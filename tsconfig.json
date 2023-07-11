@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "module": "NodeNext",
+        "target": "ES2022",
+        "moduleResolution": "NodeNext",
+        "lib": ["ESNext"],
+        "strict": true,
+        "skipDefaultLibCheck": true,
+        "baseUrl": ".",
+        "paths": {
+            "#rt/*": ["./src/*"]
+        },
+        "noEmit": true
+    },
+    "exclude": ["node_modules"],
+    "include": ["src", "test"]
+}
