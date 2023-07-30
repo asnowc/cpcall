@@ -6,7 +6,7 @@ export default defineConfig({
             "#rt": __dirname + "/src",
         },
         coverage: {
-            exclude: ["**/__mocks__","**/*errors.ts"],
+            exclude: ["**/__mocks__","**/*errors.ts","**/*.type.ts"],
         },
     },
 });
