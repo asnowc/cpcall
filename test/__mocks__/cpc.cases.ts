@@ -1,15 +1,10 @@
-import { vi } from "vitest";
-export const callBackArgs = {
-    noContent: [undefined, null, true, false],
-    int: [-2147483648, -66, -1, 0, 1, , 2147483647],
-    bigint: [-9223372036854775808n, , -1n, 0n, 1n, , 9223372036854775807n],
-    double: [-1.1, 1.1, NaN, Infinity, -Infinity],
-    buffer: [Buffer.from("abcd", "ascii"), Buffer.from("")],
-    string: ["abcd中文123", ""],
-    map: [{ a: 8, b: false, q: [1, 3, "a", null], c: { a: 9 } }],
-    array: [[1, 4, "2"]],
-};
+import { vi, expect } from "vitest";
+import { ReactionController } from "#rt/cpc.js";
+import { baseDataTypes, objectDataTypes } from "./bson.cases.js";
+export const callbackBaseArgs = baseDataTypes;
 
+const { objectId, ...callBackObjectArgs } = objectDataTypes;
+export { callBackObjectArgs };
 export function createServerFnCase() {
     return {
         returnArg0: vi.fn((arg1) => arg1),

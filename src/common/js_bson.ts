@@ -1,4 +1,4 @@
-import { toDynamicLenData, readDynamicLenData } from "#rt/common/stream_util.js";
+import { toDynamicLenData, readDynamicLenData, MAX_OBJECT_ID } from "#rt/common/stream_util.js";
 import type { StreamReader, StreamWriter } from "#rt/common/stream_util.js";
 
 export enum DataType {
@@ -67,7 +67,10 @@ export class BSONReaders {
 
     async [DataType.arrayBuffer](read: StreamReader): Promise<ArrayBuffer> {
         const buffer = await this[DataType.buffer](read);
-        return buffer.buffer;
+        const arrayBuffer = new ArrayBuffer(buffer.byteLength);
+        const view = Buffer.from(arrayBuffer);
+        view.set(buffer);
+        return arrayBuffer;
     }
     async [DataType.string](read: StreamReader): Promise<string> {
         const buf = await this[DataType.buffer](read);
@@ -143,6 +146,7 @@ export class BSONWriters {
                 else if (data instanceof ArrayBuffer) type = DataType.arrayBuffer;
                 else if (data instanceof RegExp) type = DataType.regExp;
                 else if (data instanceof Error) type = DataType.error;
+                else if (data instanceof ObjectId) type = DataType.objectId;
                 else type = DataType.map;
                 break;
             default:
@@ -192,6 +196,7 @@ export class BSONWriters {
         return buf.byteLength;
     }
     [DataType.arrayBuffer](data: ArrayBufferLike, write: StreamWriter) {
+        write(toDynamicLenData(data.byteLength));
         write(Buffer.from(data));
         return data.byteLength;
     }
@@ -353,6 +358,7 @@ export class ObjectId {
         return this.#value;
     }
     constructor(value: bigint | number) {
+        if (value > MAX_OBJECT_ID) throw new Error("Exceed the maximum");
         if (typeof value === "number") this.#value = BigInt(value);
         else this.#value = value;
     }

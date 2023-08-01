@@ -6,7 +6,7 @@ import {
     getInitedStateConnectedCpc,
     nextMacaoTask,
 } from "./__mocks__/node_process_cpc.mock.js";
-import { callBackArgs, createServerFnCase } from "./__mocks__/cpc.cases.js";
+import { callbackBaseArgs, callBackObjectArgs, createServerFnCase } from "./__mocks__/cpc.cases.js";
 
 it("实例创建状态检测", function () {
     const { cpcClient } = createConnectedFcp();
@@ -23,7 +23,7 @@ describe("参数调用", function () {
 
     /** 测试参数传输 */
     describe.concurrent("单个参数调用与返回值", function () {
-        const cases = Object.entries(callBackArgs);
+        const cases = Object.entries(callbackBaseArgs);
         describe.each(cases)("%s", function (type, dataList) {
             it.each(dataList as any[])("%s", async function (arg) {
                 const { cpcClient, fn, cmd } = createBase();
@@ -34,9 +34,20 @@ describe("参数调用", function () {
                 expect(await pms, "返回值").toEqual(arg);
             });
         });
+
+        const cases2 = Object.entries(callBackObjectArgs);
+        describe.each(cases2)("%s", function (type, { data, expect: cusExpect }) {
+            it.each(data as any[])("%s", async function (arg) {
+                const { cpcClient, fn, cmd } = createBase();
+                const pms = cpcClient.call(cmd, [arg]);
+                await nextMacaoTask();
+
+                cusExpect(arg, await pms);
+            });
+        });
     });
     describe.concurrent("多参数写入测试", function () {
-        const args = Object.entries(callBackArgs);
+        const args = Object.entries(callbackBaseArgs);
         it.each(args)(
             "%s",
             async function (type, arg) {
@@ -51,7 +62,7 @@ describe("参数调用", function () {
     /** 测试返回顺序 */
     it("连续调用", async function () {
         const { cpcClient, cmd, fn } = createBase();
-        const dataList = callBackArgs.noContent;
+        const dataList = callbackBaseArgs.noContent;
         const pmsList: Promise<any>[] = dataList.map((args) => cpcClient.call(cmd, [args]));
 
         await nextMacaoTask();

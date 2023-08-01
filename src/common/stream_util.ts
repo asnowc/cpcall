@@ -23,6 +23,7 @@ export async function readDynamicLenData(read: StreamReader): Promise<bigint> {
     } while (true);
 }
 
+export const MAX_OBJECT_ID = 0xffffffffffffffn;
 const MAX_INT = 0xfffffff;
 const shiftList = (() => {
     let list: (number | bigint)[] = [];
