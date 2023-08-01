@@ -14,18 +14,18 @@ export abstract class Cpc<
         super();
         this.#sendingUniqueKey = new UniqueKeyMap(maxAsyncId);
     }
-    /** 如果为true，Cpc将不再可用 */
     #closed: boolean = false;
+    /** 如果为true，Cpc将不再可用 */
     get closed() {
         return this.#closed;
     }
-    /** 对方是否不在有命令执行 */
+    /** 是否已发送fin帧。 */
     get isEnded() {
         return this.#end;
     }
     #end = false;
     /**
-     * 调用后将清除所有已设置命令，并且无法再执行call()、和setCmd()方法。
+     * 调用后将清除所有已设置命令，进入等待关闭状态，并且无法再执行call()、和setCmd()方法。
      * 当执行end()后如果不存在回调等待，则会自动调用dispose(), 否则等待所有回调完成后执行dispose()
      */
     end() {
@@ -37,16 +37,16 @@ export abstract class Cpc<
     /**
      * 销毁Cpc实例，这将会调用 Duplex 的 end() 和 destroy()
      */
-    dispose() {
+    dispose(error?: Error) {
         if (this.closed) return;
         if (!this.#end) {
             this.#end = true;
             this.emit("end");
         }
-        this.finalClose();
+        this.finalClose(error);
     }
     /** 最后的Cpc对象清理操作 */
-    protected async finalClose() {
+    protected finalClose(error?: Error) {
         this.#closed = true;
         this.#licensers.clear();
         let queue = this.#waitingQueue;
@@ -56,7 +56,7 @@ export abstract class Cpc<
         for (const [id, { reject }] of this.#receivingMap) reject(new CpcFailAsyncRespondError());
         this.#receivingMap.clear();
 
-        this.emit("close");
+        this.emit("close", error);
     }
     /** 最后的End操作 */
     protected finalEnd() {

@@ -30,11 +30,14 @@ export class StreamCpc<
         super(2 ** 32 - 1);
         this.#read = streamCtrl.read;
         this.#write = streamCtrl.write;
-        this.#start(streamCtrl.handshake).catch(()=>{}).finally(() => this.end());
+        this.#start(streamCtrl.handshake).then(
+            () => this.end(),
+            (error) => this.dispose(error)
+        );
     }
     async #start(handshake?: boolean) {
         if (handshake) {
-            this.#write(Buffer.alloc(HAND_SHAKE_LEN)); //10个字节的 0, 握手机制, 确认连接
+            this.#write(Buffer.alloc(HAND_SHAKE_LEN)); //HAND_SHAKE_LEN 个字节的 0, 握手机制, 确认连接
             if (!(await this.initCheck())) return;
         }
         return this.readFrame();
@@ -53,7 +56,6 @@ export class StreamCpc<
     }
     protected async readFrame() {
         const read = this.#read;
-        // if (!(await this.initCheck())) return;
         while (true) {
             const frameType = (await read(1, true))?.readUint8();
             if (frameType === undefined) break;
@@ -107,8 +109,7 @@ export class StreamCpc<
                     this.onCpcEnd();
                     break;
                 default:
-                    this.onCpcError(new CpcUnknownFrameTypeError(frameType));
-                    break;
+                    throw new CpcUnknownFrameTypeError(frameType); //致命错误。在流中未知类型会引起致命错误，因为无法知道这个帧的 content 的长度
             }
         }
     }

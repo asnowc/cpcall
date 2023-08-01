@@ -22,7 +22,7 @@ export class NodeProcessCpc extends Cpc {
             this.dispose();
         });
     }
-    protected finalClose(): Promise<void> {
+    protected finalClose() {
         this.process.off("message", this.onData);
         return super.finalClose();
     }
