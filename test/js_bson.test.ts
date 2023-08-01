@@ -1,4 +1,4 @@
-import { DataType, JsBSON, ObjectId, BsonScanItem } from "#rt/common/js_bson.js";
+import { DataType, JSBSON, ObjectId, BsonScanItem } from "#rt/common/js_bson.js";
 import { createFixedStreamReader, AllListStreamWriter } from "#rt/common/stream_util.js";
 import { describe, it, expect } from "vitest";
 
@@ -34,7 +34,7 @@ describe("JsBSONTransformer", function () {
     }
     describe("scanArray", function () {
         it.each(Object.entries(arrayCases))("%s", async function (type, cases) {
-            const transformer = new JsBSON();
+            const transformer = new JSBSON();
             const writer = new AllListStreamWriter();
 
             transformer.writeArray(cases, writer.write);
@@ -46,7 +46,7 @@ describe("JsBSONTransformer", function () {
     });
     describe("scanMap", function () {
         it.each(Object.entries(mapCases))("%s - %s", async function (index, cases) {
-            const transformer = new JsBSON();
+            const transformer = new JSBSON();
             const writer = new AllListStreamWriter();
 
             transformer.writeMap(cases, writer.write);
@@ -58,7 +58,7 @@ describe("JsBSONTransformer", function () {
     });
     describe("readArray", function () {
         it.each(Object.entries(arrayCases))("%s", async function (type, cases) {
-            const transformer = new JsBSON();
+            const transformer = new JSBSON();
             const writer = new AllListStreamWriter();
             transformer.writeArray(cases, writer.write);
 
@@ -69,7 +69,7 @@ describe("JsBSONTransformer", function () {
     });
     describe("readMap", function () {
         it.each(Object.entries(mapCases))("%s - %s", async function (index, cases) {
-            const transformer = new JsBSON();
+            const transformer = new JSBSON();
             const writer = new AllListStreamWriter();
             transformer.writeMap(cases, writer.write);
             const reader = createFixedStreamReader(writer.getAll());

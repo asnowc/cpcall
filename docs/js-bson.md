@@ -12,11 +12,11 @@
 | 5   | 0101 | int         | 4                                           |
 | 6   | 0110 | bigint      | 8                                           |
 | 7   | 0111 | double      | 8                                           |
-| 8   | 1000 | id          | dynamicLenData                              |
+| 8   | 1000 | objectId    | dynamicLenData                              |
 | 9   | 1001 | arrayBuffer | contentLen(dynamicLenData) + content        |
 | 10  | 1010 | string      | arrayBuffer                                 |
 | 11  | 1011 | regExp      | string                                      |
-| 12  | 1100 | function    | string                                      |
+| 12  | 1100 | function    | string[]&string //暂未实现                  |
 | 13  | 1101 | array       | n                                           |
 | 14  | 1110 | map(json)   | n                                           |
 | 15  | 1111 | buffer      | arrayBuffer                                 |

@@ -28,7 +28,7 @@ export enum DataType {
 type DataReader = (read: StreamReader) => Promise<unknown>;
 type DataWriter = (data: any, write: StreamWriter) => number;
 
-export class BSONReaderMap {
+export class BSONReaders {
     /** 如果读取到 void类型, 则返回VOID */
     async readArrayItem(read: StreamReader) {
         const type = (await read(1)).readUint8();
@@ -113,21 +113,11 @@ export class BSONReaderMap {
     }
     [key: number]: DataReader;
 }
-export class BSONWriterMap {
-    protected isNoContentData(type: number) {
+export class BSONWriters {
+    isNoContentData(type: number) {
         return (
             type === DataType.true || type === DataType.false || type === DataType.null || type === DataType.undefined
         );
-    }
-    protected toObjectType(data: object) {
-        let type: number;
-        if (Array.isArray(data)) type = DataType.array;
-        else if (data instanceof Buffer) type = DataType.buffer;
-        else if (data instanceof ArrayBuffer) type = DataType.arrayBuffer;
-        else if (data instanceof RegExp) type = DataType.regExp;
-        else if (data instanceof Error) type = DataType.error;
-        else type = DataType.map;
-        return type;
     }
     toType(data: any): number {
         if (data === true) return DataType.true;
@@ -148,7 +138,12 @@ export class BSONWriterMap {
                 type = DataType.bigint;
                 break;
             case "object":
-                type = this.toObjectType(data);
+                if (Array.isArray(data)) type = DataType.array;
+                else if (data instanceof Buffer) type = DataType.buffer;
+                else if (data instanceof ArrayBuffer) type = DataType.arrayBuffer;
+                else if (data instanceof RegExp) type = DataType.regExp;
+                else if (data instanceof Error) type = DataType.error;
+                else type = DataType.map;
                 break;
             default:
                 throw new UnsupportedDataTypeError(typeof data);
@@ -256,12 +251,12 @@ export class BSONWriterMap {
     [key: number]: DataWriter;
 }
 
-export class JsBSON {
-    private readerMap;
-    private writerMap;
-    constructor(writer?: BSONWriterMap, reader?: BSONReaderMap) {
-        this.readerMap = reader ?? new BSONReaderMap();
-        this.writerMap = writer ?? new BSONWriterMap();
+export class JSBSON {
+    readonly readers;
+    readonly writers;
+    constructor(writer?: BSONWriters, reader?: BSONReaders) {
+        this.readers = reader ?? new BSONReaders();
+        this.writers = writer ?? new BSONWriters();
     }
 
     private async *readDataType(read: StreamReader) {
@@ -271,15 +266,11 @@ export class JsBSON {
             yield type;
         } while (true);
     }
-    /** 如果读取到 void类型, 则返回VOID */
-    readArrayItem<T = unknown>(read: StreamReader): Promise<T | typeof VOID> {
-        return this.readerMap.readArrayItem(read) as any;
-    }
     readArray<T = unknown>(read: StreamReader): Promise<T[]> {
-        return this.readerMap[DataType.array](read) as any;
+        return this.readers[DataType.array](read) as any;
     }
     readMap<T = unknown>(read: StreamReader): Promise<T> {
-        return this.readerMap[DataType.map](read) as any;
+        return this.readers[DataType.map](read) as any;
     }
     async *scanArray(read: StreamReader): AsyncGenerator<BsonScanItem, void, void> {
         let key = 0;
@@ -288,10 +279,10 @@ export class JsBSON {
             let isIterator = true;
             if (type === DataType.array) value = this.scanArray(read);
             else if (type === DataType.map) value = this.scanMap(read);
-            else if (typeof this.readerMap[type] !== "function")
+            else if (typeof this.readers[type] !== "function")
                 throw new UnsupportedDataTypeError(DataType[type] ?? type);
             else {
-                value = await this.readerMap[type](read);
+                value = await this.readers[type](read);
                 isIterator = false;
             }
             yield { dataType: type, key, value, isIterator } as BsonScanItem;
@@ -302,16 +293,16 @@ export class JsBSON {
         const map: Record<string, unknown> = {};
         let key: string;
         for await (const type of this.readDataType(read)) {
-            key = (await this.readerMap[DataType.string](read)) as string;
+            key = (await this.readers[DataType.string](read)) as string;
 
             let value: any;
             let isIterator = true;
             if (type === DataType.array) value = this.scanArray(read);
             else if (type === DataType.map) value = this.scanMap(read);
-            else if (typeof this.readerMap[type] !== "function")
+            else if (typeof this.readers[type] !== "function")
                 throw new UnsupportedDataTypeError(DataType[type] ?? type);
             else {
-                value = await this.readerMap[type](read);
+                value = await this.readers[type](read);
                 isIterator = false;
             }
 
@@ -322,15 +313,11 @@ export class JsBSON {
 
         return map as any;
     }
-    /** 支持写入void类型 */
-    writeArrayItem(data: unknown, write: StreamWriter): number {
-        return this.writerMap.writeArrayItem(data, write);
-    }
     writeArray(array: unknown[], write: StreamWriter): number {
-        return this.writerMap[DataType.array](array, write);
+        return this.writers[DataType.array](array, write);
     }
     writeMap(map: Record<string, any>, write: StreamWriter): number {
-        return this.writerMap[DataType.map](map, write);
+        return this.writers[DataType.map](map, write);
     }
 }
 export const VOID = Symbol("void");
