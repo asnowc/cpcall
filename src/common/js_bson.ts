@@ -16,7 +16,7 @@ export enum DataType {
     arrayBuffer = 9,
     string = 10,
     regExp = 11,
-    /** @deprecated */
+    /** @deprecated 暂不支持*/
     function = 12,
     array = 13,
     map = 14,
@@ -28,10 +28,7 @@ export enum DataType {
 type DataReader = (read: StreamReader) => Promise<unknown>;
 type DataWriter = (data: any, write: StreamWriter) => number;
 
-type DataReaderMap = Record<number, DataReader>;
-type DataWriterMap = Record<number, DataWriter>;
-
-class BaseDataReaderMap implements DataReaderMap {
+export class BSONReaderMap {
     /** 如果读取到 void类型, 则返回VOID */
     async readArrayItem(read: StreamReader) {
         const type = (await read(1)).readUint8();
@@ -40,14 +37,28 @@ class BaseDataReaderMap implements DataReaderMap {
         return this[type](read);
     }
 
-    [DataType.undefined] = async () => undefined;
-    [DataType.null] = async () => null;
-    [DataType.true] = async () => true;
-    [DataType.false] = async () => false;
+    async [DataType.undefined]() {
+        return undefined;
+    }
+    async [DataType.null]() {
+        return null;
+    }
+    async [DataType.true]() {
+        return true;
+    }
+    async [DataType.false]() {
+        return false;
+    }
 
-    [DataType.int] = async (read: StreamReader) => (await read(4)).readInt32BE();
-    [DataType.bigint] = async (read: StreamReader) => (await read(8)).readBigInt64BE();
-    [DataType.double] = async (read: StreamReader) => (await read(8)).readDoubleBE();
+    async [DataType.int](read: StreamReader) {
+        return (await read(4)).readInt32BE();
+    }
+    async [DataType.bigint](read: StreamReader) {
+        return (await read(8)).readBigInt64BE();
+    }
+    async [DataType.double](read: StreamReader) {
+        return (await read(8)).readDoubleBE();
+    }
 
     async [DataType.objectId](read: StreamReader) {
         const data = await readDynamicLenData(read);
@@ -102,8 +113,23 @@ class BaseDataReaderMap implements DataReaderMap {
     }
     [key: number]: DataReader;
 }
-class BaseDataWriteMap implements DataWriterMap {
-    static toType(data: any): number {
+export class BSONWriterMap {
+    protected isNoContentData(type: number) {
+        return (
+            type === DataType.true || type === DataType.false || type === DataType.null || type === DataType.undefined
+        );
+    }
+    protected toObjectType(data: object) {
+        let type: number;
+        if (Array.isArray(data)) type = DataType.array;
+        else if (data instanceof Buffer) type = DataType.buffer;
+        else if (data instanceof ArrayBuffer) type = DataType.arrayBuffer;
+        else if (data instanceof RegExp) type = DataType.regExp;
+        else if (data instanceof Error) type = DataType.error;
+        else type = DataType.map;
+        return type;
+    }
+    toType(data: any): number {
         if (data === true) return DataType.true;
         else if (data === false) return DataType.false;
         else if (data === undefined) return DataType.undefined;
@@ -118,39 +144,30 @@ class BaseDataWriteMap implements DataWriterMap {
             case "string":
                 type = DataType.string;
                 break;
-            case "object":
-                if (Array.isArray(data)) type = DataType.array;
-                else if (data instanceof Buffer) type = DataType.buffer;
-                else if (data instanceof ArrayBuffer) type = DataType.arrayBuffer;
-                else if (data instanceof RegExp) type = DataType.regExp;
-                else if (data instanceof Error) type = DataType.error;
-                else type = DataType.map;
-                break;
             case "bigint":
                 type = DataType.bigint;
+                break;
+            case "object":
+                type = this.toObjectType(data);
                 break;
             default:
                 throw new UnsupportedDataTypeError(typeof data);
         }
         return type;
     }
-    static isNoContentData(type: number) {
-        return (
-            type === DataType.true || type === DataType.false || type === DataType.null || type === DataType.undefined
-        );
-    }
+
     /** 支持写入void类型 */
     writeArrayItem(data: unknown, write: StreamWriter): number {
         if (data === VOID) {
             write(Buffer.from([DataType.void]));
             return 1;
         }
-        const type = BaseDataWriteMap.toType(data);
+        const type = this.toType(data);
         //type
         const typeBuf = Buffer.from([type]);
         if (!typeBuf) throw new UnsupportedDataTypeError(type);
         write(typeBuf);
-        if (BaseDataWriteMap.isNoContentData(type)) return 1;
+        if (this.isNoContentData(type)) return 1;
 
         if (typeof this[type] !== "function") throw new UnsupportedDataTypeError(DataType[type] ?? type);
         return this[type](data, write);
@@ -202,7 +219,7 @@ class BaseDataWriteMap implements DataWriterMap {
     [DataType.map](map: Record<string, any>, write: StreamWriter): number {
         let writeTotalLen = 0;
         for (const [key, data] of Object.entries(map)) {
-            const type = BaseDataWriteMap.toType(data);
+            const type = this.toType(data);
             {
                 //type
                 const typeBuf = Buffer.from([type]);
@@ -218,7 +235,7 @@ class BaseDataWriteMap implements DataWriterMap {
                 writeTotalLen += lenDesc.byteLength + keyBuf.byteLength;
             }
 
-            if (BaseDataWriteMap.isNoContentData(type)) continue;
+            if (this.isNoContentData(type)) continue;
             //value
             if (typeof this[type] !== "function") throw new UnsupportedDataTypeError(DataType[type] ?? type);
             writeTotalLen += this[type](data, write);
@@ -240,10 +257,14 @@ class BaseDataWriteMap implements DataWriterMap {
 }
 
 export class JsBSON {
-    protected readerMap = new BaseDataReaderMap();
-    protected writerMap = new BaseDataWriteMap();
+    private readerMap;
+    private writerMap;
+    constructor(writer?: BSONWriterMap, reader?: BSONReaderMap) {
+        this.readerMap = reader ?? new BSONReaderMap();
+        this.writerMap = writer ?? new BSONWriterMap();
+    }
 
-    protected async *readDataType(read: StreamReader) {
+    private async *readDataType(read: StreamReader) {
         do {
             const type = (await read(1)).readUint8();
             if (type === DataType.void) return;
