@@ -1,10 +1,5 @@
 import { it, describe, expect } from "vitest";
-import {
-    numToDLD,
-    readNumberDLD,
-    createFixedStreamReader,
-    createReaderFromReadable,
-} from "./stream_util.js";
+import { numToDLD, readNumberDLD, createFixedStreamReader, createReaderFromReadable } from "./stream_util.js";
 import { Readable } from "stream";
 
 describe("DLD", function () {

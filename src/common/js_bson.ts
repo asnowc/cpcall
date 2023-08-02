@@ -358,9 +358,12 @@ export class ObjectId {
         return this.#value;
     }
     constructor(value: bigint | number) {
-        if (value > DLD_MAX_LEN) throw new Error("Exceed the maximum");
-        if (typeof value === "number") this.#value = BigInt(value);
-        else this.#value = value;
+        if (value > DLD_MAX_LEN) throw new Error("Exceeds the maximum number");
+        else if (value < 0) throw new Error("The number cannot be negative");
+        if (typeof value === "number") {
+            if (value % 1 !== 0) throw new Error("Id must be an integer");
+            this.#value = BigInt(value);
+        } else this.#value = value;
     }
     valueOf(): bigint {
         return this.#value;
