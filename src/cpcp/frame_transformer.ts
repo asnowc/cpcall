@@ -1,4 +1,4 @@
-import { toDynamicLenData, readDynamicLenData } from "#rt/common/stream_util.js";
+import { numToDLD, readNumberDLD } from "#rt/common/stream_util.js";
 import type { StreamReader, StreamWriter } from "#rt/common/stream_util.js";
 import { FrameType } from "../cpc_frame.type.js";
 import { JSBSON, VOID } from "#rt/common/js_bson.js";
@@ -12,11 +12,11 @@ export function returnWrite(write: StreamWriter, data?: any, ignoreReturn?: bool
     return bsion.writers.writeArrayItem(data, write);
 }
 export async function returnAsyncRead(read: StreamReader) {
-    return Number(await readDynamicLenData(read));
+    return Number(await readNumberDLD(read));
 }
 export function returnAsyncWrite(write: StreamWriter, asyncId: number) {
     write(Buffer.from([FrameType.returnAsync]));
-    write(toDynamicLenData(asyncId));
+    write(numToDLD(asyncId));
 }
 export async function throwRead(read: StreamReader) {
     let err = await bsion.readers.readArrayItem(read);
@@ -29,19 +29,19 @@ export function throwWrite(write: StreamWriter, data?: any, isNoExist?: boolean)
 }
 
 export async function asyncResultRead(read: StreamReader) {
-    const asyncId = await readDynamicLenData(read);
+    const asyncId = await readNumberDLD(read);
     const data = await bsion.readers.readArrayItem(read);
     return { asyncId: Number(asyncId), data };
 }
 export function asyncResultWrite(write: StreamWriter, asyncId: number, data: any, reject?: boolean) {
-    const asyncIdBuf = toDynamicLenData(asyncId);
+    const asyncIdBuf = numToDLD(asyncId);
     write(Buffer.from([reject ? FrameType.reject : FrameType.resolve]));
     write(asyncIdBuf);
     bsion.writers.writeArrayItem(data, write);
 }
 
 export async function callRead(read: StreamReader) {
-    let lenDesc = Number(await readDynamicLenData(read));
+    let lenDesc = Number(await readNumberDLD(read));
     const cmd = (await read(lenDesc)).toString("utf-8");
     const args = await bsion.readArray(read);
     return { cmd, args };
@@ -49,7 +49,7 @@ export async function callRead(read: StreamReader) {
 export function callWrite(write: StreamWriter, cmd: string, args?: any[], ignoreReturn?: boolean) {
     write(Buffer.from([ignoreReturn ? FrameType.ignoreReturnCall : FrameType.call]));
     const cmdBuf = Buffer.from(cmd);
-    write(toDynamicLenData(cmdBuf.byteLength));
+    write(numToDLD(cmdBuf.byteLength));
     write(cmdBuf);
     bsion.writeArray(args ?? [], write);
 }

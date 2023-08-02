@@ -1,13 +1,13 @@
 import { it, describe, expect } from "vitest";
 import {
-    toDynamicLenData,
-    readDynamicLenData,
+    numToDLD,
+    readNumberDLD,
     createFixedStreamReader,
     createReaderFromReadable,
 } from "./stream_util.js";
 import { Readable } from "stream";
 
-describe("toDynamicLenData", function () {
+describe("DLD", function () {
     const cases: [number | bigint, string][] = [
         [1, "1"],
         [0xff, "10000001_01111111"],
@@ -18,18 +18,18 @@ describe("toDynamicLenData", function () {
         [0xffffffffffff, "10111111_11111111_11111111_11111111_11111111_11111111_01111111"],
         [0xffffffffffffffn, "11111111_11111111_11111111_11111111_11111111_11111111_11111111_01111111"],
     ];
-    describe("toDynamicLenData", function () {
+    describe("numToDLD", function () {
         it.each(cases)("%s", function (input, output) {
-            let buf = toDynamicLenData(input);
+            let buf = numToDLD(input);
 
             expect(formatBin(buf), input.toString(16)).toBe(output);
         });
     });
 
-    describe("readDynamicLenData", function () {
+    describe("readNumDLD", function () {
         it.each(cases)("%s", async function (input) {
-            const reader = createFixedStreamReader(toDynamicLenData(input));
-            let data = await readDynamicLenData(reader);
+            const reader = createFixedStreamReader(numToDLD(input));
+            let data = await readNumberDLD(reader);
             expect(data).toMatchObject(BigInt(input));
         });
     });

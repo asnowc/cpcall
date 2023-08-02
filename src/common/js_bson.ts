@@ -1,4 +1,4 @@
-import { toDynamicLenData, readDynamicLenData, MAX_OBJECT_ID } from "#rt/common/stream_util.js";
+import { numToDLD, readNumberDLD, DLD_MAX_LEN } from "#rt/common/stream_util.js";
 import type { StreamReader, StreamWriter } from "#rt/common/stream_util.js";
 
 export enum DataType {
@@ -61,7 +61,7 @@ export class BSONReaders {
     }
 
     async [DataType.objectId](read: StreamReader) {
-        const data = await readDynamicLenData(read);
+        const data = await readNumberDLD(read);
         return new ObjectId(data);
     }
 
@@ -104,7 +104,7 @@ export class BSONReaders {
         return map as any;
     }
     async [DataType.buffer](read: StreamReader) {
-        const len = await readDynamicLenData(read);
+        const len = await readNumberDLD(read);
         if (len <= 0) return Buffer.alloc(0);
         return read(Number(len));
     }
@@ -196,7 +196,7 @@ export class BSONWriters {
         return buf.byteLength;
     }
     [DataType.arrayBuffer](data: ArrayBufferLike, write: StreamWriter) {
-        write(toDynamicLenData(data.byteLength));
+        write(numToDLD(data.byteLength));
         write(Buffer.from(data));
         return data.byteLength;
     }
@@ -229,7 +229,7 @@ export class BSONWriters {
 
                 ///key
                 const keyBuf = Buffer.from(key);
-                const lenDesc = toDynamicLenData(keyBuf.length);
+                const lenDesc = numToDLD(keyBuf.length);
                 write(lenDesc);
                 write(keyBuf);
                 writeTotalLen += lenDesc.byteLength + keyBuf.byteLength;
@@ -244,7 +244,7 @@ export class BSONWriters {
         return writeTotalLen + 1;
     }
     [DataType.buffer](data: Buffer, write: StreamWriter) {
-        write(toDynamicLenData(data.byteLength));
+        write(numToDLD(data.byteLength));
         write(data as Buffer);
         return data.byteLength;
     }
@@ -358,7 +358,7 @@ export class ObjectId {
         return this.#value;
     }
     constructor(value: bigint | number) {
-        if (value > MAX_OBJECT_ID) throw new Error("Exceed the maximum");
+        if (value > DLD_MAX_LEN) throw new Error("Exceed the maximum");
         if (typeof value === "number") this.#value = BigInt(value);
         else this.#value = value;
     }
@@ -369,7 +369,7 @@ export class ObjectId {
         return this.#value.toString();
     }
     toBuffer(): Buffer {
-        return toDynamicLenData(this.#value);
+        return numToDLD(this.#value);
     }
 }
 

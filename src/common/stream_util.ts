@@ -2,14 +2,7 @@ import { Duplex, Readable, Writable } from "node:stream";
 import { ReadableStream, WritableStream } from "node:stream/web";
 import { ReadableByteStreamController } from "stream/web";
 
-export interface StreamReader {
-    (len: number, safe?: false): Promise<Buffer>;
-    (len: number, safe: true): Promise<Buffer | null>;
-    (len: number, safe?: boolean): Promise<Buffer | null>;
-}
-export type StreamWriter = (buf: ArrayBufferView) => void;
-
-export async function readDynamicLenData(read: StreamReader): Promise<bigint> {
+export async function readNumberDLD(read: StreamReader): Promise<bigint> {
     let data = 0n;
     do {
         let buf = await read(1);
@@ -23,7 +16,7 @@ export async function readDynamicLenData(read: StreamReader): Promise<bigint> {
     } while (true);
 }
 
-export const MAX_OBJECT_ID = 0xffffffffffffffn;
+export const DLD_MAX_LEN = 0xffffffffffffffn;
 const MAX_INT = 0xfffffff;
 const shiftList = (() => {
     let list: (number | bigint)[] = [];
@@ -31,14 +24,16 @@ const shiftList = (() => {
     for (let i = 5; i < 8; i++) list[i] = BigInt(2 ** (i * 7));
     return list;
 })();
-export function toDynamicLenData(data: number | bigint): Buffer {
-    let buf: number[] = [];
+export function numToDLD(data: number | bigint): Buffer {
+    if (data > DLD_MAX_LEN) throw new Error("Exceeds the maximum number");
+    else if (data < 0) throw new Error("The number cannot be negative");
     let uInt!: number;
     let bInt: bigint | undefined;
 
     //如果number类型大于MAX_INT不转成bigInt,则移位运算符可能运算错误
     if (data > MAX_INT) bInt = BigInt(data);
     else uInt = Number(data);
+    let buf: number[] = [];
 
     let isStart = false;
     let i = 7;
@@ -67,6 +62,13 @@ export function toDynamicLenData(data: number | bigint): Buffer {
 
     return Buffer.from(buf.reverse());
 }
+
+export interface StreamReader {
+    (len: number, safe?: false): Promise<Buffer>;
+    (len: number, safe: true): Promise<Buffer | null>;
+    (len: number, safe?: boolean): Promise<Buffer | null>;
+}
+export type StreamWriter = (buf: ArrayBufferView) => void;
 
 /** 将 StreamWriter 的值保存到数组 */
 export class AllListStreamWriter {
