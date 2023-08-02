@@ -35,7 +35,7 @@ export const objectDataTypes = {
     },
     objectId: {
         data: [new ObjectId(88n), new ObjectId(0), new ObjectId(2 ** 32 + 1)],
-        expect(rawData: ObjectId, data: any, msg: number | string) {
+        expect(rawData: ObjectId, data: any, msg?: number | string) {
             expect(data, msg?.toString()).toEqual(rawData);
             expect(data, msg?.toString()).instanceof(ObjectId);
         },

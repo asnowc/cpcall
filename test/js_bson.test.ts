@@ -45,7 +45,7 @@ describe("JsBSONTransformer", function () {
 
             const array = await scanToValue(transformer.scanArray(reader), [] as number[]);
             for (let i = 0; i < array.length; i++) {
-                cusExpect(data[i], array[i], i);
+                cusExpect(data[i] as any, array[i], i);
             }
         });
     });

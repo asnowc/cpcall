@@ -8,13 +8,11 @@ import {
     getReadable,
     nextMacaoTask,
     createConnectedSocket,
+    CpcSocketMocks,
 } from "./__mocks__/cpc_socket.mock.js";
 
-vi.mock("./__mocks__/node_process_cpc.mock.js", async function () {
-    const mod = await import("./__mocks__/cpc_socket.mock.js");
-    return mod;
-});
-import "./node_process_cpc.test.js"; /** 抽象类测试用例 */
+import { cpc } from "./__mocks__/cpc.cases.js";
+describe("cpc", cpc(new CpcSocketMocks()));
 
 it("握手不通过", async function () {
     const { clientSocket, serverSocket } = createConnectedSocket();

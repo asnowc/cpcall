@@ -1,6 +1,19 @@
 import { Duplex, Readable } from "node:stream";
 import { CpcSocket } from "#rt/cpcp.js";
 import { vi } from "vitest";
+import { CpcMocks } from "./cpc.mock.js";
+import { Cpc, CpcCallList } from "#rt/cpc.js";
+export class CpcSocketMocks extends CpcMocks {
+    createConnectedFcp(
+        setClientCmd?: Record<string, (...args: any[]) => any> | undefined,
+        setServerCmd?: Record<string, (...args: any[]) => any> | undefined
+    ): { cpcServer: Cpc<CpcCallList, CpcCallList>; cpcClient: Cpc<CpcCallList, CpcCallList>; onErr: () => void } {
+        return createConnectedFcp(setClientCmd, setServerCmd);
+    }
+    getNoResponseCpc(): Cpc<CpcCallList, CpcCallList> {
+        return getNoResponseCpc();
+    }
+}
 
 /** 模拟只发送数据，永远没有数据返回的场景*/
 export function getNoResponseCpc() {
