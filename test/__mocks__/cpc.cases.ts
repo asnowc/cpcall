@@ -48,12 +48,12 @@ export function cpc(mocks: CpcMocks) {
                 const cases = Object.entries(callbackBaseArgs);
                 describe.each(cases)("%s", function (type, dataList) {
                     it.each(dataList as any[])("%s", async function (arg) {
+                        type
                         const { cpcClient, fn, cmd } = createBase();
-                        const pms = cpcClient.call(cmd, [arg]);
-                        await nextMacaoTask();
+                        const res = await cpcClient.call(cmd, [arg]);
 
                         expect(fn.mock.calls[0], "参数").toEqual([arg]);
-                        expect(await pms, "返回值").toEqual(arg);
+                        expect(res, "返回值").toEqual(arg);
                     });
                 });
 

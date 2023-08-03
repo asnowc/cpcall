@@ -1,6 +1,7 @@
 import { Cpc } from "./cpc.js";
 import { CpcUnknownFrameTypeError, FrameType } from "./cpc_frame.type.js";
 import { EventEmitter } from "events";
+import { Trans } from "./cpcp/json_frame_transformer.js";
 interface NodeProcess extends EventEmitter {
     send?: typeof process.send;
 }
@@ -11,7 +12,8 @@ export class NodeProcessCpc extends Cpc {
         this.send = typeof process.send === "function" ? process.send : this.noSend;
         this.initEvent();
     }
-    send: (msg?: any) => void;
+    private send: (msg?: any) => void;
+    private trans = new Trans();
     private noSend() {
         this.onCpcReturn(new Error("No parent process"), true);
         return false;
@@ -30,25 +32,23 @@ export class NodeProcessCpc extends Cpc {
     private onData = (data: Frame) => {
         switch (data.type) {
             case FrameType.call:
-                this.onCpcCall(data.cmd, data.args ?? []);
+                this.onCpcCall(data.cmd, data.args === undefined ? [] : this.trans.readArray(data.args));
                 break;
             case FrameType.return:
-                this.onCpcReturn(data.value);
+                this.onCpcReturn(this.trans.readReturn(data.value));
                 break;
             case FrameType.throw:
-                this.onCpcReturn(data.value, true, data.noExist);
+                this.onCpcReturn(this.trans.readValue(data.value), true, data.noExist);
                 break;
             case FrameType.returnAsync:
                 this.onCpcReturnAsync(data.id);
                 break;
             case FrameType.resolve:
-                this.onCpcAsyncRes(data.id, data.value);
+                this.onCpcAsyncRes(data.id, this.trans.readReturn(data.value));
                 break;
             case FrameType.reject:
-                this.onCpcAsyncRes(data.id, data.value, true);
+                this.onCpcAsyncRes(data.id, this.trans.readValue(data.value), true);
                 break;
-            // case FrameType.streamFrame:
-            // break;
 
             case FrameType.fin:
                 this.onCpcEnd();
@@ -59,12 +59,17 @@ export class NodeProcessCpc extends Cpc {
         }
     };
     protected sendAsyncRes(id: number, value?: any, error?: boolean | undefined): void {
-        let frameType = error ? FrameType.reject : FrameType.resolve;
-        let frame: F_asyncRes = { type: frameType, id, value };
+        let frame: F_asyncRes;
+        if (error) {
+            frame = { type: FrameType.reject, id, value: this.trans.writeValue(value) };
+        } else {
+            frame = { type: FrameType.resolve, id, value: this.trans.writeReturn(value) };
+        }
         this.send(frame);
     }
     protected sendCall(command: string | number, args?: any[]): void {
-        let frame: F_call = { type: FrameType.call, cmd: command, args };
+        const writeData = args === undefined ? undefined : this.trans.writeArray(args);
+        let frame: F_call = { type: FrameType.call, cmd: command, args: writeData };
         this.send(frame);
     }
     protected sendEnd(): void {
@@ -73,10 +78,10 @@ export class NodeProcessCpc extends Cpc {
     }
     protected sendReturn(value: any, error?: boolean | undefined, noExist?: boolean | undefined): void {
         if (error) {
-            const frame: F_throw = { type: FrameType.throw, value, noExist };
+            const frame: F_throw = { type: FrameType.throw, value: this.trans.writeValue(value), noExist };
             this.send(frame);
         } else {
-            let frame: F_return = { type: FrameType.return, value };
+            let frame: F_return = { type: FrameType.return, value: this.trans.writeReturn(value) };
             this.send(frame);
         }
     }
