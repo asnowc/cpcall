@@ -1,4 +1,4 @@
-import { Cpc, CpcCallList } from "../cpc.js";
+import { Cpc, CpcCmdList } from "../cpc.js";
 import {
     callRead,
     asyncResultRead,
@@ -21,8 +21,8 @@ export interface CpcStreamCtrl {
 }
 const HAND_SHAKE_LEN = 5;
 export class StreamCpc<
-    CallableCmd extends CpcCallList = CpcCallList,
-    CmdList extends CpcCallList = CpcCallList
+    CallableCmd extends CpcCmdList = CpcCmdList,
+    CmdList extends CpcCmdList = CpcCmdList
 > extends Cpc<CallableCmd, CmdList> {
     #read: StreamReader;
     #write: StreamWriter;

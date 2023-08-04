@@ -1,14 +1,14 @@
 import { NodeProcessCpc } from "#rt/node_process_cpc.js";
 import { vi } from "vitest";
 import { EventEmitter } from "node:events";
-import { Cpc, CpcCallList } from "#rt/cpc.js";
+import { Cpc, CpcCmdList } from "#rt/cpc.js";
 import { CpcMocks } from "./cpc.mock.js";
 
 export class PsCpcMocks extends CpcMocks {
     createConnectedFcp(
         setClientCmd?: Record<string, (...args: any[]) => any> | undefined,
         setServerCmd?: Record<string, (...args: any[]) => any> | undefined
-    ): { cpcServer: Cpc<CpcCallList, CpcCallList>; cpcClient: Cpc<CpcCallList, CpcCallList>; onErr: () => void } {
+    ): { cpcServer: Cpc<CpcCmdList, CpcCmdList>; cpcClient: Cpc<CpcCmdList, CpcCmdList>; onErr: () => void } {
         const { clientSocket, serverSocket } = createConnectedSocket();
         const cpcServer = new NodeProcessCpc(serverSocket);
         const cpcClient = new NodeProcessCpc(clientSocket);
@@ -29,7 +29,7 @@ export class PsCpcMocks extends CpcMocks {
 
         return { cpcServer, cpcClient, onErr };
     }
-    getNoResponseCpc(): Cpc<CpcCallList, CpcCallList> {
+    getNoResponseCpc(): Cpc<CpcCmdList, CpcCmdList> {
         const clientSocket: NodeProcess = new EventEmitter();
         clientSocket.send = () => true;
         return new NodeProcessCpc(clientSocket);

@@ -48,7 +48,6 @@ export function cpc(mocks: CpcMocks) {
                 const cases = Object.entries(callbackBaseArgs);
                 describe.each(cases)("%s", function (type, dataList) {
                     it.each(dataList as any[])("%s", async function (arg) {
-                        type
                         const { cpcClient, fn, cmd } = createBase();
                         const res = await cpcClient.call(cmd, [arg]);
 
@@ -103,7 +102,7 @@ export function cpc(mocks: CpcMocks) {
                     },
                 }
             );
-            await expect(cpcClient.call("fn")).resolves.toBe(3);
+            await expect(cpcClient.callNoCheck("fn")).resolves.toBe(3);
             await expect(pms!).resolves.toBe(7);
         });
         describe("返回值", function () {
@@ -115,16 +114,16 @@ export function cpc(mocks: CpcMocks) {
             });
 
             it("未处理异常", async function () {
-                await expect(cpcClient.call("cmd99")).rejects.toThrowError(CpcUnregisteredCommandError);
+                await expect(cpcClient.callNoCheck("cmd99")).rejects.toThrowError(CpcUnregisteredCommandError);
             });
             it("函数抛出Error对象", async function () {
-                await expect(cpcClient.call("throwError")).rejects.toThrowError("yy");
+                await expect(cpcClient.callNoCheck("throwError")).rejects.toThrowError("yy");
             });
             it("函数抛出非Error对象", async function () {
                 await expect(cpcClient.call("throwArg0", ["abc"])).rejects.toThrow("abc");
             });
             it("异步抛出Error对象", async function () {
-                await expect(cpcClient.call("asyncThrowError")).rejects.toThrowError("yy");
+                await expect(cpcClient.callNoCheck("asyncThrowError")).rejects.toThrowError("yy");
             });
             it("异步抛出非Error对象", async function () {
                 await expect(cpcClient.call("asyncThrowArg0", ["abc"])).rejects.toThrow("abc");
@@ -156,7 +155,7 @@ export function cpc(mocks: CpcMocks) {
                 s.cpc.setCmd("cmd", function () {
                     return new Promise((resolve) => setTimeout(resolve, 100));
                 });
-                const pms = c.cpc.call("cmd");
+                const pms = c.cpc.callNoCheck("cmd");
                 c.cpc.end();
                 await nextMacaoTask(50);
                 expect(s.onEnd, "serverEnd").toBeCalledTimes(1);
@@ -191,7 +190,7 @@ export function cpc(mocks: CpcMocks) {
             });
             it("在返回前断开连接", async function () {
                 const cpc = getNoResponseCpc();
-                const pms = cpc.call("yyy");
+                const pms = cpc.callNoCheck("yyy");
                 await nextMacaoTask();
                 expect(cpc.isEnded).toBeFalsy();
                 cpc.dispose();
@@ -206,7 +205,7 @@ export function cpc(mocks: CpcMocks) {
                         setTimeout(resolve, 500);
                     });
                 });
-                let pms = c.cpc.call("cmd");
+                let pms = c.cpc.callNoCheck("cmd");
                 await nextMacaoTask(50);
                 c.cpc.dispose();
                 expect(c.cpc.closed).toBeTruthy();

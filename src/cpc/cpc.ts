@@ -1,5 +1,6 @@
 import { UniqueKeyMap } from "../common/virtual_heap.js";
 import { EventEmitter } from "node:events";
+import { PromiseHandel, SyncReturnQueue } from "./promise_queue.js";
 
 /**
  * @description Cross-process call (跨进程调用-CPC)
@@ -7,8 +8,8 @@ import { EventEmitter } from "node:events";
  * 事件触发顺序：end->close
  */
 export abstract class Cpc<
-    CallableCmd extends CpcCallList = CpcCallList,
-    CmdList extends CpcCallList = CpcCallList
+    CallList extends CpcCmdList = CpcCmdList,
+    CmdList extends CpcCmdList = CpcCmdList
 > extends EventEmitter {
     constructor(protected readonly maxAsyncId = 4294967295) {
         super();
@@ -49,12 +50,8 @@ export abstract class Cpc<
     protected finalClose(error?: Error) {
         this.#closed = true;
         this.#licensers.clear();
-        let queue = this.#waitingQueue;
-        this.#waitingQueue = [];
-        for (const { reject } of queue) reject(new CpcFailRespondError());
-
-        for (const [id, { reject }] of this.#receivingMap) reject(new CpcFailAsyncRespondError());
-        this.#receivingMap.clear();
+        this.#syncReturnQueue.rejectAllByClass(CpcFailRespondError);
+        this.#syncReturnQueue.rejectAsyncAllByClass(CpcFailAsyncRespondError);
 
         this.emit("close", error);
     }
@@ -65,7 +62,7 @@ export abstract class Cpc<
         this.testClose();
     }
     #licensers = new Map<string | number, CmdFx>();
-    setCmd<T extends keyof CpcCallList>(cmd: T, fx: CpcCallList[T]): void;
+    setCmd<T extends keyof CpcCmdList>(cmd: T, fx: CpcCmdList[T]): void;
     setCmd(cmd: string | number, fx: CmdFx) {
         if (this.#end) return;
         this.#licensers.set(cmd, fx);
@@ -79,30 +76,32 @@ export abstract class Cpc<
     }
 
     /**
+     * @param options 执行选项
+     *
      * @throws {CpcUnregisteredCommandError} 调用未注册的命令
      * @throws {CpcFailRespondError}  在返回前断开连接
      * @throws {CpcFailAsyncRespondError} 已返回 AsyncId (命令已被执行), 但Promise状态在变化前断开连接
      */
-    call<T extends keyof CallableCmd>(
+    call<T extends keyof PickVoidCallList<CallList>>(command: T): Promise<ReturnType<CallList[T]>>;
+    call<T extends keyof CallList, Fn extends CallList[T]>(command: T, arg: Parameters<Fn>): Promise<ReturnType<Fn>>;
+    call<T extends keyof CallList, Fn extends CallList[T]>(
         command: T,
-        arg?: Parameters<CallableCmd[T]>
-    ): Promise<ReturnType<CallableCmd[T]>>;
-    call(command: string | number, args?: any[], ignoreReturn?: boolean) {
+        arg: Parameters<Fn>,
+        options: CallOptions
+    ): Promise<ReturnType<Fn>>;
+    call(command: string | number, args?: any[], options?: CallOptions) {
         if (this.#end) throw new Error("Cpc is ended");
-        if (ignoreReturn) {
-            this.sendCall(command, args, ignoreReturn);
-            return;
-        }
-        return new Promise((resolve, reject) => {
-            this.#waitingQueue.push({ resolve, reject });
-            this.sendCall(command, args);
-        });
+        this.sendCall(command, args);
+        return this.#syncReturnQueue.add(options ?? {});
     }
-    /** call()的别名，用于辅助Ts类型提示 */
-    callWithArgs<T extends keyof CallableCmd>(command: T, args: Parameters<CallableCmd[T]>) {
-        return this.call(command, args);
+
+    exec<T extends keyof CallList>(command: T, args: any[]): void;
+    exec(command: string | number, args: any[]) {
+        if (this.#end) throw new Error("Cpc is ended");
+        this.sendCall(command, args, true);
     }
-    #waitingQueue: WaitingQueueItem[] = [];
+    #syncReturnQueue = new SyncReturnQueue<CallOptions>();
+
     protected onCpcError(error: Error) {
         this.emit("error", error);
     }
@@ -112,25 +111,34 @@ export abstract class Cpc<
     protected abstract sendAsyncRes(id: number, arg?: any, error?: boolean): void;
     protected abstract sendCall(command: string | number, args?: any[], ignoreReturn?: boolean): void;
     protected abstract sendEnd(): void;
-    protected onCpcReturn(arg: any, error?: boolean, isNoExist?: boolean) {
-        let res = this.#waitingQueue.shift();
-        if (!res) return this.onCpcError(new CpcError("Redundant return"));
-        if (error) res.reject(isNoExist ? new CpcUnregisteredCommandError() : arg);
-        else res.resolve(arg);
+
+    private handleAwait(handle: PromiseHandel<any, any> & CallOptions, value: any, error?: boolean) {
+        if (error) handle.reject(value);
+        else {
+            handle.resolve(value);
+        }
         this.testClose();
+    }
+    private beforeSendReturn(value: any, isError?: boolean): void {
+        this.sendReturn(value, isError);
+    }
+
+    protected onCpcReturn(arg: any, error?: boolean, isNoExist?: boolean) {
+        let res = this.#syncReturnQueue.shift();
+        if (!res) return this.onCpcError(new CpcError("Redundant return"));
+        if (isNoExist) return res.reject(new CpcUnregisteredCommandError());
+        this.handleAwait(res, arg, error);
     }
     protected onCpcReturnAsync(id: number) {
-        let res = this.#waitingQueue.shift();
-        if (!res) return this.onCpcError(new CpcError("Redundant return"));
-        this.#receivingMap.set(id, res);
+        if (!this.#syncReturnQueue.swapInAsyncMap(id)) {
+            return this.onCpcError(new CpcError("Redundant return"));
+        }
     }
     protected onCpcAsyncRes(id: any, arg?: any, error?: boolean) {
-        let res = this.#receivingMap.get(id);
+        let res = this.#syncReturnQueue.takeAsyncItem(id);
         if (!res) return this.onCpcError(new CpcError("Invalid async ID"));
-        this.#receivingMap.delete(id);
-        if (error) res.reject(arg);
-        else res.resolve(arg);
-        this.testClose();
+
+        this.handleAwait(res, arg, error);
     }
     protected onCpcCall(cmd: string | number, args: any[], ignoreReturn?: boolean) {
         let fx = this.#licensers.get(cmd);
@@ -147,8 +155,9 @@ export abstract class Cpc<
             isError = true;
         }
         if (ignoreReturn) return;
-        if (res instanceof Promise) this.#handelReturnAsync(res);
-        else this.sendReturn(res, isError);
+
+        if (res instanceof Promise) return this.#handelReturnAsync(res);
+        this.beforeSendReturn(res, isError);
     }
     protected onCpcEnd() {
         if (this.#end) return;
@@ -159,7 +168,7 @@ export abstract class Cpc<
     }
     protected get closeable() {
         if (!this.#end) return false;
-        if (this.#waitingQueue.length || this.#sendingUniqueKey.size || this.#receivingMap.size) return false;
+        if (this.#syncReturnQueue.hasItem || this.#sendingUniqueKey.size) return false;
         return true;
     }
 
@@ -174,24 +183,27 @@ export abstract class Cpc<
         });
         this.sendReturnAsync(id);
     }
-    /** 等待异步响应的堆 */
-    readonly #receivingMap = new Map<number, WaitingQueueItem>();
     /** 等待异步发送的堆 */
     readonly #sendingUniqueKey: UniqueKeyMap;
 }
 
-export interface Cpc<CallableCmd extends CpcCallList, CmdList extends CpcCallList = CpcCallList> {
+Cpc.prototype.callNoCheck = Cpc.prototype.call;
+
+export interface Cpc<CallList extends CpcCmdList, CmdList extends CpcCmdList = CpcCmdList> {
     on(name: "end", listener: (msg?: string) => void): this;
     on(name: "close", listener: () => void): this;
     on(name: "error", listener: (error: Error) => void): this;
     on(eventName: string | symbol, listener: (...args: any[]) => void): this;
     off(name: "end" | "close" | "error" | string): this;
+    /** call的别名，用于绕靠类型检查 */
+    callNoCheck<T extends keyof CallList, P>(command: T, args?: any[], options?: CallOptions): Promise<P>;
 }
-type CmdFx = (...args: any[]) => any;
-type WaitingQueueItem = { resolve: (arg: any) => void; reject: (err?: Error) => void };
 
-export type CpcCallList = {
-    [key: string | number]: (...args: any[]) => any;
+interface CallOptions {}
+type CmdFx = (...args: any[]) => any;
+
+export type CpcCmdList = {
+    [key: string | number]: ((...args: any[]) => any) | (() => any);
 };
 
 export class CpcError extends Error {}
@@ -208,3 +220,7 @@ export class CpcFailRespondError extends CpcCallError {}
 export class CpcFailAsyncRespondError extends CpcFailRespondError {}
 /** 调用未注册的命令 */
 export class CpcUnregisteredCommandError extends CpcCallError {}
+
+type PickVoidCallList<T extends CpcCmdList> = {
+    [key in keyof T as Parameters<T[key]> extends [] ? key : never]: T[key];
+};

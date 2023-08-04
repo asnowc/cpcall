@@ -2,15 +2,15 @@ import { Duplex, Readable } from "node:stream";
 import { CpcSocket } from "#rt/cpcp.js";
 import { vi } from "vitest";
 import { CpcMocks } from "./cpc.mock.js";
-import { Cpc, CpcCallList } from "#rt/cpc.js";
+import { Cpc, CpcCmdList } from "#rt/cpc.js";
 export class CpcSocketMocks extends CpcMocks {
     createConnectedFcp(
         setClientCmd?: Record<string, (...args: any[]) => any> | undefined,
         setServerCmd?: Record<string, (...args: any[]) => any> | undefined
-    ): { cpcServer: Cpc<CpcCallList, CpcCallList>; cpcClient: Cpc<CpcCallList, CpcCallList>; onErr: () => void } {
+    ): { cpcServer: Cpc<CpcCmdList, CpcCmdList>; cpcClient: Cpc<CpcCmdList, CpcCmdList>; onErr: () => void } {
         return createConnectedFcp(setClientCmd, setServerCmd);
     }
-    getNoResponseCpc(): Cpc<CpcCallList, CpcCallList> {
+    getNoResponseCpc(): Cpc<CpcCmdList, CpcCmdList> {
         return getNoResponseCpc();
     }
 }

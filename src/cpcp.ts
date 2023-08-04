@@ -1,7 +1,7 @@
 import { TcpNetConnectOpts, createConnection, Server, ServerOpts } from "node:net";
 import { EventEmitter } from "node:events";
 import { createReaderFromReadable } from "./common/stream_util.js";
-import { CpcCallList } from "./cpc.js";
+import { CpcCmdList } from "./cpc.js";
 import { Duplex } from "node:stream";
 import { StreamCpc } from "./cpcp/stream_cpc.js";
 
@@ -15,8 +15,8 @@ import { StreamCpc } from "./cpcp/stream_cpc.js";
  *
  */
 export class CpcSocket<
-    CallableCmd extends CpcCallList = CpcCallList,
-    CmdList extends CpcCallList = CpcCallList,
+    CallableCmd extends CpcCmdList = CpcCmdList,
+    CmdList extends CpcCmdList = CpcCmdList,
     Dp extends Duplex = Duplex
 > extends StreamCpc<CallableCmd, CmdList> {
     #duplex: Dp;
