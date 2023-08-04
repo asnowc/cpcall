@@ -1,4 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { PsCpcMocks } from "./__mocks__/node_process_cpc.mock.js";
-import { cpc } from "./__mocks__/cpc.cases.js";
-describe("Cpc", cpc(new PsCpcMocks()));
+import { cpc, cpcReactionTest } from "./__mocks__/cpc.cases.js";
+
+const mocks = new PsCpcMocks();
+
+describe("Cpc", cpc(mocks));
+describe("cpcReactionTest", cpcReactionTest(mocks));

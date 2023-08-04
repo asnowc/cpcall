@@ -1,3 +1,18 @@
+### 协议 action
+
+selected version
+
+get all command
+command executable
+
+### 数据同步
+
+### map array
+
+delete: remove shift/pop
+set: update/add unshift/insert/push
+call:
+
 ### Cross-process call protocol(CPCP) 数据帧格式:
 
 ```
@@ -5,24 +20,28 @@
 |Frame type|Content|
 ```
 
-| dec | binary | Frame type length  | content length |
-| --- | ------ | ------------------ | -------------- |
-| 0   | 0000   |                    |                |
-| 1   | 0001   | call               | n              |
-| 2   | 0010   | call ignore return | same call      |
-|     |        |                    |                |
-| 8   | 1000   | return promise     |                |
-| 9   | 1001   | promise resolve    | n              |
-| 10  | 1010   | promise reject     | n              |
-| 11  | 1011   | return             | n              |
-| 12  | 1100   | throw              | same return    |
+| dec | binary | DESC                 | content length |
+| --- | ------ | -------------------- | -------------- |
+| 0   | 0000   |                      |                |
+| 1   | 0001   | call                 | n              |
+| 2   | 0010   | call ignore return   | same call      |
+| 3   | 0011   | changeReactionServer |                |
+| 4   | 0100   | changeReactionAgent  |                |
+| 5   | 0101   | reactionCancel       |                |
+| 6   | 0110   | reactionAgentCancel  |                |
+| 7   | 0111   | actionResponse       | same return    |
+| 8   | 1000   | return promise       |                |
+| 9   | 1001   | promise resolve      | n              |
+| 10  | 1010   | promise reject       | n              |
+| 11  | 1011   | return               | n              |
+| 12  | 1100   | throw                | same return    |
 
 | dec | binary    | Frame type length | content length |
 | --- | --------- | ----------------- | -------------- |
-| 12  | 0001_0000 | create stream     |                |
-| 13  | 0001_0001 | stream frame      |                |
+| 16  | 0001_0000 |                   |                |
+| 17  | 0001_0001 |                   |                |
 |     |           |                   |                |
-| 16  | 0001_0100 | create reaction   | n              |
+| 20  | 0001_0100 |                   |                |
 | 255 | 11111111  | fin               | 0              |
 
 ### All types of content:
@@ -64,12 +83,24 @@ if (type === void) throw CpcUnregisteredCommandError
     asyncId
 ```
 
-#### call:
+#### call/call ignore return:
 
 ```
 <dynamicLenData> |cmdLen| <args>
      cmdLen      command  <args>
 ```
+
+#### object action:
+
+```
+<dynamicLenData> |---1---|  <dynamicLenData> |cmdLen| <args>
+    address        action       keyDesc        key   <args>
+```
+
+action:
+call
+delete
+set
 
 #### streamFrame:
 

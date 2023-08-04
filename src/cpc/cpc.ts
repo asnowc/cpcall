@@ -1,6 +1,15 @@
 import { UniqueKeyMap } from "../common/virtual_heap.js";
 import { EventEmitter } from "node:events";
-import { PromiseHandel, SyncReturnQueue } from "./promise_queue.js";
+import { RAction } from "./reaction.js";
+import {
+    ReactionAgent,
+    ReactionService,
+    RemoteObj,
+    ReactionServerSync,
+    ReactionAgentSync,
+    ReactionFactory,
+} from "./reaction_sync.js";
+import { PromiseHandel, ResponseQueue, SyncReturnQueue } from "./promise_queue.js";
 
 /**
  * @description Cross-process call (跨进程调用-CPC)
@@ -115,11 +124,32 @@ export abstract class Cpc<
     private handleAwait(handle: PromiseHandel<any, any> & CallOptions, value: any, error?: boolean) {
         if (error) handle.reject(value);
         else {
+            if (value instanceof ReactionAgent) {
+                const id = value.id;
+
+                //监听 agent 端本地变化，通知 server 端
+                value = this.reactionAgentSync.listen(
+                    value,
+                    (key, event) => {
+                        this.sendChangeReaction(id, event.type, key as string, event.newValue);
+                        return this.#syncResponseQueue.add();
+                    },
+                    handle.reactionFactory
+                );
+            }
             handle.resolve(value);
         }
         this.testClose();
     }
     private beforeSendReturn(value: any, isError?: boolean): void {
+        if (!isError && value instanceof ReactionService) {
+            const reactionAgent = this.reactionServerSync.listen(value, (key, event) => {
+                //监听server端本地变化，通知 agent 端
+                this.sendChangeReaction(id, event.type, key as string, event.newValue, true);
+            });
+            const id = reactionAgent.id;
+            value = reactionAgent;
+        }
         this.sendReturn(value, isError);
     }
 
@@ -185,6 +215,36 @@ export abstract class Cpc<
     }
     /** 等待异步发送的堆 */
     readonly #sendingUniqueKey: UniqueKeyMap;
+
+    #syncResponseQueue = new ResponseQueue<void, void>();
+    protected onCpcActionResponse(isReject?: boolean) {
+        let notIsNull = isReject ? this.#syncResponseQueue.reject() : this.#syncResponseQueue.resolve();
+        if (!notIsNull) return this.onCpcError(new Error("invalid onCpcActionResponse"));
+    }
+    protected reactionServerSync = new ReactionServerSync();
+    protected reactionAgentSync = new ReactionAgentSync();
+    protected abstract sendActionResponse(reject?: boolean): void;
+    protected abstract sendCancelReaction(id: number, isAgent?: boolean): void;
+    protected abstract sendChangeReaction(
+        id: number,
+        action: RAction,
+        key: string,
+        data?: any,
+        isAgent?: boolean
+    ): void;
+
+    cancelReactionServer(reaction: RemoteObj) {
+        const final = this.reactionServerSync.cancel(reaction);
+        if (!final) return;
+        this.sendCancelReaction(final[0], false);
+        return this.#syncResponseQueue.add().then(final[1]);
+    }
+    cancelReactionAgent(reactionAgent: RemoteObj) {
+        const id = this.reactionAgentSync.cancel(reactionAgent);
+        if (id === undefined) return;
+        this.sendCancelReaction(id, true);
+        return this.#syncResponseQueue.add();
+    }
 }
 
 Cpc.prototype.callNoCheck = Cpc.prototype.call;
@@ -199,7 +259,9 @@ export interface Cpc<CallList extends CpcCmdList, CmdList extends CpcCmdList = C
     callNoCheck<T extends keyof CallList, P>(command: T, args?: any[], options?: CallOptions): Promise<P>;
 }
 
-interface CallOptions {}
+interface CallOptions {
+    reactionFactory?: ReactionFactory;
+}
 type CmdFx = (...args: any[]) => any;
 
 export type CpcCmdList = {

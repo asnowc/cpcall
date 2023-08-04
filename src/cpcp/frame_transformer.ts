@@ -1,7 +1,11 @@
 import { numToDLD, readNumberDLD } from "#rt/common/stream_util.js";
 import type { StreamReader, StreamWriter } from "#rt/common/stream_util.js";
 import { FrameType } from "../cpc_frame.type.js";
-import { JSBSON, VOID } from "#rt/common/js_bson.js";
+import { ReactionController } from "../cpc/reaction.js";
+import { JSBSON, VOID, DataType, BSONReaders, BSONWriters } from "#rt/common/js_bson.js";
+enum CustomDataType {
+    reaction = 255,
+}
 
 export async function returnRead<T = unknown>(read: StreamReader): Promise<T | undefined> {
     return bsion.readers.readArrayItem(read) as any;
@@ -53,5 +57,21 @@ export function callWrite(write: StreamWriter, cmd: string, args?: any[], ignore
     write(cmdBuf);
     bsion.writeArray(args ?? [], write);
 }
+class CustomReaders extends BSONReaders {
+    async [CustomDataType.reaction](read: StreamReader) {
+        const initData = await this[DataType.map](read);
+        return ReactionController.create(initData);
+    }
+}
+CustomReaders.prototype[CustomDataType.reaction] = BSONReaders.prototype[DataType.map];
 
-const bsion = new JSBSON();
+class CustomWriters extends BSONWriters {
+    toType(data: any): number {
+        const type = super.toType(data);
+        if (type === DataType.map && ReactionController.isReaction(data)) return CustomDataType.reaction;
+        return type;
+    }
+}
+CustomWriters.prototype[CustomDataType.reaction] = BSONWriters.prototype[DataType.map];
+
+const bsion = new JSBSON(new CustomWriters(), new CustomReaders());

@@ -1,5 +1,12 @@
 import { baseDataTypes as callbackBaseArgs, objectDataTypes as callBackObjectArgs } from "./bson.cases.js";
-import { Cpc, CpcFailAsyncRespondError, CpcFailRespondError, CpcUnregisteredCommandError } from "#rt/cpc.js";
+import {
+    Cpc,
+    CpcFailAsyncRespondError,
+    CpcFailRespondError,
+    CpcUnregisteredCommandError,
+    ReactionController,
+    ReactionService,
+} from "#rt/cpc.js";
 import { describe, it, expect, vi, SpyInstance } from "vitest";
 import { CpcMocks, nextMacaoTask } from "./cpc.mock.js";
 
@@ -212,6 +219,67 @@ export function cpc(mocks: CpcMocks) {
 
                 await expect(pms).rejects.toThrowError(CpcFailAsyncRespondError);
             });
+        });
+    };
+}
+export function cpcReactionTest(mocks: CpcMocks) {
+    const { createConnectedFcp } = mocks;
+    async function initGetReaction() {
+        const { cpcClient, cpcServer, onErr } = createConnectedFcp();
+        const reaction = ReactionController.create<Record<string, any>>({});
+        const service = new ReactionService(reaction);
+        const fn = vi.fn(() => service);
+        cpcServer.setCmd("getReaction", fn);
+        const reactionAgent = await cpcClient.call("getReaction", []);
+        return { reactionAgent, reaction, service, cpcClient, cpcServer };
+    }
+    function setListener(reaction: object) {
+        const fn = vi.fn();
+        ReactionController.get(reaction)?.addListener(fn);
+        return fn;
+    }
+    return function cpcReactionCases() {
+        it("返回 reaction", async () => {
+            const { reaction, reactionAgent } = await initGetReaction();
+            expect(ReactionController.isReaction(reactionAgent)).toBeTruthy();
+        });
+        it("修改响应", async function () {
+            const { reaction, reactionAgent } = await initGetReaction();
+            reaction.add = 9; //server 修改
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            expect(reactionAgent, "agent端变化").toEqual({ add: 9 });
+
+            reactionAgent.add = 8; //agent 修改
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            expect(reaction, "server端变化").toEqual({ add: 8 });
+        });
+        it("cancel agent", async function () {
+            const { reaction, reactionAgent, service, cpcClient } = await initGetReaction();
+            const serverFn = setListener(reaction);
+            const agentFn = setListener(reactionAgent);
+            const pms = cpcClient.cancelReactionAgent(reactionAgent);
+
+            reaction.add = 9; //server 修改
+            reaction.add = "";
+            expect(serverFn, "server已响应").toBeCalledTimes(2);
+
+            await pms;
+            expect(agentFn, "agent未响应").toBeCalledTimes(0);
+            expect(reactionAgent, "agent端无变化").toEqual({});
+        });
+        it("cancel server", async function () {
+            const { reaction, reactionAgent, service, cpcClient } = await initGetReaction();
+            const serverFn = setListener(reaction);
+            const agentFn = setListener(reactionAgent);
+
+            const pms = cpcClient.cancelReactionServer(reactionAgent);
+            reactionAgent.add = 9; //agent 修改
+            reactionAgent.add = "";
+            expect(agentFn, "agent已响应").toBeCalledTimes(2);
+            await pms;
+
+            expect(serverFn, "server未响应").toBeCalledTimes(0);
+            expect(reaction, "server端无变化").toEqual({});
         });
     };
 }

@@ -1,4 +1,5 @@
 import { ObjectId } from "#rt/common/js_bson.js";
+import { ReactionAgent } from "../cpc/reaction_sync.js";
 type BaseType = string | number | boolean | bigint | null | undefined | object;
 type AdvType = [type: number, value: any];
 type RawData = BaseType | AdvType;
@@ -16,7 +17,9 @@ enum AdvDataType {
 export class Trans {
     /** advSerialization 是否已启用高级序列号 */
     constructor(readonly advSerialization?: boolean) {}
-    private readAdvValue(type: number, raw: any): any {
+    private readAdvValue(data: any[]): any {
+        const type = data[0];
+        const raw = data[1];
         switch (type) {
             case AdvDataType.array:
                 return this.readArray(raw);
@@ -34,7 +37,8 @@ export class Trans {
                 const arrayBuffer = new ArrayBuffer(raw.length);
                 Buffer.from(arrayBuffer).write(raw, "ascii");
                 return arrayBuffer;
-
+            case AdvDataType.reaction:
+                return new ReactionAgent(raw, data[2], { readonly: data[3] });
             default:
                 throw new Error("unsor");
         }
@@ -52,9 +56,12 @@ export class Trans {
                 return [AdvDataType.error, { message, name, cause }];
             } else if (value instanceof RegExp) {
                 return [AdvDataType.regExp, value.source];
+            } else if (value instanceof ReactionAgent) {
+                let advData: any[] = [AdvDataType.reaction, value.id, value.initObj, value.readonly];
+                if (value.initObj) advData.push(value.initObj);
+                return advData;
             }
         }
-        return this.writeMap(value);
     }
 
     writeArray(array: any[]) {
@@ -73,10 +80,11 @@ export class Trans {
         }
         return map;
     }
+
     readMap(map: Record<string, RawData>) {
         for (const [key, value] of Object.entries(map)) {
             if (Array.isArray(value)) {
-                map[key] = this.readAdvValue(value[0], value[1]);
+                map[key] = this.readAdvValue(value);
             } else if (typeof value === "object" && value) {
                 map[key] = this.readMap(value as any);
             }
@@ -88,7 +96,7 @@ export class Trans {
         for (let i = 0; i < array.length; i++) {
             const value = array[i];
             if (Array.isArray(value)) {
-                array[i] = this.readAdvValue(value[0], value[1]);
+                array[i] = this.readAdvValue(value);
             } else if (typeof value === "object" && value) {
                 array[i] = this.readMap(value as any);
             }
@@ -98,23 +106,64 @@ export class Trans {
 
     writeValue(value: any): RawData {
         if (typeof value === "object" && value) {
-            return this.writeAdvValue(value);
+            return this.writeAdvValue(value) ?? this.writeMap(value);
         }
         return value;
     }
     readValue(data: any) {
         if (Array.isArray(data)) {
-            return this.readAdvValue(data[0], data[1]);
+            return this.readAdvValue(data);
         } else if (typeof data === "object" && data) {
             return this.readMap(data as any);
         }
         return data;
     }
-    readReturn(data: any) {
-        return this.readValue(data)
+
+    *scanMapRead(map: any): Generator<any, object, any> {
+        for (const [key, value] of Object.entries(map)) {
+            map[key] = yield* this.scanValueRead(value);
+        }
+        return map;
+    }
+    *scanArrayRead(array: any[]): Generator<any, any[], any> {
+        for (let i = 0; i < array.length; i++) {
+            array[i] = yield* this.scanValueRead(array[i]);
+        }
+        return array;
+    }
+    *scanValueRead(value: any) {
+        if (Array.isArray(value)) {
+            if (value[0] === AdvDataType.array) return yield* this.scanArrayRead(value[1]);
+            return this.readAdvValue(value);
+        } else if (typeof value === "object" && value) {
+            return yield* this.scanMapRead(value as any);
+        }
+        return value;
+    }
+
+    *scanMapWrite(rawMap: object): Generator<any, any, object> {
+        const map: Record<string, RawData> = {};
+        const array = Object.entries(rawMap);
+        for (let i = 0; i < array.length; i++) {
+            const [key, value] = array[i];
+            map[key] = yield this.writeValue(value);
+        }
+        return map;
+    }
+    *scanArrayWrite(array: any[]): Generator<any, any, any[]> {
+        const data: RawData[] = [];
+        for (let i = 0; i < array.length; i++) {
+            data[i] = yield this.writeValue(array[i]);
+        }
         return data;
     }
-    writeReturn(data: any) {
-       return this.writeValue(data);
+    *scanValueWrite(value: any): Generator<any, any, any> {
+        if (typeof value === "object" && value) {
+            if (Array.isArray(value)) return yield* this.scanArrayWrite(value);
+            let data = this.writeAdvValue(value);
+            if (data) return yield data;
+            else return yield* this.scanMapWrite(value);
+        }
+        return yield value;
     }
 }
