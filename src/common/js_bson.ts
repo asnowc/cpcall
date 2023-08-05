@@ -1,5 +1,5 @@
-import { numToDLD, readNumberDLD, DLD_MAX_LEN } from "#rt/common/stream_util.js";
-import type { StreamReader, StreamWriter } from "#rt/common/stream_util.js";
+import { numToDLD, readNumberDLD, DLD_MAX_LEN } from "./stream_util.js";
+import type { StreamReader, StreamWriter } from "./stream_util.js";
 
 export enum DataType {
     void = 0,

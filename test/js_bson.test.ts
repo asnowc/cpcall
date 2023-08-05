@@ -1,4 +1,4 @@
-import { DataType, JSBSON, ObjectId, BsonScanItem } from "#rt/common/js_bson.js";
+import { DataType, JSBSON, BsonScanItem } from "#rt/common/js_bson.js";
 import { createFixedStreamReader, AllListStreamWriter } from "#rt/common/stream_util.js";
 import { baseDataTypes, objectDataTypes } from "./__mocks__/bson.cases.js";
 import { describe, it, expect } from "vitest";

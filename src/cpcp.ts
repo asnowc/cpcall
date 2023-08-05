@@ -1,6 +1,6 @@
 import { TcpNetConnectOpts, createConnection, Server, ServerOpts } from "node:net";
 import { EventEmitter } from "node:events";
-import { createReaderFromReadable } from "./common/stream_util.js";
+import { createReaderFromReadable } from "./common/node_stream_util.js";
 import { CpcCmdList } from "./cpc.js";
 import { Duplex } from "node:stream";
 import { StreamCpc } from "./cpcp/stream_cpc.js";

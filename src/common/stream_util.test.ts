@@ -1,6 +1,5 @@
 import { it, describe, expect } from "vitest";
-import { numToDLD, readNumberDLD, createFixedStreamReader, createReaderFromReadable } from "./stream_util.js";
-import { Readable } from "stream";
+import { numToDLD, readNumberDLD, createFixedStreamReader } from "./stream_util.js";
 
 describe("DLD", function () {
     const cases: [number | bigint, string][] = [
@@ -29,76 +28,7 @@ describe("DLD", function () {
         });
     });
 });
-describe("createReaderFromReadable", function () {
-    function createMockRead() {
-        const readable = new Readable({ read(size) {} });
-        const read = createReaderFromReadable(readable);
-        return { readable, read };
-    }
 
-    describe("等待分段", function () {
-        it("一个chunk足够多个分段", async function () {
-            const { read, readable } = createMockRead();
-            readable.push(Buffer.allocUnsafe(10));
-            readable.push(null);
-            await expect(read(4)).resolves.toHaveLength(4);
-            await expect(read(2)).resolves.toHaveLength(2);
-            await expect(read(2)).resolves.toHaveLength(2);
-            await expect(read(2)).resolves.toHaveLength(2);
-            await expect(read(2, true)).resolves.toBe(null);
-        });
-        it("需要等待多个chunk", async function () {
-            const { read, readable } = createMockRead();
-            let pms = read(4);
-            expect(pms).resolves.toHaveLength(4);
-            {
-                //mock
-                readable.push(Buffer.allocUnsafe(2));
-                await new Promise<void>((resolve) => setTimeout(resolve));
-                readable.push(Buffer.allocUnsafe(2));
-                readable.push(null);
-            }
-            await pms;
-            await expect(read(2, true)).resolves.toBe(null);
-        });
-        it("等待的chunk足够下一个分段", async function () {
-            const { read, readable } = createMockRead();
-            let pms = read(4);
-            expect(pms).resolves.toHaveLength(4);
-            readable.push(Buffer.allocUnsafe(2));
-            await new Promise<void>((resolve) => setTimeout(resolve));
-            readable.push(Buffer.allocUnsafe(6));
-            readable.push(null);
-            await pms;
-            await expect(read(4)).resolves.toHaveLength(4);
-            // await expect(read(2, true)).resolves.toBe(null);
-        });
-    });
-    it("同一个readable创建第二次", function () {
-        const { read, readable } = createMockRead();
-        expect(() => createReaderFromReadable(readable)).toThrowError();
-    });
-
-    it("不安全读取", async function () {
-        const { read, readable } = createMockRead();
-        let pms = read(4);
-        readable.push(Buffer.allocUnsafe(2));
-        readable.push(null);
-        await expect(pms).rejects.toThrowError();
-    });
-
-    const { read, readable } = createMockRead();
-    it("安全读取", async function () {
-        let pms = read(4, true);
-        readable.push(Buffer.allocUnsafe(2));
-        readable.push(null);
-        await expect(pms).resolves.toBe(null);
-    });
-
-    it("结束的流继续读取", async function () {
-        await expect(read(4)).rejects.toThrowError();
-    });
-}, 1000);
 function formatBin(num_buf: number | Buffer) {
     let str = "";
     if (typeof num_buf === "number") {
