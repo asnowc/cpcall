@@ -1,6 +1,8 @@
 export enum FrameType {
+    mappingCall = 0,
     call = 1,
     ignoreReturnCall = 2,
+    actionResponse = 7,
 
     returnAsync = 8,
     resolve = 9,
@@ -9,7 +11,6 @@ export enum FrameType {
     return = 11,
     throw = 12,
 
-    streamFrame = 0b1_01000,
     /** 收到fin后表示对方不会再发起调用 */
     fin = 0b1111_1110,
 }

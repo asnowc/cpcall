@@ -101,10 +101,6 @@ export class StreamCpc<
                         this.onCpcAsyncRes(res.asyncId, res.data, true);
                     }
                     break;
-                case FrameType.streamFrame:
-                    //todo
-                    break;
-
                 case FrameType.fin:
                     this.onCpcEnd();
                     break;

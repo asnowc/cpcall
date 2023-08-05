@@ -5,12 +5,16 @@
 |Frame type|Content|
 ```
 
-| dec | binary | Frame type length  | content length |
+| dec | binary | DESC               | content length |
 | --- | ------ | ------------------ | -------------- |
-| 0   | 0000   |                    |                |
+| 0   | 0000   | mapping call       |                |
 | 1   | 0001   | call               | n              |
 | 2   | 0010   | call ignore return | same call      |
-|     |        |                    |                |
+| 3   | 0011   |                    |                |
+| 4   | 0100   |                    |                |
+| 5   | 0101   |                    |                |
+| 6   | 0110   |                    |                |
+| 7   | 0111   | actionResponse     | same return    |
 | 8   | 1000   | return promise     |                |
 | 9   | 1001   | promise resolve    | n              |
 | 10  | 1010   | promise reject     | n              |
@@ -19,10 +23,10 @@
 
 | dec | binary    | Frame type length | content length |
 | --- | --------- | ----------------- | -------------- |
-| 12  | 0001_0000 | create stream     |                |
-| 13  | 0001_0001 | stream frame      |                |
+| 16  | 0001_0000 |                   |                |
+| 17  | 0001_0001 |                   |                |
 |     |           |                   |                |
-| 16  | 0001_0100 | create reaction   | n              |
+| 20  | 0001_0100 |                   |                |
 | 255 | 11111111  | fin               | 0              |
 
 ### All types of content:
@@ -64,20 +68,18 @@ if (type === void) throw CpcUnregisteredCommandError
     asyncId
 ```
 
-#### call:
+#### call/call ignore return:
 
 ```
 <dynamicLenData> |cmdLen| <args>
      cmdLen      command  <args>
 ```
 
-#### streamFrame:
-
-如果 `contentLen` 为 0，则表示 streamFrame 结束
+#### mapping call:
 
 ```
-<dynamicLenData> <dynamicLenData>  |contentLen|
-    frameId        contentLen       dataFrame
+<dynamicLenData>   <args>
+     command       <args>
 ```
 
 #### dynamicLenData
@@ -94,10 +96,3 @@ if (type === void) throw CpcUnregisteredCommandError
 | 8    |                  | 7B      | 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx |
 
 0~65535 TB
-
-### dynamic object
-
-create type id initData
-
-set id type
-delete id

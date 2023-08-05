@@ -35,7 +35,7 @@ export class NodeProcessCpc extends Cpc {
                 this.onCpcCall(data.cmd, data.args === undefined ? [] : this.trans.readArray(data.args));
                 break;
             case FrameType.return:
-                this.onCpcReturn(this.trans.readReturn(data.value));
+                this.onCpcReturn(this.trans.readValue(data.value));
                 break;
             case FrameType.throw:
                 this.onCpcReturn(this.trans.readValue(data.value), true, data.noExist);
@@ -44,7 +44,7 @@ export class NodeProcessCpc extends Cpc {
                 this.onCpcReturnAsync(data.id);
                 break;
             case FrameType.resolve:
-                this.onCpcAsyncRes(data.id, this.trans.readReturn(data.value));
+                this.onCpcAsyncRes(data.id, this.trans.readValue(data.value));
                 break;
             case FrameType.reject:
                 this.onCpcAsyncRes(data.id, this.trans.readValue(data.value), true);
@@ -63,7 +63,7 @@ export class NodeProcessCpc extends Cpc {
         if (error) {
             frame = { type: FrameType.reject, id, value: this.trans.writeValue(value) };
         } else {
-            frame = { type: FrameType.resolve, id, value: this.trans.writeReturn(value) };
+            frame = { type: FrameType.resolve, id, value: this.trans.writeValue(value) };
         }
         this.send(frame);
     }
@@ -81,7 +81,7 @@ export class NodeProcessCpc extends Cpc {
             const frame: F_throw = { type: FrameType.throw, value: this.trans.writeValue(value), noExist };
             this.send(frame);
         } else {
-            let frame: F_return = { type: FrameType.return, value: this.trans.writeReturn(value) };
+            let frame: F_return = { type: FrameType.return, value: this.trans.writeValue(value) };
             this.send(frame);
         }
     }
@@ -124,11 +124,7 @@ interface F_asyncRes {
     value: any;
 }
 
-interface F_streamFrame {
-    type: FrameType.streamFrame;
-    data: Buffer;
-}
 interface F_end {
     type: FrameType.fin;
 }
-type Frame = F_call | F_asyncRes | F_returnAsync | F_end | F_return | F_throw | F_streamFrame;
+type Frame = F_call | F_asyncRes | F_returnAsync | F_end | F_return | F_throw;
