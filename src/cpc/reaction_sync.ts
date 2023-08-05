@@ -153,9 +153,24 @@ export class ReactionAgentSync {
 export class ReactionAgent {
     readonly readonly?: boolean;
     readonly fnKeys: string[] = [];
-    constructor(readonly id: number, readonly initObj?: RemoteObj, options?: { readonly?: boolean }) {
+    readonly initObj?: RemoteObj;
+    constructor(readonly id: number, initObj?: RemoteObj, options?: { readonly?: boolean; fnKeys?: string[] }) {
         this.readonly = options?.readonly;
-        //todo: fnKeys
+        if (!initObj) return;
+        const obj: RemoteObj = {};
+        const kvList = Object.entries(initObj);
+        for (let i = 0; i < kvList.length; i++) {
+            const [key, value] = kvList[i];
+            if (typeof value === "function") this.fnKeys.push(key);
+            else obj[key] = value;
+        }
+        const fnKeys: string[] | undefined = options?.fnKeys;
+        if (fnKeys) {
+            for (let i = 0; i < fnKeys.length; i++) {
+                this.fnKeys.push(fnKeys[i]);
+            }
+        }
+        this.initObj = obj;
     }
 }
 export class ReactionService {

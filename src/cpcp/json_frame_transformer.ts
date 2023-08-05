@@ -38,7 +38,7 @@ export class Trans {
                 Buffer.from(arrayBuffer).write(raw, "ascii");
                 return arrayBuffer;
             case AdvDataType.reaction:
-                return new ReactionAgent(raw, data[2], { readonly: data[3] });
+                return new ReactionAgent(raw, data[2], { readonly: data[3], fnKeys: data[4] });
             default:
                 throw new Error("unsor");
         }
@@ -57,7 +57,7 @@ export class Trans {
             } else if (value instanceof RegExp) {
                 return [AdvDataType.regExp, value.source];
             } else if (value instanceof ReactionAgent) {
-                let advData: any[] = [AdvDataType.reaction, value.id, value.initObj, value.readonly];
+                let advData: any[] = [AdvDataType.reaction, value.id, value.initObj, value.readonly, value.fnKeys];
                 if (value.initObj) advData.push(value.initObj);
                 return advData;
             }
