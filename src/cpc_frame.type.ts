@@ -1,7 +1,8 @@
 export enum FrameType {
-    mappingCall = 0,
+    exec = 0,
     call = 1,
     ignoreReturnCall = 2,
+    ignoreReturnExec = 3,
     actionResponse = 7,
 
     returnAsync = 8,

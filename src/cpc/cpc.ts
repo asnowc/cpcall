@@ -210,16 +210,24 @@ export class CpcError extends Error {}
 
 /** 调用失败 */
 export class CpcCallError extends Error {
-    constructor(msg?: string) {
-        super("CallError");
+    constructor(msg: string = "Call failed") {
+        super(msg);
     }
 }
 /** 在返回前断开连接 */
-export class CpcFailRespondError extends CpcCallError {}
+export class CpcFailRespondError extends CpcCallError {
+    constructor() {
+        super("CpcFailRespondError");
+    }
+}
 /** 已返回 AsyncId (命令已被执行), 但Promise状态在变化前断开连接*/
 export class CpcFailAsyncRespondError extends CpcFailRespondError {}
 /** 调用未注册的命令 */
-export class CpcUnregisteredCommandError extends CpcCallError {}
+export class CpcUnregisteredCommandError extends CpcCallError {
+    constructor() {
+        super("CpcUnregisteredCommandError");
+    }
+}
 
 type PickVoidCallList<T extends CpcCmdList> = {
     [key in keyof T as Parameters<T[key]> extends [] ? key : never]: T[key];

@@ -54,4 +54,15 @@ export function callWrite(write: StreamWriter, cmd: string, args?: any[], ignore
     bsion.writeArray(args ?? [], write);
 }
 
+export async function execRead(read: StreamReader) {
+    const cmd = Number(await readNumberDLD(read));
+    const args = await bsion.readArray(read);
+    return { cmd, args };
+}
+export async function execWrite(write: StreamWriter, cmd: number, args?: any[], ignoreReturn?: boolean) {
+    write(Buffer.from([ignoreReturn ? FrameType.ignoreReturnExec : FrameType.exec]));
+    write(numToDLD(cmd));
+    bsion.writeArray(args ?? [], write);
+}
+
 const bsion = new JSBSON();

@@ -91,6 +91,14 @@ export function cpc(mocks: CpcMocks) {
                 expect(res).toEqual(dataList);
             }, 500);
         });
+        it("exec", async function () {
+            const { cpcClient, cpcServer, onErr } = createConnectedFcp();
+            const fn = vi.fn((arg) => arg);
+            cpcServer.setCmd(3, fn);
+
+            const res = await cpcClient.callNoCheck(3, [77]);
+            expect(res).toBe(77);
+        });
         it("内联调用", async function () {
             let pms: Promise<any>;
             const { cpcClient, cpcServer } = createConnectedFcp(

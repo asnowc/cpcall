@@ -7,10 +7,10 @@
 
 | dec | binary | DESC               | content length |
 | --- | ------ | ------------------ | -------------- |
-| 0   | 0000   | mapping call       |                |
+| 0   | 0000   | exec               |                |
 | 1   | 0001   | call               | n              |
 | 2   | 0010   | call ignore return | same call      |
-| 3   | 0011   |                    |                |
+| 3   | 0011   | exec ignore return |                |
 | 4   | 0100   |                    |                |
 | 5   | 0101   |                    |                |
 | 6   | 0110   |                    |                |

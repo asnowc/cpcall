@@ -30,7 +30,7 @@ export class CpcSocket<
             write: (buf: ArrayBufferView) => {
                 duplex.write(buf);
             },
-            handshake: true,
+            handshake: 5,
         });
         this.#duplex = duplex;
         if (duplex.destroyed || duplex.writableEnded || duplex.readableEnded) {

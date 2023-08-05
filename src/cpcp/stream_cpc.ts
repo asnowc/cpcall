@@ -1,4 +1,4 @@
-import { Cpc, CpcCmdList } from "../cpc.js";
+import { Cpc, CpcCallError, CpcCmdList } from "../cpc.js";
 import {
     callRead,
     asyncResultRead,
@@ -10,6 +10,8 @@ import {
     asyncResultWrite,
     callWrite,
     returnAsyncWrite,
+    execRead,
+    execWrite,
 } from "./frame_transformer.js";
 import type { StreamReader, StreamWriter } from "../common/stream_util.js";
 import { CpcUnknownFrameTypeError, FrameType } from "../cpc_frame.type.js";
@@ -17,9 +19,8 @@ import { CpcUnknownFrameTypeError, FrameType } from "../cpc_frame.type.js";
 export interface CpcStreamCtrl {
     read: StreamReader;
     write: StreamWriter;
-    handshake?: boolean;
+    handshake?: number;
 }
-const HAND_SHAKE_LEN = 5;
 export class StreamCpc<
     CallableCmd extends CpcCmdList = CpcCmdList,
     CmdList extends CpcCmdList = CpcCmdList
@@ -35,16 +36,16 @@ export class StreamCpc<
             (error) => this.dispose(error)
         );
     }
-    async #start(handshake?: boolean) {
-        if (handshake) {
-            this.#write(Buffer.alloc(HAND_SHAKE_LEN)); //HAND_SHAKE_LEN 个字节的 0, 握手机制, 确认连接
-            if (!(await this.initCheck())) return;
+    async #start(handshake?: number) {
+        if (handshake && handshake > 0) {
+            this.#write(Buffer.alloc(handshake)); //HAND_SHAKE_LEN 个字节的 0, 握手机制, 确认连接
+            if (!(await this.initCheck(handshake))) return;
         }
         return this.readFrame();
     }
-    private async initCheck() {
+    private async initCheck(handshake: number) {
         const read = this.#read;
-        for (let i = 0; i < HAND_SHAKE_LEN; i++) {
+        for (let i = 0; i < handshake; i++) {
             let buf = await read(1);
             if (buf[0] !== 0) {
                 this.onCpcError(new Error("初始化失败"));
@@ -61,46 +62,49 @@ export class StreamCpc<
             if (frameType === undefined) break;
 
             switch (frameType) {
-                case FrameType.call:
-                    {
-                        let res = await callRead(read);
-                        this.onCpcCall(res.cmd, res.args);
-                    }
+                case FrameType.call: {
+                    let res = await callRead(read);
+                    this.onCpcCall(res.cmd, res.args);
                     break;
-                case FrameType.ignoreReturnCall:
-                    {
-                        let res = await callRead(read);
-                        this.onCpcCall(res.cmd, res.args, true);
-                    }
+                }
+                case FrameType.ignoreReturnCall: {
+                    let res = await callRead(read);
+                    this.onCpcCall(res.cmd, res.args, true);
                     break;
+                }
+                case FrameType.exec: {
+                    let res = await execRead(read);
+                    this.onCpcCall(res.cmd, res.args);
+                    break;
+                }
+                case FrameType.ignoreReturnExec: {
+                    let res = await execRead(read);
+                    this.onCpcCall(res.cmd, res.args, true);
+                }
                 case FrameType.return:
                     this.onCpcReturn(await returnRead(read), false);
                     break;
-                case FrameType.returnAsync:
-                    {
-                        const id = await returnAsyncRead(read);
-                        this.onCpcReturnAsync(id);
-                    }
+                case FrameType.returnAsync: {
+                    const id = await returnAsyncRead(read);
+                    this.onCpcReturnAsync(id);
                     break;
-                case FrameType.throw:
-                    {
-                        const res = await throwRead(read);
-                        this.onCpcReturn(res.data, true, res.isNoExist);
-                    }
+                }
+                case FrameType.throw: {
+                    const res = await throwRead(read);
+                    this.onCpcReturn(res.data, true, res.isNoExist);
                     break;
+                }
 
-                case FrameType.resolve:
-                    {
-                        let res = await asyncResultRead(read);
-                        this.onCpcAsyncRes(res.asyncId, res.data);
-                    }
+                case FrameType.resolve: {
+                    let res = await asyncResultRead(read);
+                    this.onCpcAsyncRes(res.asyncId, res.data);
                     break;
-                case FrameType.reject:
-                    {
-                        const res = await asyncResultRead(read);
-                        this.onCpcAsyncRes(res.asyncId, res.data, true);
-                    }
+                }
+                case FrameType.reject: {
+                    const res = await asyncResultRead(read);
+                    this.onCpcAsyncRes(res.asyncId, res.data, true);
                     break;
+                }
                 case FrameType.fin:
                     this.onCpcEnd();
                     break;
@@ -111,8 +115,9 @@ export class StreamCpc<
     }
 
     protected sendCall(command: string | number, args?: any[] | undefined, ignoreReturn?: boolean): void {
-        if (typeof command !== "string") command = String(command);
-        callWrite(this.#write, command, args, ignoreReturn);
+        if (typeof command === "number") execWrite(this.#write, command, args, ignoreReturn);
+        else if (typeof command === "string") callWrite(this.#write, command, args, ignoreReturn);
+        else throw new CpcCallError("Unsupported command type: " + typeof command);
     }
     protected sendReturn(arg: any, error?: boolean, isNoExist?: boolean): void {
         if (error) throwWrite(this.#write, arg, isNoExist);

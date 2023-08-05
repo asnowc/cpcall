@@ -75,7 +75,7 @@ describe.concurrent("状态更改/cpc_socket", function () {
         const { c, s } = getInitedStateConnectedCpc();
 
         s.cpc.setCmd("cmd", () => new Promise((resolve) => setTimeout(() => resolve(7), 100)));
-        const pms = c.cpc.call("cmd");
+        const pms = c.cpc.callNoCheck("cmd");
         c.cpc.end();
         await nextMacaoTask();
 
