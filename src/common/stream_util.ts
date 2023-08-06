@@ -11,7 +11,25 @@ export async function readNumberDLD(read: StreamReader): Promise<bigint> {
         }
     } while (true);
 }
+export function readNumberDLDSync(buffer: Buffer, offset: number): [bigint, number] {
+    if (buffer[buffer.byteLength - 1] >> 7 !== 0) throw new Error("buffer 是不完整的DLD数据");
+    let data = 0n;
+    let byteSize = 1;
+    do {
+        let rawData = BigInt(buffer[offset]);
+        if (rawData > 0b1111111) {
+            data = (data << 7n) + rawData - 0b10000000n;
+        } else {
+            data = (data << 7n) + rawData;
+            break;
+        }
+        offset++;
+        byteSize++;
+        if (byteSize > 8) throw new Error("错误的DLD数据");
+    } while (true);
 
+    return [data, byteSize];
+}
 export const DLD_MAX_LEN = 0xffffffffffffffn;
 const MAX_INT = 0xfffffff;
 const shiftList = (() => {
@@ -64,7 +82,7 @@ export interface StreamReader {
     (len: number, safe: true): Promise<Buffer | null>;
     (len: number, safe?: boolean): Promise<Buffer | null>;
 }
-export type StreamWriter = (buf: ArrayBufferView) => void;
+export type StreamWriter = (buf: Buffer) => void;
 
 /** 将 StreamWriter 的值保存到数组 */
 export class AllListStreamWriter {
@@ -73,11 +91,10 @@ export class AllListStreamWriter {
         return this.#byteSize;
     }
     private bufList: Buffer[] = [];
-    write = (bufView: ArrayBufferView) => {
-        if (bufView.byteLength <= 0) return;
-        this.#byteSize += bufView.byteLength;
-        let buf = Buffer.from(bufView.buffer, bufView.byteOffset, bufView.byteLength);
-        this.bufList.push(Buffer.alloc(bufView.byteLength, buf));
+    write = (buf: Buffer) => {
+        if (buf.byteLength <= 0) return;
+        this.#byteSize += buf.byteLength;
+        this.bufList.push(buf);
     };
     getAll() {
         return Buffer.concat(this.bufList);

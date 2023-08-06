@@ -1,6 +1,6 @@
 import { numToDLD, readNumberDLD } from "#rt/common/stream_util.js";
 import type { StreamReader, StreamWriter } from "#rt/common/stream_util.js";
-import { FrameType } from "../cpc_frame.type.js";
+import { FrameType } from "../cpc/cpc_frame.type.js";
 import { JSBSON, VOID } from "#rt/common/js_bson.js";
 
 export async function returnRead<T = unknown>(read: StreamReader): Promise<T | undefined> {

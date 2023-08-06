@@ -1,4 +1,4 @@
-import { Cpc, CpcCallError, CpcCmdList } from "../cpc.js";
+import { Cpc } from "../cpc.js";
 import {
     callRead,
     asyncResultRead,
@@ -14,7 +14,7 @@ import {
     execWrite,
 } from "./frame_transformer.js";
 import type { StreamReader, StreamWriter } from "../common/stream_util.js";
-import { CpcUnknownFrameTypeError, FrameType } from "../cpc_frame.type.js";
+import { CpcCallError, CpcCmdList, CpcUnknownFrameTypeError, FrameType } from "../cpc/cpc_frame.type.js";
 
 export interface CpcStreamCtrl {
     read: StreamReader;

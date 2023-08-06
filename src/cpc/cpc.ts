@@ -1,6 +1,13 @@
 import { UniqueKeyMap } from "../common/virtual_heap.js";
 import { EventEmitter } from "../common/event_emitter.js";
 import { PromiseHandel, SyncReturnQueue } from "./promise_queue.js";
+import {
+    CpcCmdList,
+    CpcError,
+    CpcFailAsyncRespondError,
+    CpcFailRespondError,
+    CpcUnregisteredCommandError,
+} from "./cpc_frame.type.js";
 
 /**
  * @description Cross-process call (跨进程调用-CPC)
@@ -11,7 +18,7 @@ export abstract class Cpc<
     CallList extends CpcCmdList = CpcCmdList,
     CmdList extends CpcCmdList = CpcCmdList
 > extends EventEmitter {
-    constructor(protected readonly maxAsyncId = 4294967295) {
+    constructor(maxAsyncId = 4294967295) {
         super();
         this.#sendingUniqueKey = new UniqueKeyMap(maxAsyncId);
     }
@@ -201,33 +208,6 @@ export interface Cpc<CallList extends CpcCmdList, CmdList extends CpcCmdList = C
 
 interface CallOptions {}
 type CmdFx = (...args: any[]) => any;
-
-export type CpcCmdList = {
-    [key: string | number]: ((...args: any[]) => any) | (() => any);
-};
-
-export class CpcError extends Error {}
-
-/** 调用失败 */
-export class CpcCallError extends Error {
-    constructor(msg: string = "Call failed") {
-        super(msg);
-    }
-}
-/** 在返回前断开连接 */
-export class CpcFailRespondError extends CpcCallError {
-    constructor() {
-        super("CpcFailRespondError");
-    }
-}
-/** 已返回 AsyncId (命令已被执行), 但Promise状态在变化前断开连接*/
-export class CpcFailAsyncRespondError extends CpcFailRespondError {}
-/** 调用未注册的命令 */
-export class CpcUnregisteredCommandError extends CpcCallError {
-    constructor() {
-        super("CpcUnregisteredCommandError");
-    }
-}
 
 type PickVoidCallList<T extends CpcCmdList> = {
     [key in keyof T as Parameters<T[key]> extends [] ? key : never]: T[key];
