@@ -1,15 +1,38 @@
-import { DataType, JSBSON, BsonScanItem } from "#rt/common/js_bson.js";
-import { createFixedStreamReader, AllListStreamWriter } from "#rt/common/stream_util.js";
+import { DataType, JBSON, toArrayJBSON, toMapJBSON, BsonScanItem } from "#rt/common/js_bson.js";
+import { createFixedStreamReader } from "#rt/common/stream_util.js";
 import { baseDataTypes, objectDataTypes } from "./__mocks__/bson.cases.js";
 import { describe, it, expect } from "vitest";
+const mapCases: Record<string, any> = {
+    0: { a: 1, b: 2, c: 3 },
+    1: { a: false, b: [1, "a", null] }, // [4, 1,97, ] [13,1,98,[5,0,0,0,1, 10,1,97, 1, 0], 0]
+    2: { a: false, b: { a: 9, b: null } },
+};
 
-describe("JsBSONTransformer", function () {
-    const mapCases: Record<string, any> = {
-        0: { a: 1, b: 2, c: 3 },
-        1: { a: false, b: [1, "a", null] }, // [4, 1,97, ] [13,1,98,[5,0,0,0,1, 10,1,97, 1, 0], 0]
-        2: { a: false, b: { a: 9, b: null } },
-    };
+describe("同步转换器", function () {
+    describe("array类型", function () {
+        it.each(Object.entries(baseDataTypes))("%s", async function (type, cases) {
+            const buffer = toArrayJBSON(cases);
+            const array = JBSON.toArray(buffer);
+            expect(array).toEqual(cases);
+        });
+        it.each(Object.entries(objectDataTypes))("%s", async function (type, { data, expect: cusExpect }) {
+            const buffer = toArrayJBSON(data);
+            const array = JBSON.toArray(buffer);
 
+            for (let i = 0; i < array.length; i++) {
+                cusExpect(data[i] as any, array[i], i);
+            }
+        });
+    });
+    describe("map类型", function () {
+        it.each(Object.entries(mapCases))("%s - %s", async function (index, cases) {
+            const buffer = toMapJBSON(cases);
+            const map = JBSON.toMap(buffer);
+            expect(map).toEqual(cases);
+        });
+    });
+});
+describe("异步转换器", function () {
     async function scanToValue<T extends Record<number | string, any>>(
         itr: AsyncGenerator<BsonScanItem, void, void>,
         obj: T
@@ -27,59 +50,41 @@ describe("JsBSONTransformer", function () {
 
     describe("scanArray", function () {
         it.each(Object.entries(baseDataTypes))("%s", async function (type, cases) {
-            const transformer = new JSBSON();
-            const writer = new AllListStreamWriter();
-
-            transformer.writeArray(cases, writer.write);
-            const reader = createFixedStreamReader(writer.getAll());
-
-            const array = await scanToValue(transformer.scanArray(reader), []);
+            const reader = createFixedStreamReader(toArrayJBSON(cases));
+type
+            const array = await scanToValue(JBSON.scanArray(reader), []);
             expect(array).toEqual(cases);
         });
         it.each(Object.entries(objectDataTypes))("%s", async function (type, { data, expect: cusExpect }) {
-            const transformer = new JSBSON();
-            const writer = new AllListStreamWriter();
+            const reader = createFixedStreamReader(toArrayJBSON(data));
 
-            transformer.writeArray(data, writer.write);
-            const reader = createFixedStreamReader(writer.getAll());
-
-            const array = await scanToValue(transformer.scanArray(reader), [] as number[]);
+            const array = await scanToValue(JBSON.scanArray(reader), [] as number[]);
             for (let i = 0; i < array.length; i++) {
                 cusExpect(data[i] as any, array[i], i);
             }
         });
     });
     describe("scanMap", function () {
-        it.each(Object.entries(mapCases))("%s - %s", async function (index, cases) {
-            const transformer = new JSBSON();
-            const writer = new AllListStreamWriter();
+        it.each(Object.entries(mapCases))("%s - %s", async function (type, cases) {
+            const reader = createFixedStreamReader(toMapJBSON(cases));
 
-            transformer.writeMap(cases, writer.write);
-            const reader = createFixedStreamReader(writer.getAll());
-
-            const map = await scanToValue(transformer.scanMap(reader), {});
+            const map = await scanToValue(JBSON.scanMap(reader), {});
             expect(map).toEqual(cases);
         });
     });
     describe("readArray", function () {
         it.each(Object.entries(baseDataTypes))("%s", async function (type, cases) {
-            const transformer = new JSBSON();
-            const writer = new AllListStreamWriter();
-            transformer.writeArray(cases, writer.write);
+            const reader = createFixedStreamReader(toArrayJBSON(cases));
 
-            const reader = createFixedStreamReader(writer.getAll());
-            const array = await transformer.readArray(reader);
+            const array = await JBSON.readArray(reader);
             expect(array).toEqual(cases);
         });
     });
     describe("readMap", function () {
         it.each(Object.entries(mapCases))("%s - %s", async function (index, cases) {
-            const transformer = new JSBSON();
-            const writer = new AllListStreamWriter();
-            transformer.writeMap(cases, writer.write);
-            const reader = createFixedStreamReader(writer.getAll());
+            const reader = createFixedStreamReader(toMapJBSON(cases));
 
-            const array = await transformer.readMap(reader);
+            const array = await JBSON.readMap(reader);
             expect(array).toEqual(cases);
         });
     });

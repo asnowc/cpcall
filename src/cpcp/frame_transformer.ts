@@ -1,7 +1,14 @@
 import { numToDLD, readNumberDLD } from "#rt/common/stream_util.js";
 import type { StreamReader, StreamWriter } from "#rt/common/stream_util.js";
 import { FrameType } from "../cpc/cpc_frame.type.js";
-import { JSBSON, VOID } from "#rt/common/js_bson.js";
+import {
+    JBSONWriter,
+    BsonScanItem,
+    DataType,
+    JBSONScanner,
+    UnsupportedDataTypeError,
+    VOID,
+} from "#rt/common/js_bson.js";
 
 export async function returnRead<T = unknown>(read: StreamReader): Promise<T | undefined> {
     return bsion.readers.readArrayItem(read) as any;
@@ -65,4 +72,74 @@ export async function execWrite(write: StreamWriter, cmd: number, args?: any[], 
     bsion.writeArray(args ?? [], write);
 }
 
+export class JSBSON {
+    readonly readers;
+    readonly writers;
+    constructor(writer?: JBSONWriter, reader?: JBSONScanner) {
+        this.readers = reader ?? new JBSONScanner();
+        this.writers = writer ?? new JBSONWriter();
+    }
+
+    private async *readDataType(read: StreamReader) {
+        do {
+            const type = (await read(1)).readUint8();
+            if (type === DataType.void) return;
+            yield type;
+        } while (true);
+    }
+
+    readArray<T = unknown>(read: StreamReader): Promise<T[]> {
+        return this.readers[DataType.array](read) as any;
+    }
+    readMap<T = unknown>(read: StreamReader): Promise<T> {
+        return this.readers[DataType.map](read) as any;
+    }
+    async *scanArray(read: StreamReader): AsyncGenerator<BsonScanItem, void, void> {
+        let key = 0;
+        for await (const type of this.readDataType(read)) {
+            let value: unknown;
+            let isIterator = true;
+            if (type === DataType.array) value = this.scanArray(read);
+            else if (type === DataType.map) value = this.scanMap(read);
+            else if (typeof this.readers[type] !== "function")
+                throw new UnsupportedDataTypeError(DataType[type] ?? type);
+            else {
+                value = await this.readers[type](read);
+                isIterator = false;
+            }
+            yield { dataType: type, key, value, isIterator } as BsonScanItem;
+            key++;
+        }
+    }
+    async *scanMap(read: StreamReader): AsyncGenerator<BsonScanItem, void, void> {
+        const map: Record<string, unknown> = {};
+        let key: string;
+        for await (const type of this.readDataType(read)) {
+            key = (await this.readers[DataType.string](read)) as string;
+
+            let value: any;
+            let isIterator = true;
+            if (type === DataType.array) value = this.scanArray(read);
+            else if (type === DataType.map) value = this.scanMap(read);
+            else if (typeof this.readers[type] !== "function")
+                throw new UnsupportedDataTypeError(DataType[type] ?? type);
+            else {
+                value = await this.readers[type](read);
+                isIterator = false;
+            }
+
+            map[key] = value;
+
+            yield { key, dataType: type, value, isIterator } as BsonScanItem;
+        }
+
+        return map as any;
+    }
+    writeArray(array: unknown[], write: StreamWriter): number {
+        return this.writers[DataType.array](array, write);
+    }
+    writeMap(map: Record<string, any>, write: StreamWriter): number {
+        return this.writers[DataType.map](map, write);
+    }
+}
 const bsion = new JSBSON();
