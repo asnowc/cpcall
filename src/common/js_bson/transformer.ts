@@ -1,4 +1,4 @@
-import { StreamWriter, numToDLD, readNumberDLDSync } from "../stream_util.js";
+import { StreamWriter, numToDLD, DLD } from "../stream_util.js";
 import { DataType, ObjectId, UnsupportedDataTypeError, VOID } from "./bson.type.js";
 
 export class JBSONReader {
@@ -36,7 +36,7 @@ export class JBSONReader {
     }
 
     [DataType.objectId](buf: Buffer, offset: number): [ObjectId, number] {
-        const data = readNumberDLDSync(buf, offset);
+        const data = DLD.readBigIntSync(buf, offset);
         (data as any)[0] = new ObjectId(data[0]);
         return data as any;
     }
@@ -89,7 +89,7 @@ export class JBSONReader {
         return [map, offset - start];
     }
     [DataType.buffer](buf: Buffer, offset: number): [Buffer, number] {
-        const [lenDesc, len] = readNumberDLDSync(buf, offset);
+        const [lenDesc, len] = DLD.readNumberSync(buf, offset);
         if (lenDesc <= 0) return [Buffer.alloc(0), len];
         offset += len;
 

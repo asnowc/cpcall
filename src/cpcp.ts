@@ -1,5 +1,3 @@
-import { TcpNetConnectOpts, createConnection, Server, ServerOpts } from "node:net";
-import { EventEmitter } from "node:events";
 import { createReaderFromReadable } from "./common/node_stream_util.js";
 import { Duplex } from "node:stream";
 import { StreamCpc } from "./cpcp/stream_cpc.js";
@@ -45,46 +43,4 @@ export class CpcSocket<
         else this.#duplex.destroy();
         return super.finalClose();
     }
-}
-
-//todo:
-class CpcpServer extends EventEmitter {
-    readonly server: Server;
-    constructor(options?: ServerOpts) {
-        super();
-        this.server = new Server(options);
-        this.server.on("close", () => {
-            this.emit("close");
-        });
-        this.server.on("connection", (socket) => {
-            this.emit("connection", new CpcSocket(socket));
-        });
-        this.server.on("drop", () => {});
-        this.server.on("error", (err) => {
-            this.emit("error", err);
-        });
-        this.server.on("listening", () => {});
-    }
-}
-interface CpcpServer {
-    on(eventName: "error", fx: (err: any) => void): this;
-    on(eventName: "error", fx: (err: any) => void): this;
-    on(eventName: "connection", fx: (fcpSocket: CpcSocket) => void): this;
-    on(eventName: "error", fx: (err: any) => void): this;
-    on(eventName: string | symbol, listener: (...args: any[]) => void): this;
-}
-
-export interface CpcpConnectOption extends TcpNetConnectOpts {}
-export async function createCpcpConnection(option: TcpNetConnectOpts) {
-    option = Object.assign({}, option);
-    const socket = createConnection(option);
-    return new Promise((resolve, reject) => {
-        socket.on("connect", () => {
-            socket.removeAllListeners("error");
-            socket.removeAllListeners("close");
-            resolve(new CpcSocket(socket));
-        });
-        socket.on("error", reject);
-        socket.on("close", reject);
-    });
 }

@@ -1,4 +1,4 @@
-import { numToDLD, readNumberDLD } from "#rt/common/stream_util.js";
+import { numToDLD, DLD } from "#rt/common/stream_util.js";
 import type { StreamReader, StreamWriter } from "#rt/common/stream_util.js";
 import { FrameType } from "../cpc/cpc_frame.type.js";
 import {
@@ -19,7 +19,7 @@ export function returnWrite(write: StreamWriter, data?: any, ignoreReturn?: bool
     return bsion.writers.writeArrayItem(data, write);
 }
 export async function returnAsyncRead(read: StreamReader) {
-    return Number(await readNumberDLD(read));
+    return await DLD.readNumber(read);
 }
 export function returnAsyncWrite(write: StreamWriter, asyncId: number) {
     write(Buffer.from([FrameType.returnAsync]));
@@ -36,7 +36,7 @@ export function throwWrite(write: StreamWriter, data?: any, isNoExist?: boolean)
 }
 
 export async function asyncResultRead(read: StreamReader) {
-    const asyncId = await readNumberDLD(read);
+    const asyncId = await DLD.readNumber(read);
     const data = await bsion.readers.readArrayItem(read);
     return { asyncId: Number(asyncId), data };
 }
@@ -48,7 +48,7 @@ export function asyncResultWrite(write: StreamWriter, asyncId: number, data: any
 }
 
 export async function callRead(read: StreamReader) {
-    let lenDesc = Number(await readNumberDLD(read));
+    let lenDesc = await DLD.readNumber(read);
     const cmd = (await read(lenDesc)).toString("utf-8");
     const args = await bsion.readArray(read);
     return { cmd, args };
@@ -62,7 +62,7 @@ export function callWrite(write: StreamWriter, cmd: string, args?: any[], ignore
 }
 
 export async function execRead(read: StreamReader) {
-    const cmd = Number(await readNumberDLD(read));
+    const cmd = await DLD.readNumber(read);
     const args = await bsion.readArray(read);
     return { cmd, args };
 }

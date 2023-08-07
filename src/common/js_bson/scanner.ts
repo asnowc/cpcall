@@ -1,4 +1,4 @@
-import { readNumberDLD } from "../stream_util.js";
+import { DLD } from "../stream_util.js";
 import type { StreamReader } from "../stream_util.js";
 import { DataType, ObjectId, UnsupportedDataTypeError, VOID } from "./bson.type.js";
 
@@ -37,7 +37,7 @@ export class JBSONScanner {
     }
 
     async [DataType.objectId](read: StreamReader) {
-        const data = await readNumberDLD(read);
+        const data = await DLD.readBigInt(read);
         return new ObjectId(data);
     }
 
@@ -80,7 +80,7 @@ export class JBSONScanner {
         return map as any;
     }
     async [DataType.buffer](read: StreamReader) {
-        const len = await readNumberDLD(read);
+        const len = await DLD.readNumber(read);
         if (len <= 0) return Buffer.alloc(0);
         return read(Number(len));
     }

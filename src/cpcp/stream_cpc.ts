@@ -133,7 +133,4 @@ export class StreamCpc<
     protected sendReturnAsync(id: number): void {
         returnAsyncWrite(this.#write, id);
     }
-    protected get closeable(): boolean {
-        return super.closeable;
-    }
 }

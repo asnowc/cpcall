@@ -1,6 +1,5 @@
 import { FrameCpc, CpcFrame } from "./cpcp/frame_cpc.js";
 import { EventEmitter } from "events";
-import { Trans } from "./cpcp/json_frame_transformer.js";
 import { JBSON, toArrayJBSON } from "#rt/common/js_bson.js";
 interface NodeProcess extends EventEmitter {
     send?: typeof process.send;
@@ -13,7 +12,6 @@ export class NodeProcessCpc extends FrameCpc {
         this.initEvent();
     }
     private send: (msg?: any) => void;
-    private trans = new Trans();
     private noSend() {
         this.onCpcReturn(new Error("No parent process"), true);
         return false;

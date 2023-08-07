@@ -60,18 +60,19 @@
 
 #### dynamicLenData
 
-| byte | max              | real    | content                                                                 |
-| ---- | ---------------- | ------- | ----------------------------------------------------------------------- |
-| 1    | 0x7f             | 7bit    | 0xxxxxxx                                                                |
-| 2    | 0x3fff           | 6bit 1B | 1xxxxxxx 0xxxxxxx                                                       |
-| 3    | 0x1fffff         | 5bit 2B | 1xxxxxxx 1xxxxxxx 0xxxxxxx                                              |
-| 4    | 0xfffffff(255MB) | 4bit 3B | 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx                                     |
-| 5    | 0x7ffffffff      | 3bit 4B | 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx                            |
-| 6    | 0x3ffffffffff    | 2bit 5B | 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx                   |
-| 7    | 0x1ffffffffffff  | 1bit 6B | 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx          |
-| 8    |                  | 7B      | 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx |
+| byte | max               | real    | content                                                                 |
+| ---- | ----------------- | ------- | ----------------------------------------------------------------------- |
+| 1    | 0x7f              | 7bit    | 0xxxxxxx                                                                |
+| 2    | 0x3fff            | 6bit 1B | 1xxxxxxx 0xxxxxxx                                                       |
+| 3    | 0x1fffff          | 5bit 2B | 1xxxxxxx 1xxxxxxx 0xxxxxxx                                              |
+| 4    | 0xfffffff(255MB)  | 4bit 3B | 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx                                     |
+| 5    | 0x7_ffffffff      | 3bit 4B | 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx                            |
+| 6    | 0x3ff_ffffffff    | 2bit 5B | 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx                   |
+| 7    | 0x1ffff_ffffffff  | 1bit 6B | 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx          |
+| 8    | 0xffffff_ffffffff | 7B      | 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx |
 
-0~65535 TB
+number(47 bit): 0~512 TB - 1
+id(7 bytes): 0~65535 TB -1
 
 #### dynamicContent
 

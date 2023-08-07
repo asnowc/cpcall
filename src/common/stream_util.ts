@@ -1,80 +1,98 @@
-export async function readNumberDLD(read: StreamReader): Promise<bigint> {
-    let data = 0n;
-    do {
-        let buf = await read(1);
+export class DLD {
+    static readonly MAX_INT = Number.MAX_SAFE_INTEGER;
+    static readonly MAX_BIG_ING = 0xffffffffffffffn;
+    static readNumberSync(buffer: Buffer, offset: number = 0) {
+        let [bigInt, len] = this.readBigIntSync(buffer, offset);
+        if (bigInt > Number.MAX_SAFE_INTEGER) throw new Error("Integer over maximum");
+        return [Number(bigInt), len];
+    }
+    static readBigIntSync(buffer: Buffer, offset: number = 0): [bigint, number] {
+        let data = 0n;
+        let byteSize = 1;
+        do {
+            let rawData = BigInt(buffer[offset]);
+            if (rawData > 0b1111111) {
+                data = (data << 7n) + rawData - 0b10000000n;
+            } else {
+                data = (data << 7n) + rawData;
+                break;
+            }
+            offset++;
+            byteSize++;
+            if (byteSize > 8) throw new Error("错误的DLD数据");
+        } while (true);
 
-        let rawData = BigInt(buf.readUint8());
-        if (rawData > 0b1111111) {
-            data = (data << 7n) + rawData - 0b10000000n;
-        } else {
-            return (data << 7n) + rawData;
-        }
-    } while (true);
-}
-export function readNumberDLDSync(buffer: Buffer, offset: number): [bigint, number] {
-    if (buffer[buffer.byteLength - 1] >> 7 !== 0) throw new Error("buffer 是不完整的DLD数据");
-    let data = 0n;
-    let byteSize = 1;
-    do {
-        let rawData = BigInt(buffer[offset]);
-        if (rawData > 0b1111111) {
-            data = (data << 7n) + rawData - 0b10000000n;
-        } else {
-            data = (data << 7n) + rawData;
-            break;
-        }
-        offset++;
-        byteSize++;
-        if (byteSize > 8) throw new Error("错误的DLD数据");
-    } while (true);
+        return [data, byteSize];
+    }
+    static async readBigInt(read: StreamReader) {
+        let data = 0n;
+        do {
+            let buf = await read(1);
 
-    return [data, byteSize];
+            let rawData = BigInt(buf.readUint8());
+            if (rawData > 0b1111111) {
+                data = (data << 7n) + rawData - 0b10000000n;
+            } else {
+                return (data << 7n) + rawData;
+            }
+        } while (true);
+    }
+    static async readNumber(read: StreamReader) {
+        let bigInt = await this.readBigInt(read);
+        if (bigInt > Number.MAX_SAFE_INTEGER) throw new Error("Integer over maximum");
+        return Number(bigInt);
+    }
+    static async read(read: StreamReader): Promise<Buffer> {
+        let list: number[] = [];
+        do {
+            let buf = await read(1);
+            let rawData = buf.readUint8();
+            if (rawData > 0b1111111) list.push(rawData);
+            else break;
+        } while (true);
+
+        let mv = 0x10;
+        for (let i = list.length; i > 0; i--) {
+            list[i] += list[i - 1] % mv;
+            list[i - 1] >> mv;
+            mv << 1;
+        }
+        return Buffer.from(list);
+    }
 }
-export const DLD_MAX_LEN = 0xffffffffffffffn;
-const MAX_INT = 0xfffffff;
-const shiftList = (() => {
-    let list: (number | bigint)[] = [];
-    for (let i = 0; i < 5; i++) list[i] = 2 ** (i * 7);
-    for (let i = 5; i < 8; i++) list[i] = BigInt(2 ** (i * 7));
-    return list;
-})();
+
+const MAX_INT = 0xffffffff;
+function bigIntToDLD(value: bigint): Buffer {
+    let list: number[] = [];
+    list[0] = Number(value % 0x80n);
+    value >>= 7n;
+
+    while (value > 0x7f) {
+        list.unshift(Number(value % 0x80n | 0x80n));
+        value >>= 7n;
+    }
+    if (value > 0) list.unshift(Number(value | 0x80n));
+    return Buffer.from(list);
+}
+function numberToDLD(value: number) {
+    let list: number[] = [];
+    list[0] = value % 0x80;
+    value >>>= 7;
+
+    while (value > 0x7f) {
+        list.unshift(value % 0x80 | 0x80);
+        value >>>= 7;
+    }
+    if (value > 0) list.unshift(value | 0x80);
+    return Buffer.from(list);
+}
 export function numToDLD(data: number | bigint): Buffer {
-    if (data > DLD_MAX_LEN) throw new Error("Exceeds the maximum number");
-    else if (data < 0) throw new Error("The number cannot be negative");
-    let uInt!: number;
-    let bInt: bigint | undefined;
-
-    //如果number类型大于MAX_INT不转成bigInt,则移位运算符可能运算错误
-    if (data > MAX_INT) bInt = BigInt(data);
-    else uInt = Number(data);
-    let buf: number[] = [];
-
-    let isStart = false;
-    let i = 7;
-    if (bInt) {
-        for (; i > 4; i--) {
-            if (bInt >= shiftList[i]) {
-                buf[i] = 0b10000000 + Number(bInt >> BigInt(i * 7));
-                bInt %= shiftList[i] as bigint;
-                isStart = true;
-            } else if (isStart) buf[i] = 0b10000000;
-        }
-        if (bInt > MAX_INT) {
-            buf[i] = 0b10000000 + Number(bInt >> BigInt(i * 7));
-            uInt = Number(bInt % BigInt(shiftList[i]));
-            i--;
-        } else uInt = Number(bInt);
-    }
-    for (; i > 0; i--) {
-        if (uInt >= shiftList[i]) {
-            buf[i] = 0b10000000 + (uInt >>> (i * 7));
-            uInt %= shiftList[i] as number;
-            isStart = true;
-        } else if (isStart) buf[i] = 0b10000000;
-    }
-    buf[0] = uInt;
-
-    return Buffer.from(buf.reverse());
+    if (data < 0) throw new Error("The number cannot be negative");
+    if (typeof data === "number") {
+        if (data > MAX_INT) return bigIntToDLD(BigInt(data));
+        else return numberToDLD(data);
+    } else if (typeof data !== "bigint") throw new Error("Parameter type error");
+    return bigIntToDLD(data);
 }
 
 export interface StreamReader {
@@ -84,22 +102,6 @@ export interface StreamReader {
 }
 export type StreamWriter = (buf: Buffer) => void;
 
-/** 将 StreamWriter 的值保存到数组 */
-export class AllListStreamWriter {
-    #byteSize = 0;
-    get byteSize() {
-        return this.#byteSize;
-    }
-    private bufList: Buffer[] = [];
-    write = (buf: Buffer) => {
-        if (buf.byteLength <= 0) return;
-        this.#byteSize += buf.byteLength;
-        this.bufList.push(buf);
-    };
-    getAll() {
-        return Buffer.concat(this.bufList);
-    }
-}
 /** 固定 Buffer 的 StreamReader*/
 export function createFixedStreamReader(buffer: Buffer) {
     let offset = 0;
