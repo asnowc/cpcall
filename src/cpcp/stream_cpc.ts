@@ -1,4 +1,4 @@
-import { Cpc } from "../cpc.js";
+import { Cpc, CpcCallError, CpcCmdList, CpcUnknownFrameTypeError, FrameType } from "../cpc.js";
 import {
     callRead,
     asyncResultRead,
@@ -14,17 +14,16 @@ import {
     execWrite,
 } from "./frame_transformer.js";
 import type { StreamReader, StreamWriter } from "../common/stream_util.js";
-import { CpcCallError, CpcCmdList, CpcUnknownFrameTypeError, FrameType } from "../cpc/cpc_frame.type.js";
 
 export interface CpcStreamCtrl {
     read: StreamReader;
     write: StreamWriter;
     handshake?: number;
 }
-export class StreamCpc<
-    CallableCmd extends CpcCmdList = CpcCmdList,
-    CmdList extends CpcCmdList = CpcCmdList
-> extends Cpc<CallableCmd, CmdList> {
+export class StreamCpc<CallableCmd extends object = CpcCmdList, CmdList extends object = CpcCmdList> extends Cpc<
+    CallableCmd,
+    CmdList
+> {
     #read: StreamReader;
     #write: StreamWriter;
     constructor(streamCtrl: CpcStreamCtrl) {

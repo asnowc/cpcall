@@ -21,11 +21,10 @@
         "vitest": "^0.33.0"
     },
     "exports": {
-        ".": {
-            "import": "./index.js",
-            "types": "./index.d.ts"
-        },
-        "./*": "./out/*.js"
+        ".": "./out/cpc.js",
+        "./socket-cpc": "./out/socket_cpc.js",
+        "./ps-cpc": "./out/node_process_cpc.js",
+        "./ws-cpc": "./web_socket_cpc.js"
     },
     "imports": {
         "#rt/*": "./out/*"

@@ -8,7 +8,7 @@ export * from "./transformer.js";
 const syncReader = new JBSONReader();
 const jbsonScanner = new JBSONScanner();
 
-async function* readDataType(read: StreamReader) {
+async function* scanDataType(read: StreamReader) {
     do {
         const type = (await read(1)).readUint8();
         if (type === DataType.void) return;
@@ -17,7 +17,7 @@ async function* readDataType(read: StreamReader) {
 }
 async function* scanArray(read: StreamReader): AsyncGenerator<BsonScanItem, void, void> {
     let key = 0;
-    for await (const type of readDataType(read)) {
+    for await (const type of scanDataType(read)) {
         let value: unknown;
         let isIterator = true;
         if (type === DataType.array) value = scanArray(read);
@@ -34,7 +34,7 @@ async function* scanArray(read: StreamReader): AsyncGenerator<BsonScanItem, void
 async function* scanMap(read: StreamReader): AsyncGenerator<BsonScanItem, void, void> {
     const map: Record<string, unknown> = {};
     let key: string;
-    for await (const type of readDataType(read)) {
+    for await (const type of scanDataType(read)) {
         key = (await jbsonScanner[DataType.string](read)) as string;
 
         let value: any;

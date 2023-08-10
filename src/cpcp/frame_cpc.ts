@@ -1,9 +1,8 @@
-import { Cpc } from "#rt/cpc/cpc.js";
-import { CpcCmdList, CpcUnknownFrameTypeError, FrameType } from "#rt/cpc/cpc_frame.type.js";
+import { Cpc, CpcCmdList, CpcUnknownFrameTypeError, FrameType } from "../cpc/cpc.js";
 
 export abstract class FrameCpc<
-    CallableCmd extends CpcCmdList = CpcCmdList,
-    CmdList extends CpcCmdList = CpcCmdList
+    CallableCmd extends object = CpcCmdList,
+    CmdList extends object = CpcCmdList
 > extends Cpc<CallableCmd, CmdList> {
     protected sendAsyncRes(id: number, arg?: any, error?: boolean | undefined): void {
         const frame: F_asyncRes = [error ? FrameType.reject : FrameType.resolve, id, arg];

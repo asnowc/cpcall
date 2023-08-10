@@ -2,12 +2,12 @@ import { UniqueKeyMap } from "../common/virtual_heap.js";
 import { EventEmitter } from "../common/event_emitter.js";
 import { PromiseHandel, SyncReturnQueue } from "./promise_queue.js";
 import {
-    CpcCmdList,
     CpcError,
     CpcFailAsyncRespondError,
     CpcFailRespondError,
     CpcUnregisteredCommandError,
 } from "./cpc_frame.type.js";
+export * from "./cpc_frame.type.js";
 
 /**
  * @description Cross-process call (跨进程调用-CPC)
@@ -15,8 +15,8 @@ import {
  * 事件触发顺序：end->close
  */
 export abstract class Cpc<
-    CallList extends CpcCmdList = CpcCmdList,
-    CmdList extends CpcCmdList = CpcCmdList
+    CallList extends object = CpcCmdList,
+    CmdList extends object = CpcCmdList
 > extends EventEmitter {
     constructor(maxAsyncId = 4294967295) {
         super();
@@ -69,11 +69,14 @@ export abstract class Cpc<
         this.testClose();
     }
     #licensers = new Map<string | number, CmdFx>();
-    setCmd<T extends keyof CpcCmdList>(cmd: T, fx: CpcCmdList[T]): void;
+    setCmd<T extends GetCmds<CmdList>, Fn extends GetFn<CmdList[T]>>(cmd: T, fx: Fn): void;
+    // setCmd(cmd: string | number, fx: CmdFx): void;
     setCmd(cmd: string | number, fx: CmdFx) {
         if (this.#end) return;
         this.#licensers.set(cmd, fx);
     }
+    removeCmd<T extends GetCmds<CmdList>>(cmd: T): void;
+    removeCmd(cmd: string | number): void;
     removeCmd(cmd: string | number) {
         this.#licensers.delete(cmd);
     }
@@ -89,10 +92,14 @@ export abstract class Cpc<
      * @throws {CpcFailRespondError}  在返回前断开连接
      * @throws {CpcFailAsyncRespondError} 已返回 AsyncId (命令已被执行), 但Promise状态在变化前断开连接
      */
-    call<T extends keyof PickVoidCallList<CallList>>(command: T): Promise<ReturnType<CallList[T]>>;
-    call<T extends keyof CallList, Fn extends CallList[T]>(command: T, arg: Parameters<Fn>): Promise<ReturnType<Fn>>;
-    call<T extends keyof CallList, Fn extends CallList[T]>(
-        command: T,
+    call<T extends GetAnyVoidCmd<CallList>>(cmd: T): Promise<any>;
+    call<T extends GetVoidCmds<CallList>, R = ReturnType<GetVoidFn<CallList[T]>>>(cmd: T): Promise<R>;
+    call<T extends GetCmds<CallList>, Fn extends CmdFx = GetFn<CallList[T]>>(
+        cmd: T,
+        arg: Parameters<Fn>
+    ): Promise<ReturnType<Fn>>;
+    call<T extends GetCmds<CallList>, Fn extends CmdFx = GetFn<CallList[T]>>(
+        cmd: T,
         arg: Parameters<Fn>,
         options: CallOptions
     ): Promise<ReturnType<Fn>>;
@@ -102,8 +109,10 @@ export abstract class Cpc<
         return this.#syncReturnQueue.add(options ?? {});
     }
 
-    exec<T extends keyof CallList>(command: T, args: any[]): void;
-    exec(command: string | number, args: any[]) {
+    exec<T extends GetAnyVoidCmd<CallList>>(cmd: T): void;
+    exec<T extends GetVoidCmds<CallList>>(cmd: T): void;
+    exec<T extends GetCmds<CallList>, Arg extends any[] = Parameters<GetFn<CallList[T]>>>(cmd: T, arg: Arg): void;
+    exec(command: string | number, args?: any[]) {
         if (this.#end) throw new Error("Cpc is ended");
         this.sendCall(command, args, true);
     }
@@ -194,21 +203,30 @@ export abstract class Cpc<
     readonly #sendingUniqueKey: UniqueKeyMap;
 }
 
-Cpc.prototype.callNoCheck = Cpc.prototype.call;
-
-export interface Cpc<CallList extends CpcCmdList, CmdList extends CpcCmdList = CpcCmdList> {
+export interface Cpc<CallList extends object, CmdList extends object> {
     on(name: "end", listener: (msg?: string) => void): this;
     on(name: "close", listener: () => void): this;
     on(name: "error", listener: (error: Error) => void): this;
     on(eventName: string | symbol, listener: (...args: any[]) => void): this;
     off(name: "end" | "close" | "error" | string): this;
-    /** call的别名，用于绕靠类型检查 */
-    callNoCheck<T extends keyof CallList, P>(command: T, args?: any[], options?: CallOptions): Promise<P>;
 }
 
 interface CallOptions {}
 type CmdFx = (...args: any[]) => any;
 
-type PickVoidCallList<T extends CpcCmdList> = {
-    [key in keyof T as Parameters<T[key]> extends [] ? key : never]: T[key];
+type CpcCmdList = {
+    [key: string | number]: ((...args: any[]) => any) | (() => any);
 };
+
+type GetFn<T> = T extends CmdFx ? T : never;
+type PickFn<T> = {
+    [key in keyof T as T[key] extends (...args: any[]) => any ? key : never]: T[key];
+};
+type PickVoidFn<T extends object> = {
+    [key in keyof T as T[key] extends CmdFx ? (Parameters<T[key]> extends [] ? key : never) : never]: T[key];
+};
+
+type GetVoidFn<T> = T extends () => any ? T : never;
+type GetCmds<T> = keyof PickFn<T>;
+type GetVoidCmds<T extends object> = keyof PickVoidFn<T>;
+type GetAnyVoidCmd<T> = T extends CpcCmdList ? string | number : never;

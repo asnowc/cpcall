@@ -1,7 +1,7 @@
 import { FrameCpc, CpcFrame } from "./cpcp/frame_cpc.js";
 import { EventEmitter } from "events";
 import { JBSON, toArrayJBSON } from "#rt/common/js_bson.js";
-import { CpcCmdList } from "./cpc/cpc_frame.type.js";
+import { CpcCmdList } from "./cpc/cpc.js";
 interface NodeProcess extends EventEmitter {
     send?: typeof process.send;
 }

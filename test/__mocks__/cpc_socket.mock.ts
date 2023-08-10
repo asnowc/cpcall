@@ -1,5 +1,5 @@
 import { Duplex, Readable } from "node:stream";
-import { CpcSocket } from "#rt/cpcp.js";
+import { CpcSocket } from "#rt/socket_cpc.js";
 import { vi } from "vitest";
 import { CpcMocks } from "./cpc.mock.js";
 import { Cpc, CpcCmdList } from "#rt/cpc.js";

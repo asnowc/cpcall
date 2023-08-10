@@ -17,7 +17,7 @@ export enum FrameType {
 }
 
 export type CpcCmdList = {
-    [key: string | number]: ((...args: any[]) => any) | (() => any);
+    [key: string | number]: (...args: any[]) => any;
 };
 
 export class CpcError extends Error {}

@@ -1,6 +1,6 @@
 import { numToDLD, DLD } from "#rt/common/stream_util.js";
 import type { StreamReader, StreamWriter } from "#rt/common/stream_util.js";
-import { FrameType } from "../cpc/cpc_frame.type.js";
+import { FrameType } from "../cpc/cpc.js";
 import {
     JBSONWriter,
     BsonScanItem,

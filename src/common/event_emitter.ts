@@ -15,6 +15,7 @@ export class EventEmitter {
         }
         return this;
     }
+    off(name: string | symbol, fn: Function): void;
     off(name: string | symbol, fn: EventListener) {
         if (name === "error") this.#listenError.delete(fn);
         else this.#listeners.get(name)?.delete(fn);

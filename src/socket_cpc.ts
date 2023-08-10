@@ -1,7 +1,7 @@
 import { createReaderFromReadable } from "./common/node_stream_util.js";
 import { Duplex } from "node:stream";
 import { StreamCpc } from "./cpcp/stream_cpc.js";
-import { CpcCmdList } from "./cpc/cpc_frame.type.js";
+import { CpcCmdList } from "./cpc/cpc.js";
 
 /**
  * 事件触发顺序：end->close
