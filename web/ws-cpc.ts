@@ -1,6 +1,4 @@
-import { CpcFrame, FrameCpc } from "#rt/cpcp/frame_cpc.js";
-import { JBSON, toArrayJBSON } from "#rt/common/js_bson.js";
-import { CpcCmdList } from "#rt/cpc/cpc_frame.type.js";
+import { CpcFrame, FrameCpc, CpcCmdList, JBSON, toArrayJBSON } from "./cpc.js";
 
 export class WebSocketCpc<
     CallableCmd extends object = CpcCmdList,

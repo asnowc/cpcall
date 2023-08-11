@@ -16,8 +16,9 @@ export * from "./cpc_frame.type.js";
  */
 export abstract class Cpc<
     CallList extends object = CpcCmdList,
-    CmdList extends object = CpcCmdList
-> extends EventEmitter {
+    CmdList extends object = CpcCmdList,
+    Ev extends object = {}
+> extends EventEmitter<Ev & CpcEvents> {
     constructor(maxAsyncId = 4294967295) {
         super();
         this.#sendingUniqueKey = new UniqueKeyMap(maxAsyncId);
@@ -69,9 +70,10 @@ export abstract class Cpc<
         this.testClose();
     }
     #licensers = new Map<string | number, CmdFx>();
+    // setCmd(cmd: string | number, target: Cpc, insp?: (returns: any) => any): void;
     setCmd<T extends GetCmds<CmdList>, Fn extends GetFn<CmdList[T]>>(cmd: T, fx: Fn): void;
     // setCmd(cmd: string | number, fx: CmdFx): void;
-    setCmd(cmd: string | number, fx: CmdFx) {
+    setCmd(cmd: string | number, fx: CmdFx, options?: SetCmdOptions<CmdFx>) {
         if (this.#end) return;
         this.#licensers.set(cmd, fx);
     }
@@ -203,15 +205,20 @@ export abstract class Cpc<
     readonly #sendingUniqueKey: UniqueKeyMap;
 }
 
-export interface Cpc<CallList extends object, CmdList extends object> {
-    on(name: "end", listener: (msg?: string) => void): this;
-    on(name: "close", listener: () => void): this;
-    on(name: "error", listener: (error: Error) => void): this;
-    on(eventName: string | symbol, listener: (...args: any[]) => void): this;
-    off(name: "end" | "close" | "error" | string): this;
+export interface CpcEvents {
+    end(msg?: string): void;
+    close(): void;
+    error(error: Error): void;
 }
 
 interface CallOptions {}
+interface SetCmdOptions<Fn extends CmdFx> {
+    /** 不解析二进制 */
+    useRawArg?: boolean;
+    /** 参数转换函数 */
+    trans?: (args: Parameters<Fn>) => any[];
+}
+
 type CmdFx = (...args: any[]) => any;
 
 type CpcCmdList = {

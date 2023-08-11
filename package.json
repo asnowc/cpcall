@@ -4,11 +4,11 @@
     "description": "",
     "type": "module",
     "scripts": {
-        "build": "tsc -p tsconfig.build.json",
+        "build": "tsc -p tsconfig.build.json && tsc -p web/tsconfig.json",
         "test": "vitest",
         "test:ui": "vitest --ui",
         "test:coverage": "vitest --coverage --ui",
-        "ci:test": "vitest run --coverage",
+        "ci:test": "vitest run",
         "publish test": "pnpm publish --no-git-checks --dry-run"
     },
     "dependencies": {

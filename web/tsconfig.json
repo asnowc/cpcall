@@ -2,8 +2,14 @@
     "extends": "../tsconfig.json",
     "compilerOptions": {
         "lib": ["ESNext", "DOM"],
-        "types": []
+        "types": [],
+        "declaration": true,
+        "skipLibCheck": true,
+        "outDir": "../out",
+        "rootDir": ".",
+        "rootDirs": [".", "../out"],
+        "noEmit": false
     },
-    "include": ["**/*.ts"],
+    "include": ["*.ts"],
     "exclude": ["node_modules"]
 }
