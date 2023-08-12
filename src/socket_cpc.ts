@@ -1,4 +1,4 @@
-import { createReaderFromReadable } from "./common/node_stream_util.js";
+import { createReaderFromReadable } from "#lib/node_stream_util.js";
 import { Duplex } from "node:stream";
 import { StreamCpc } from "./cpcp/stream_cpc.js";
 import { CpcCmdList } from "./cpc/cpc.js";

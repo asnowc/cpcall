@@ -1,14 +1,7 @@
-import { numToDLD, DLD } from "#rt/common/stream_util.js";
-import type { StreamReader, StreamWriter } from "#rt/common/stream_util.js";
+import { numToDLD, DLD } from "#lib/stream_util.js";
+import type { StreamReader, StreamWriter } from "#lib/stream_util.js";
 import { FrameType } from "../cpc/cpc.js";
-import {
-    JBSONWriter,
-    BsonScanItem,
-    DataType,
-    JBSONScanner,
-    UnsupportedDataTypeError,
-    VOID,
-} from "#rt/common/js_bson.js";
+import { JBSONWriter, BsonScanItem, DataType, JBSONScanner, UnsupportedDataTypeError, VOID } from "#lib/js_bson.js";
 
 export async function returnRead<T = unknown>(read: StreamReader): Promise<T | undefined> {
     return bsion.readers.readArrayItem(read) as any;

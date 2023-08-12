@@ -1,5 +1,4 @@
-import { DataType, JBSON, toArrayJBSON, toMapJBSON, BsonScanItem } from "#rt/common/js_bson.js";
-import { createFixedStreamReader } from "#rt/common/stream_util.js";
+import { DataType, JBSON, toArrayJBSON, toMapJBSON, BsonScanItem } from "#lib/js_bson.js";
 import { baseDataTypes, objectDataTypes } from "./__mocks__/bson.cases.js";
 import { describe, it, expect } from "vitest";
 const mapCases: Record<string, any> = {
@@ -51,7 +50,7 @@ describe("异步转换器", function () {
     describe("scanArray", function () {
         it.each(Object.entries(baseDataTypes))("%s", async function (type, cases) {
             const reader = createFixedStreamReader(toArrayJBSON(cases));
-type
+            type;
             const array = await scanToValue(JBSON.scanArray(reader), []);
             expect(array).toEqual(cases);
         });
@@ -89,3 +88,15 @@ type
         });
     });
 });
+
+/** 固定 Buffer 的 StreamReader*/
+export function createFixedStreamReader(buffer: Buffer) {
+    let offset = 0;
+    return async function streamReader(size: number) {
+        let end = offset + size;
+        if (end > buffer.length) throw new Error("out of range");
+        let buf = buffer.subarray(offset, end);
+        offset = end;
+        return buf;
+    };
+}

@@ -1,5 +1,5 @@
-import { UniqueKeyMap } from "../common/virtual_heap.js";
-import { EventEmitter } from "../common/event_emitter.js";
+import { UniqueKeyMap } from "#lib/virtual_heap.js";
+import { EventEmitter } from "#lib/event_emitter.js";
 import { PromiseHandel, SyncReturnQueue } from "./promise_queue.js";
 import {
     CpcError,

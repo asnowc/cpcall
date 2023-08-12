@@ -1,4 +1,4 @@
-import { ObjectId } from "#rt/common/js_bson.js";
+import { ObjectId } from "#lib/js_bson.js";
 import { vi, expect } from "vitest";
 
 export const baseDataTypes = {

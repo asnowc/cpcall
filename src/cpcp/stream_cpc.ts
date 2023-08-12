@@ -13,7 +13,7 @@ import {
     execRead,
     execWrite,
 } from "./frame_transformer.js";
-import type { StreamReader, StreamWriter } from "../common/stream_util.js";
+import type { StreamReader, StreamWriter } from "#lib/stream_util.js";
 
 export interface CpcStreamCtrl {
     read: StreamReader;

@@ -1,7 +1,7 @@
 import type { Duplex, Readable, Writable } from "node:stream";
-import { ReadableStream, WritableStream } from "node:stream/web";
 import type { ReadableByteStreamController } from "node:stream/web";
 import { StreamReader } from "./stream_util.js";
+import { ReadableStream, WritableStream } from "node:stream/web";
 
 export function duplexToWebStream(duplex: Duplex) {
     const read = readableToWebStream(duplex);
