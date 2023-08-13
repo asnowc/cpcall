@@ -9,6 +9,7 @@
         "test:ui": "vitest --ui",
         "test:coverage": "vitest --coverage --ui",
         "ci:test": "vitest run",
+        "ci:build": "pnpm build",
         "publish:test": "pnpm publish --no-git-checks --dry-run"
     },
     "devDependencies": {
