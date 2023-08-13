@@ -8,7 +8,8 @@
         "skipDefaultLibCheck": true,
         "baseUrl": ".",
         "paths": {
-            "#rt/*": ["./src/*"]
+            "#rt/*": ["./src/*"],
+            "#lib/*": ["./src/lib/*"]
         },
         "noEmit": true
     },
