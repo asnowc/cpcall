@@ -5,21 +5,21 @@
 |Frame type|Content|
 ```
 
-| dec | binary | DESC               | content length |
-| --- | ------ | ------------------ | -------------- |
-| 0   | 0000   | exec               |                |
-| 1   | 0001   | call               | n              |
-| 2   | 0010   | call ignore return | same call      |
-| 3   | 0011   | exec ignore return |                |
-| 4   | 0100   |                    |                |
-| 5   | 0101   |                    |                |
-| 6   | 0110   |                    |                |
-| 7   | 0111   | actionResponse     | same return    |
-| 8   | 1000   | return promise     |                |
-| 9   | 1001   | promise resolve    | n              |
-| 10  | 1010   | promise reject     | n              |
-| 11  | 1011   | return             | n              |
-| 12  | 1100   | throw              | same return    |
+| dec | binary | DESC            | content length |
+| --- | ------ | --------------- | -------------- |
+| 0   | 0000   |                 |                |
+| 1   | 0001   | call            | n              |
+| 2   | 0010   | exec            | same call      |
+| 3   | 0011   |                 |                |
+| 4   | 0100   |                 |                |
+| 5   | 0101   |                 |                |
+| 6   | 0110   |                 |                |
+| 7   | 0111   | actionResponse  | same return    |
+| 8   | 1000   | return promise  |                |
+| 9   | 1001   | promise resolve | n              |
+| 10  | 1010   | promise reject  | n              |
+| 11  | 1011   | return          | n              |
+| 12  | 1100   | throw           | same return    |
 
 | dec | binary    | Frame type length | content length |
 | --- | --------- | ----------------- | -------------- |

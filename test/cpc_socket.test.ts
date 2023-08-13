@@ -1,9 +1,8 @@
-import { CpcSocket } from "#rt/socket_cpc.js";
+import { createSocketCpc } from "#rt/node.js";
 import { describe, it, expect, vi, SpyInstance } from "vitest";
 import { Readable } from "stream";
 import {
     createConnectedFcp,
-    getNoResponseCpc,
     getInitedStateConnectedCpc,
     getReadable,
     nextMacaoTask,
@@ -12,11 +11,12 @@ import {
 } from "./__mocks__/cpc_socket.mock.js";
 
 import { cpc } from "./__mocks__/cpc.cases.js";
+import { Cpc } from "#rt/cpc.js";
 describe("cpc", cpc(new CpcSocketMocks()));
 
 it("握手不通过", async function () {
     const { clientSocket, serverSocket } = createConnectedSocket();
-    let cpc = new CpcSocket(clientSocket);
+    let cpc = createSocketCpc(clientSocket);
     let onError = vi.fn();
     cpc.on("error", onError);
 
@@ -25,15 +25,6 @@ it("握手不通过", async function () {
     expect(clientSocket.closed);
     expect(onError).toBeCalledTimes(1);
     expect(onError.mock.calls[0][0]).toBeInstanceOf(Error);
-});
-
-it.skip("错误的流状态/cpc_socket", async function () {
-    const cpcClient = getNoResponseCpc();
-    cpcClient.duplex.end();
-    await nextMacaoTask();
-    const cpc = new CpcSocket(cpcClient.duplex);
-    expect(cpc.isEnded, "未结束").toBeTruthy();
-    expect(cpc.closed, "初始状态").toBeTruthy();
 });
 
 describe.skip("传递流/cpc_socket", function () {
@@ -66,9 +57,8 @@ describe.skip("传递流/cpc_socket", function () {
 }, 2000);
 
 describe.concurrent("状态更改/cpc_socket", function () {
-    function expectFcpClose(cpc: CpcSocket, closeFn: SpyInstance) {
+    function expectFcpClose(cpc: Cpc, closeFn: SpyInstance) {
         expect(closeFn).toBeCalledTimes(1);
-        expect(cpc.duplex.destroyed).toBeTruthy();
         expect(cpc.closed).toBeTruthy();
     }
     it("有等待结束状态执行end()", async function () {
@@ -100,6 +90,8 @@ describe.concurrent("状态更改/cpc_socket", function () {
         expect(c.onEnd).toBeCalledTimes(1);
         expectFcpClose(c.cpc, c.onClose);
         expectFcpClose(s.cpc, s.onClose);
+        expect(s.socket.destroyed).toBeTruthy();
+        expect(c.socket.destroyed).toBeTruthy();
     });
     it("外部Duplex 销毁", async function () {
         const { s, c } = getInitedStateConnectedCpc();
@@ -112,40 +104,7 @@ describe.concurrent("状态更改/cpc_socket", function () {
 
         expectFcpClose(c.cpc, c.onClose);
         expectFcpClose(s.cpc, s.onClose);
-    });
-    it.skip("stream 发送结束前断开连接", async function () {
-        const { c, s } = getInitedStateConnectedCpc();
-        const serverCmd = vi.fn();
-        s.cpc.setCmd("cmd", serverCmd);
-        const client = {
-            stream: getReadable(),
-            onStreamErr: vi.fn(),
-            onStreamClose: vi.fn(),
-        };
-        client.stream.on("error", client.onStreamErr);
-        client.stream.on("close", client.onStreamClose);
-        c.cpc.call("cmd", [client.stream]);
-
-        await nextMacaoTask();
-        const serverReceivedStream = serverCmd.mock.calls[0][0];
-        expect(serverReceivedStream).toBeInstanceOf(Readable);
-        const server = {
-            stream: serverReceivedStream,
-            onStreamErr: vi.fn(),
-            onStreamClose: vi.fn(),
-        };
-        server.stream.on("error", server.onStreamErr);
-        server.stream.on("close", server.onStreamClose);
-
-        c.cpc.dispose();
-        expect(c.cpc.closed).toBeTruthy();
-
-        await nextMacaoTask();
-        expect(client.onStreamClose, "client 流被关闭").toBeCalledTimes(1);
-        expect(client.onStreamErr.mock.calls[0][0], "client 流触发异常").toBeInstanceOf(Error);
-
-        expect(s.cpc.closed).toBeTruthy();
-        expect(server.onStreamClose, "server 流被关闭").toBeCalledTimes(1);
-        expect(server.onStreamErr.mock.calls[0][0], "server 流触发异常").toBeInstanceOf(Error);
+        expect(s.socket.destroyed).toBeTruthy();
+        expect(c.socket.destroyed).toBeTruthy();
     });
 });

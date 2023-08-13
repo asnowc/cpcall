@@ -44,9 +44,9 @@ export function cpc(mocks: CpcMocks) {
             }
 
             /** 测试参数传输 */
-            describe.concurrent("单个参数调用与返回值", function () {
+            describe("单个参数调用与返回值", function () {
                 const cases = Object.entries(callbackBaseArgs);
-                describe.each(cases)("%s", function (type, dataList) {
+                cases.forEach(([type, dataList]) => {
                     it.each(dataList as any[])("%s", async function (arg) {
                         const { cpcClient, fn, cmd } = createBase();
                         const res = await cpcClient.call(cmd, [arg]);
@@ -90,7 +90,7 @@ export function cpc(mocks: CpcMocks) {
                 const res = await Promise.all(pmsList);
                 expect(res).toEqual(dataList);
             }, 500);
-        });
+        }, 500);
         it("exec", async function () {
             const { cpcClient, cpcServer, onErr } = createConnectedFcp();
             const fn = vi.fn((arg) => arg);
@@ -136,7 +136,7 @@ export function cpc(mocks: CpcMocks) {
             it("异步抛出非Error对象", async function () {
                 await expect(cpcClient.call("asyncThrowArg0", ["abc"])).rejects.toThrow("abc");
             });
-        });
+        }, 500);
         describe("状态更改", function () {
             function expectFcpClose(cpc: Cpc, closeFn: SpyInstance) {
                 expect(closeFn).toBeCalledTimes(1);
@@ -220,6 +220,6 @@ export function cpc(mocks: CpcMocks) {
 
                 await expect(pms).rejects.toThrowError(CpcFailAsyncRespondError);
             });
-        });
+        }, 1000);
     };
 }

@@ -153,10 +153,7 @@ export class JBSONWriter {
             return 1;
         }
         const type = this.toType(data);
-        //type
-        const typeBuf = Buffer.from([type]);
-        if (!typeBuf) throw new UnsupportedDataTypeError(type);
-        write(typeBuf);
+        write(Buffer.from([type]));
         if (this.isNoContentData(type)) return 1;
 
         if (typeof this[type] !== "function") throw new UnsupportedDataTypeError(DataType[type] ?? type);
@@ -199,15 +196,15 @@ export class JBSONWriter {
         return this[DataType.string](data.source, write);
     }
 
-    [DataType.array](array: unknown[], write: StreamWriter): number {
+    [DataType.array](array: unknown[], write: StreamWriter, ignoreVoid?: boolean): number {
         let writeTotalLen = 0;
         for (let i = 0; i < array.length; i++) {
             writeTotalLen += this.writeArrayItem(array[i], write);
         }
-        write(Buffer.from([DataType.void]));
+        if (!ignoreVoid) write(Buffer.from([DataType.void]));
         return writeTotalLen + 1;
     }
-    [DataType.map](map: Record<string, any>, write: StreamWriter): number {
+    [DataType.map](map: Record<string, any>, write: StreamWriter, ignoreVoid?: boolean): number {
         let writeTotalLen = 0;
         for (const [key, data] of Object.entries(map)) {
             const type = this.toType(data);
@@ -231,7 +228,7 @@ export class JBSONWriter {
             if (typeof this[type] !== "function") throw new UnsupportedDataTypeError(DataType[type] ?? type);
             writeTotalLen += this[type](data, write);
         }
-        write(Buffer.from([DataType.void]));
+        if (!ignoreVoid) write(Buffer.from([DataType.void]));
         return writeTotalLen + 1;
     }
     [DataType.buffer](data: Buffer, write: StreamWriter) {

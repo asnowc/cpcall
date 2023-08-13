@@ -50,6 +50,7 @@ describe("异步转换器", function () {
     describe("scanArray", function () {
         it.each(Object.entries(baseDataTypes))("%s", async function (type, cases) {
             const reader = createFixedStreamReader(toArrayJBSON(cases));
+
             type;
             const array = await scanToValue(JBSON.scanArray(reader), []);
             expect(array).toEqual(cases);

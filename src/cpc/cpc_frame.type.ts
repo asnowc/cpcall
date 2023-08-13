@@ -1,8 +1,6 @@
 export enum FrameType {
-    exec = 0,
     call = 1,
-    ignoreReturnCall = 2,
-    ignoreReturnExec = 3,
+    exec = 2,
     actionResponse = 7,
 
     returnAsync = 8,
@@ -14,6 +12,12 @@ export enum FrameType {
 
     /** 收到fin后表示对方不会再发起调用 */
     fin = 0b1111_1110,
+}
+
+export interface CpcEvents {
+    end(msg?: string): void;
+    close(): void;
+    error(error: Error): void;
 }
 
 export type CpcCmdList = {

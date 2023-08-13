@@ -3,12 +3,12 @@ import type { ReadableByteStreamController } from "node:stream/web";
 import { StreamReader } from "./stream_util.js";
 import { ReadableStream, WritableStream } from "node:stream/web";
 
-export function duplexToWebStream(duplex: Duplex) {
+function duplexToWebStream(duplex: Duplex) {
     const read = readableToWebStream(duplex);
     const write = writeableToWebStream(duplex);
     return { read, write };
 }
-export function readableToWebStream(readable: Readable) {
+function readableToWebStream(readable: Readable) {
     return new ReadableStream(
         {
             type: "bytes",
@@ -27,7 +27,7 @@ export function readableToWebStream(readable: Readable) {
         { highWaterMark: readable.readableHighWaterMark }
     );
 }
-export function writeableToWebStream(writeable: Writable) {
+function writeableToWebStream(writeable: Writable) {
     return new WritableStream(
         {
             abort(reason: any) {

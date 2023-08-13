@@ -3,10 +3,14 @@ import { EventEmitter } from "#lib/event_emitter.js";
 import { PromiseHandel, SyncReturnQueue } from "./promise_queue.js";
 import {
     CpcError,
+    CpcEvents,
     CpcFailAsyncRespondError,
     CpcFailRespondError,
+    CpcUnknownFrameTypeError,
     CpcUnregisteredCommandError,
+    FrameType,
 } from "./cpc_frame.type.js";
+import { VOID } from "#lib/js_bson.js";
 export * from "./cpc_frame.type.js";
 
 /**
@@ -124,12 +128,6 @@ export abstract class Cpc<
         this.emit("error", error);
     }
 
-    protected abstract sendReturn(arg: any, error?: boolean, isNoExist?: boolean): void;
-    protected abstract sendReturnAsync(id: any): void;
-    protected abstract sendAsyncRes(id: number, arg?: any, error?: boolean): void;
-    protected abstract sendCall(command: string | number, args?: any[], ignoreReturn?: boolean): void;
-    protected abstract sendEnd(): void;
-
     private handleAwait(handle: PromiseHandel<any, any> & CallOptions, value: any, error?: boolean) {
         if (error) handle.reject(value);
         else {
@@ -140,25 +138,24 @@ export abstract class Cpc<
     private beforeSendReturn(value: any, isError?: boolean): void {
         this.sendReturn(value, isError);
     }
-
-    protected onCpcReturn(arg: any, error?: boolean, isNoExist?: boolean) {
+    private onCpcReturn(arg: any, error?: boolean, isNoExist?: boolean) {
         let res = this.#syncReturnQueue.shift();
         if (!res) return this.onCpcError(new CpcError("Redundant return"));
         if (isNoExist) return res.reject(new CpcUnregisteredCommandError());
         this.handleAwait(res, arg, error);
     }
-    protected onCpcReturnAsync(id: number) {
+    private onCpcReturnAsync(id: number) {
         if (!this.#syncReturnQueue.swapInAsyncMap(id)) {
             return this.onCpcError(new CpcError("Redundant return"));
         }
     }
-    protected onCpcAsyncRes(id: any, arg?: any, error?: boolean) {
+    private onCpcAsyncRes(id: any, arg?: any, error?: boolean) {
         let res = this.#syncReturnQueue.takeAsyncItem(id);
         if (!res) return this.onCpcError(new CpcError("Invalid async ID"));
 
         this.handleAwait(res, arg, error);
     }
-    protected onCpcCall(cmd: string | number, args: any[], ignoreReturn?: boolean) {
+    private onCpcCall(cmd: any, args: any[], ignoreReturn?: boolean) {
         let fx = this.#licensers.get(cmd);
         if (typeof fx !== "function") {
             if (ignoreReturn) return;
@@ -177,10 +174,79 @@ export abstract class Cpc<
         if (res instanceof Promise) return this.#handelReturnAsync(res);
         this.beforeSendReturn(res, isError);
     }
-    protected onCpcEnd() {
+    private onCpcEnd() {
         if (this.#end) return;
         this.finalEnd();
     }
+    protected onCpcFrame(frame: CpcFrame) {
+        switch (frame[0]) {
+            case FrameType.call: {
+                const [cmd, ...args] = frame[1];
+                this.onCpcCall(cmd, args);
+                break;
+            }
+
+            case FrameType.exec: {
+                const [type, cmd, ...args] = frame;
+                this.onCpcCall(cmd, args, true);
+                break;
+            }
+
+            case FrameType.return:
+                this.onCpcReturn(frame[1]);
+                break;
+            case FrameType.throw:
+                this.onCpcReturn(frame[1], true, frame[1] === VOID);
+                break;
+            case FrameType.returnAsync:
+                this.onCpcReturnAsync(frame[1]);
+                break;
+            case FrameType.resolve:
+                this.onCpcAsyncRes(frame[1], frame[2]);
+                break;
+            case FrameType.reject:
+                this.onCpcAsyncRes(frame[1], frame[2], true);
+                break;
+
+            case FrameType.fin:
+                this.onCpcEnd();
+                break;
+            default:
+                this.onCpcError(new CpcUnknownFrameTypeError((frame as any)?.type));
+                break;
+        }
+    }
+
+    /**
+     * send
+     */
+    protected abstract sendFrame(frame: CpcFrame): void;
+    private sendAsyncRes(id: number, arg?: any, error?: boolean | undefined): void {
+        const frame: F_asyncRes = [error ? FrameType.reject : FrameType.resolve, id, arg];
+        this.sendFrame(frame);
+    }
+    private sendCall(command: any, args: any[] = [], ignoreReturn?: boolean): void {
+        const frame: F_call = [ignoreReturn ? FrameType.exec : FrameType.call, [command, ...args]];
+        this.sendFrame(frame);
+    }
+    private sendEnd(): void {
+        const frame: F_end = [FrameType.fin];
+        this.sendFrame(frame);
+    }
+    private sendReturn(value: any, error?: boolean, isNoExist?: boolean): void {
+        if (error) {
+            const frame: F_throw = [FrameType.throw, isNoExist ? VOID : value];
+            this.sendFrame(frame);
+        } else {
+            let frame: F_return = [FrameType.return, value];
+            this.sendFrame(frame);
+        }
+    }
+    private sendReturnAsync(id: any): void {
+        let frame: F_returnAsync = [FrameType.returnAsync, id];
+        this.sendFrame(frame);
+    }
+
     protected testClose() {
         if (this.closeable) this.dispose();
     }
@@ -203,12 +269,6 @@ export abstract class Cpc<
     }
     /** 等待异步发送的堆 */
     readonly #sendingUniqueKey: UniqueKeyMap;
-}
-
-export interface CpcEvents {
-    end(msg?: string): void;
-    close(): void;
-    error(error: Error): void;
 }
 
 interface CallOptions {}
@@ -237,3 +297,11 @@ type GetVoidFn<T> = T extends () => any ? T : never;
 type GetCmds<T> = keyof PickFn<T>;
 type GetVoidCmds<T extends object> = keyof PickVoidFn<T>;
 type GetAnyVoidCmd<T> = T extends CpcCmdList ? string | number : never;
+
+type F_call = [type: FrameType.call | FrameType.exec, args: any[]];
+type F_return = [type: FrameType.return, value: any];
+type F_throw = [type: FrameType.throw, value: any];
+type F_returnAsync = [type: FrameType.returnAsync, id: number];
+type F_asyncRes = [type: FrameType.reject | FrameType.resolve, id: number, value: any];
+type F_end = [type: FrameType.fin];
+export type CpcFrame = F_call | F_asyncRes | F_returnAsync | F_end | F_return | F_throw;

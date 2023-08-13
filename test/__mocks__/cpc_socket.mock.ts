@@ -1,5 +1,5 @@
 import { Duplex, Readable } from "node:stream";
-import { CpcSocket } from "#rt/socket_cpc.js";
+import { createSocketCpc } from "#rt/node.js";
 import { vi } from "vitest";
 import { CpcMocks } from "./cpc.mock.js";
 import { Cpc, CpcCmdList } from "#rt/cpc.js";
@@ -26,7 +26,7 @@ export function getNoResponseCpc() {
             callback();
         },
     });
-    return new CpcSocket(clientSocket);
+    return createSocketCpc(clientSocket);
 }
 /** 模拟两个已连接的 CpcSocket */
 export function createConnectedFcp(
@@ -34,8 +34,8 @@ export function createConnectedFcp(
     setServerCmd?: Record<string, (...args: any[]) => any>
 ) {
     const { clientSocket, serverSocket } = createConnectedSocket();
-    const cpcServer = new CpcSocket(serverSocket);
-    const cpcClient = new CpcSocket(clientSocket);
+    const cpcServer = createSocketCpc(serverSocket);
+    const cpcClient = createSocketCpc(clientSocket);
     const onErr = vi.fn();
     cpcClient.on("error", onErr);
     cpcServer.on("error", onErr);

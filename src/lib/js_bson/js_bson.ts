@@ -1,5 +1,5 @@
 import type { StreamReader, StreamWriter } from "../stream_util.js";
-import { DataType, UnsupportedDataTypeError } from "./bson.type.js";
+import { DataType, UnsupportedDataTypeError, VOID } from "./bson.type.js";
 import { BsonScanItem, JBSONScanner } from "./scanner.js";
 import { JBSONReader, JBSONWriter } from "./transformer.js";
 export * from "./scanner.js";
@@ -55,20 +55,23 @@ async function* scanMap(read: StreamReader): AsyncGenerator<BsonScanItem, void, 
     return map as any;
 }
 
-type BSONData = Buffer | ArrayBufferView | ArrayBuffer;
-
 export const JBSON = {
-    toArray<T = unknown[]>(buffer: BSONData, offset = 0): T {
-        if (buffer instanceof ArrayBuffer) buffer = Buffer.from(buffer);
-        else if (!Buffer.isBuffer(buffer)) buffer = Buffer.from(buffer.buffer);
+    toArray<T = unknown>(buffer: Buffer, offset: number = 0): T[] {
+        if (!Buffer.isBuffer(buffer)) throw new Error("第一个参数应该是Buffer类型");
 
-        return syncReader[DataType.array](buffer as Buffer, offset)[0] as any;
+        return syncReader[DataType.array](buffer, offset)[0];
     },
-    toMap<T = Record<string, unknown>>(buffer: BSONData, offset = 0): T {
-        if (buffer instanceof ArrayBuffer) buffer = Buffer.from(buffer);
-        else if (!Buffer.isBuffer(buffer)) buffer = Buffer.from(buffer.buffer);
+    toMap<T = Record<string, unknown>>(buffer: Buffer, offset = 0): T {
+        if (!Buffer.isBuffer(buffer)) throw new Error("第一个参数应该是Buffer类型");
 
-        return syncReader[DataType.map](buffer as Buffer, offset)[0] as any;
+        return syncReader[DataType.map](buffer, offset)[0] as T;
+    },
+    /**
+     * 读取一个Array项
+     */
+    toArrayItem<T = unknown>(buffer: Buffer, offset: number = 0): [T, number] {
+        if (!Buffer.isBuffer(buffer)) throw new Error("第一个参数应该是Buffer类型");
+        return syncReader.readArrayItem(buffer, offset);
     },
 
     scanArray,
@@ -84,23 +87,45 @@ export const JBSON = {
 
 const writer = new JBSONWriter();
 
-export function toArrayJBSON(arr: any[]) {
+/**
+ * @description 将对象转为 array 类型的 JBSON. 顶层不写入类型
+ * @param ignoreVoid 如果为true, 则在Array结束位置忽略写入Void类型(仅在顶层忽略写入)
+ */
+export function toArrayJBSON(arr: any[], ignoreVoid?: boolean) {
     const bufferList: Buffer[] = [];
     let totalSize = 0;
     const write: StreamWriter = function (data: Buffer) {
         bufferList.push(data);
         totalSize += data.byteLength;
     };
-    writer[DataType.array](arr, write);
+    writer[DataType.array](arr, write, ignoreVoid);
     return Buffer.concat(bufferList);
 }
-export function toMapJBSON(arr: object) {
+/**
+ * @description 将对象类型转为 map 类型的 JBSON. 顶层不写入类型
+ * @param ignoreVoid 如果为true, 则在Map结束位置忽略写入Void类型(仅在顶层忽略写入)
+ */
+export function toMapJBSON(arr: object, ignoreVoid?: boolean) {
     const bufferList: Buffer[] = [];
     let totalSize = 0;
     const write: StreamWriter = function (data: Buffer) {
         bufferList.push(data);
         totalSize += data.byteLength;
     };
-    writer[DataType.map](arr, write);
+    writer[DataType.map](arr, write, ignoreVoid);
+    return Buffer.concat(bufferList);
+}
+/**
+ * 转为Array项
+ */
+export function toArrayItemJBSON(data: any) {
+    const bufferList: Buffer[] = [];
+    let totalSize = 0;
+    const write: StreamWriter = function (data: Buffer) {
+        bufferList.push(data);
+        totalSize += data.byteLength;
+    };
+    writer.writeArrayItem(data, write);
+
     return Buffer.concat(bufferList);
 }

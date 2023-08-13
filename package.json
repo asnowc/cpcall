@@ -23,13 +23,12 @@
     "exports": {
         ".": "./out/cpc.js",
         "./lib/*": "./out/lib/*",
-        "./socket-cpc": "./out/socket_cpc.js",
-        "./ps-cpc": "./out/node_process_cpc.js",
-        "./ws-cpc": "./web_socket_cpc.js"
+        "./node": "./out/node/index.js",
+        "./web": "./ws_cpc.js"
     },
     "imports": {
         "#rt/*": "./out/*",
-        "#lib/*":"./out/lib/*"
+        "#lib/*": "./out/lib/*"
     },
     "publishConfig": {
         "access": "public",

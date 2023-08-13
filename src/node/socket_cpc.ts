@@ -1,7 +1,7 @@
 import { createReaderFromReadable } from "#lib/node_stream_util.js";
-import { Duplex } from "node:stream";
-import { StreamCpc } from "./cpcp/stream_cpc.js";
-import { CpcCmdList } from "./cpc/cpc.js";
+import type { Duplex } from "node:stream";
+import { StreamCpc } from "../cpc/stream_cpc.js";
+import type { CpcCmdList, Cpc } from "../cpc/cpc.js";
 
 /**
  * 事件触发顺序：end->close
@@ -12,7 +12,7 @@ import { CpcCmdList } from "./cpc/cpc.js";
  * `duplex` 的`end`和`close`事件会触发 Fcp 的`close`
  *
  */
-export class CpcSocket<
+class CpcSocket<
     CallableCmd extends CpcCmdList = CpcCmdList,
     CmdList extends CpcCmdList = CpcCmdList,
     Dp extends Duplex = Duplex
@@ -43,4 +43,9 @@ export class CpcSocket<
         else this.#duplex.destroy();
         return super.finalClose();
     }
+}
+export function createSocketCpc<CallableCmd extends CpcCmdList = CpcCmdList, CmdList extends CpcCmdList = CpcCmdList>(
+    duplex: Duplex
+): Cpc<CallableCmd, CmdList> {
+    return new CpcSocket(duplex);
 }

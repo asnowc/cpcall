@@ -47,8 +47,11 @@ export class DLD {
         return this.readBigIntCore(desc, buf);
     }
     //todo: 优化
-    static async readBigInt(read: StreamReader): Promise<bigint> {
-        const head = await read(1);
+    static async readBigInt(read: StreamReader, safe?: false): Promise<bigint>;
+    static async readBigInt(read: StreamReader, safe?: boolean): Promise<bigint | undefined>;
+    static async readBigInt(read: StreamReader, safe?: boolean) {
+        const head = await read(1, safe);
+        if (!head) return;
         if (head[0] === 0xff) return (await read(8)).readBigInt64BE();
         const desc = 0xff - head[0];
         if (desc > 0b111_1111) return BigInt(head[0] & 0b1111111);
@@ -65,8 +68,11 @@ export class DLD {
         const buf = await read(addLen);
         return this.readBigIntSync(Buffer.concat([head, buf]))[0];
     }
-    static async readNumber(read: StreamReader) {
-        let bigInt = await this.readBigInt(read);
+    static async readNumber(read: StreamReader, safe?: false): Promise<number>;
+    static async readNumber(read: StreamReader, safe?: boolean): Promise<number | undefined>;
+    static async readNumber(read: StreamReader, safe?: boolean) {
+        let bigInt = await this.readBigInt(read, safe);
+        if (bigInt === undefined) return;
         if (bigInt > Number.MAX_SAFE_INTEGER) throw new Error("Integer over maximum");
         return Number(bigInt);
     }

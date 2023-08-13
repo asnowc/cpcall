@@ -1,9 +1,10 @@
-import { CpcFrame, FrameCpc, CpcCmdList, JBSON, toArrayJBSON } from "./cpc.js";
+import { CpcFrame, Cpc, CpcCmdList } from "./cpc.js";
+import { sendCpcFrame, readCpcFrame } from "./cpc/transition_frame.js";
 
-export class WebSocketCpc<
-    CallableCmd extends object = CpcCmdList,
-    CmdList extends object = CpcCmdList
-> extends FrameCpc<CallableCmd, CmdList> {
+export class WebSocketCpc<CallableCmd extends object = CpcCmdList, CmdList extends object = CpcCmdList> extends Cpc<
+    CallableCmd,
+    CmdList
+> {
     static createConnect(url: string | URL, protocols?: string | string[]) {
         return new Promise<WebSocketCpc>(function (resolve, reject) {
             const socket = new WebSocket(url, protocols);
@@ -21,12 +22,12 @@ export class WebSocketCpc<
     private onMsg = (event: MessageEvent<ArrayBuffer>) => {
         const buf = event.data;
         if (buf instanceof ArrayBuffer) {
-            let offset = 0;
-            let frame = JBSON.toArray<CpcFrame>(buf, offset);
+            const frame = readCpcFrame(Buffer.from(buf));
             this.onCpcFrame(frame);
         }
     };
     protected sendFrame(frame: CpcFrame): void {
-        this.socket.send(toArrayJBSON(frame));
+        const chunks = sendCpcFrame(frame)[0];
+        this.socket.send(Buffer.concat(chunks));
     }
 }
