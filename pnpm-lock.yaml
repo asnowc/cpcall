@@ -4,11 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-dependencies:
-  cpcall:
-    specifier: 0.0.1-0
-    version: 0.0.1-0
-
 devDependencies:
   '@types/node':
     specifier: ^20.4.4
@@ -226,10 +221,6 @@ packages:
   /@types/node@20.4.4:
     resolution: {integrity: sha512-CukZhumInROvLq3+b5gLev+vgpsIqC2D0deQr/yS1WnxvmYLlJXZpaQrQiseMY+6xusl79E04UjWoqyr+t1/Ew==}
     dev: true
-
-  /cpcall@0.0.1-0:
-    resolution: {integrity: sha512-iC3ge9qp3NJsPw1MSICogpzBqFBS0/Tg5ovDJ5Y1wsbB5zGed0RBBMbTy5KFHlf8jpA7IIWz6jimMWC6UWyzeg==}
-    dev: false
 
   r2.cnpmjs.org/fsevents@2.3.2:
     resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==, registry: https://r.cnpmjs.org/, tarball: https://r2.cnpmjs.org/fsevents/-/fsevents-2.3.2.tgz}

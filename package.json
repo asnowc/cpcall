@@ -1,6 +1,6 @@
 {
     "name": "cpcall",
-    "version": "0.0.1-0",
+    "version": "0.0.1-1",
     "description": "",
     "type": "module",
     "scripts": {
@@ -9,10 +9,7 @@
         "test:ui": "vitest --ui",
         "test:coverage": "vitest --coverage --ui",
         "ci:test": "vitest run",
-        "publish test": "pnpm publish --no-git-checks --dry-run"
-    },
-    "dependencies": {
-        "cpcall": "0.0.1-0"
+        "publish:test": "pnpm publish --no-git-checks --dry-run"
     },
     "devDependencies": {
         "@types/node": "^20.4.4",
@@ -35,10 +32,11 @@
         "registry": "https://registry.npmjs.org"
     },
     "files": [
-        "**/out/**/*.js"
+        "**/out/**/*.js",
+        "**/out/**/*d.ts"
     ],
     "repository": {
         "type": "git",
-        "url": ""
+        "url": "https://github.com/asnow-c/cpcall"
     }
 }
