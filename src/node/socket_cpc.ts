@@ -13,8 +13,8 @@ import type { CpcCmdList, Cpc } from "../cpc/cpc.js";
  *
  */
 class CpcSocket<
-    CallableCmd extends CpcCmdList = CpcCmdList,
-    CmdList extends CpcCmdList = CpcCmdList,
+    CallableCmd extends object = CpcCmdList,
+    CmdList extends object = CpcCmdList,
     Dp extends Duplex = Duplex
 > extends StreamCpc<CallableCmd, CmdList> {
     #duplex: Dp;
@@ -44,7 +44,7 @@ class CpcSocket<
         return super.finalClose();
     }
 }
-export function createSocketCpc<CallableCmd extends CpcCmdList = CpcCmdList, CmdList extends CpcCmdList = CpcCmdList>(
+export function createSocketCpc<CallableCmd extends object = CpcCmdList, CmdList extends object = CpcCmdList>(
     duplex: Duplex
 ): Cpc<CallableCmd, CmdList> {
     return new CpcSocket(duplex);

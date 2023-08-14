@@ -21,7 +21,7 @@
     "exports": {
         ".": "./out/cpc.js",
         "./lib/*": "./out/lib/*",
-        "./node": "./out/node/index.js",
+        "./node": "./out/node.js",
         "./web": "./ws_cpc.js"
     },
     "imports": {
