@@ -22,7 +22,7 @@ export abstract class Cpc<
     CallList extends object = CpcCmdList,
     CmdList extends object = CpcCmdList,
     Ev extends object = {}
-> extends EventEmitter<Ev & CpcEvents> {
+> extends EventEmitter<Ev & CpcEvents extends CpcEvents ? Ev & CpcEvents : never> {
     constructor(maxAsyncId = 4294967295) {
         super();
         this.#sendingUniqueKey = new UniqueKeyMap(maxAsyncId);
@@ -64,7 +64,6 @@ export abstract class Cpc<
         this.#licensers.clear();
         this.#syncReturnQueue.rejectAllByClass(CpcFailRespondError);
         this.#syncReturnQueue.rejectAsyncAllByClass(CpcFailAsyncRespondError);
-
         this.emit("close", error);
     }
     /** 最后的End操作 */

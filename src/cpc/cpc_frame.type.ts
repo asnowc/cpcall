@@ -15,9 +15,9 @@ export enum FrameType {
 }
 
 export interface CpcEvents {
-    end(msg?: string): void;
-    close(): void;
-    error(error: Error): void;
+    end: [];
+    close: [error?: Error];
+    error: [error: Error];
 }
 
 export type CpcCmdList = {
