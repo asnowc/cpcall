@@ -21,8 +21,8 @@ export * from "./cpc_frame.type.js";
 export abstract class Cpc<
     CallList extends object = CpcCmdList,
     CmdList extends object = CpcCmdList,
-    Ev extends object = {}
-> extends EventEmitter<Ev & CpcEvents extends CpcEvents ? Ev & CpcEvents : never> {
+    Ev extends CpcEvents = CpcEvents
+> extends EventEmitter<Ev> {
     constructor(maxAsyncId = 4294967295) {
         super();
         this.#sendingUniqueKey = new UniqueKeyMap(maxAsyncId);

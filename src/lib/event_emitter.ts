@@ -1,4 +1,4 @@
-export class EventEmitter<R extends object = {}, T extends EventList = OmitEvents<R>> {
+export class EventEmitter<T extends EventList = {}> {
     #listeners = new Map<EventName, Set<EvListener>>();
     on<E extends keyof T, Fn extends T[E]>(name: E, fn: Fn): Fn;
     on<E extends EventName, Fn extends LimitEvListener<T, E>>(name: E, fn: Fn): Fn;
@@ -51,11 +51,8 @@ export class EventEmitter<R extends object = {}, T extends EventList = OmitEvent
 }
 type EvListener = (...args: any[]) => void;
 type EventName = string | symbol;
-type OmitEvents<T extends object> = {
-    [key in keyof T as T[key] extends any[] ? key : never]: T[key];
-};
 
-type EventList = {
+export type EventList = {
     [key: EventName]: any[];
 };
 

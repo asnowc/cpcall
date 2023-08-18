@@ -1,4 +1,4 @@
-import { CpcCmdList, Cpc, CpcFrame } from "./cpc.js";
+import { CpcCmdList, Cpc, CpcEvents, CpcFrame } from "./cpc.js";
 import { readCpcFrame, sendCpcFrame } from "../cpc/transition_frame.js";
 import { DLD, numToDLD, type StreamReader, type StreamWriter } from "#lib/stream_util.js";
 
@@ -7,10 +7,11 @@ export interface CpcStreamCtrl {
     write: StreamWriter;
     handshake?: number;
 }
-export class StreamCpc<CallableCmd extends object = CpcCmdList, CmdList extends object = CpcCmdList> extends Cpc<
-    CallableCmd,
-    CmdList
-> {
+export class StreamCpc<
+    CallableCmd extends object = CpcCmdList,
+    CmdList extends object = CpcCmdList,
+    Ev extends CpcEvents = CpcEvents
+> extends Cpc<CallableCmd, CmdList, Ev> {
     #read: StreamReader;
     #write: StreamWriter;
     constructor(streamCtrl: CpcStreamCtrl) {

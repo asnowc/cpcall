@@ -14,11 +14,11 @@ export enum FrameType {
     fin = 0b1111_1110,
 }
 
-export interface CpcEvents {
+export type CpcEvents = {
     end: [];
     close: [error?: Error];
     error: [error: Error];
-}
+};
 
 export type CpcCmdList = {
     [key: string | number]: (...args: any[]) => any;
