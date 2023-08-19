@@ -12,13 +12,6 @@ export const baseDataTypes = {
 };
 export type ObjectDataType = { data: any[]; expect(rawData: any, data: any, msg?: string | number): void };
 export const objectDataTypes = {
-    buffer: {
-        data: [Buffer.from("abcd", "ascii"), Buffer.from("")],
-        expect: (rawData: Buffer, data: any) => {
-            expect(data).instanceof(Buffer);
-            expect(data.toString("hex")).toBe(rawData.toString("hex"));
-        },
-    },
     arrayBuffer: {
         data: [new ArrayBuffer(5)],
         expect(rawData: ArrayBuffer, data: any) {

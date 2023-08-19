@@ -1,15 +1,22 @@
-import { StreamWriter, numToDLD, DLD } from "../stream_util.js";
+import { numToDLD, DLD } from "../dynamic_len_data.js";
 import { DataType, ObjectId, UnsupportedDataTypeError, VOID } from "./bson.type.js";
+import { numTransf, strTransf } from "./uit_array_util.js";
 
 export class JBSONReader {
     /** 如果读取到 void类型, 则返回VOID */
-    readArrayItem(read: Buffer, offset: number): [any, number] {
-        const type = read.readUint8(offset);
+    readArrayItem(read: Uint8Array, offset: number): [any, number] {
+        const type = read[offset];
         if (type === DataType.void) return [VOID, 1];
         if (typeof this[type] !== "function") throw new UnsupportedDataTypeError(DataType[type] ?? type);
         const data = this[type](read, offset + 1);
         data[1]++;
         return data;
+    }
+    private uInt8Array(buf: Uint8Array, offset: number): [Uint8Array, number] {
+        const [lenDesc, len] = DLD.readNumberSync(buf, offset);
+        if (lenDesc <= 0) return [new Uint8Array(0), len];
+        offset += len;
+        return [buf.subarray(offset, lenDesc + offset), len + lenDesc];
     }
 
     [DataType.undefined](): [undefined, number] {
@@ -25,40 +32,43 @@ export class JBSONReader {
         return [false, 0];
     }
 
-    [DataType.int](read: Buffer, offset: number): [number, number] {
-        return [read.readInt32BE(offset), 4];
+    [DataType.int](read: Uint8Array, offset: number): [number, number] {
+        return [numTransf.readInt32BE(read, offset), 4];
     }
-    [DataType.bigint](read: Buffer, offset: number): [bigint, number] {
-        return [read.readBigInt64BE(offset), 8];
+    [DataType.bigint](read: Uint8Array, offset: number): [bigint, number] {
+        return [numTransf.readBigInt64BE(read, offset), 8];
     }
-    [DataType.double](buf: Buffer, offset: number): [number, number] {
-        return [buf.readDoubleBE(offset), 8];
+    [DataType.double](buf: Uint8Array, offset: number): [number, number] {
+        return [numTransf.readDoubleBE(buf, offset), 8];
     }
 
-    [DataType.objectId](buf: Buffer, offset: number): [ObjectId, number] {
+    [DataType.objectId](buf: Uint8Array, offset: number): [ObjectId, number] {
         const data = DLD.readBigIntSync(buf, offset);
         (data as any)[0] = new ObjectId(data[0]);
         return data as any;
     }
 
-    [DataType.arrayBuffer](buf: Buffer, offset: number): [ArrayBuffer, number] {
-        const [buffer, len] = this[DataType.buffer](buf, offset);
-        const arrayBuffer = new ArrayBuffer(buffer.byteLength);
-        const view = Buffer.from(arrayBuffer);
-        view.set(buffer);
-        return [arrayBuffer, len];
+    [DataType.arrayBuffer](buf: Uint8Array, offset: number): [ArrayBuffer, number] {
+        const [lenDesc, len] = DLD.readNumberSync(buf, offset);
+        if (lenDesc <= 0) return [new ArrayBuffer(0), len];
+        offset += len;
+        const arrayBuffer = new ArrayBuffer(lenDesc);
+        const view = new Uint8Array(arrayBuffer);
+        view.set(buf.subarray(offset, offset + lenDesc));
+
+        return [arrayBuffer, len + lenDesc];
     }
-    [DataType.string](buf: Buffer, offset: number): [string, number] {
-        const [buffer, len] = this[DataType.buffer](buf, offset);
-        return [buffer.toString("utf-8"), len];
+    [DataType.string](buf: Uint8Array, offset: number): [string, number] {
+        const [buffer, len] = this.uInt8Array(buf, offset);
+        return [strTransf.readByUtf8(buffer), len];
     }
 
-    [DataType.regExp](buf: Buffer, offset: number): [RegExp, number] {
+    [DataType.regExp](buf: Uint8Array, offset: number): [RegExp, number] {
         const data = this[DataType.string](buf, offset);
         data[0] = new RegExp(data[0]) as any;
         return data as any;
     }
-    [DataType.array](buf: Buffer, offset: number): [any[], number] {
+    [DataType.array](buf: Uint8Array, offset: number): [any[], number] {
         let arrayList: unknown[] = [];
         const start = offset;
         while (offset < buf.byteLength) {
@@ -69,7 +79,7 @@ export class JBSONReader {
         }
         return [arrayList, offset - start];
     }
-    [DataType.map](buf: Buffer, offset: number): [object, number] {
+    [DataType.map](buf: Uint8Array, offset: number): [object, number] {
         const map: Record<string, unknown> = {};
         let key: string;
         const start = offset;
@@ -88,22 +98,14 @@ export class JBSONReader {
 
         return [map, offset - start];
     }
-    [DataType.buffer](buf: Buffer, offset: number): [Buffer, number] {
-        const [lenDesc, len] = DLD.readNumberSync(buf, offset);
-        if (lenDesc <= 0) return [Buffer.alloc(0), len];
-        offset += len;
 
-        let readLen = Number(lenDesc);
-        const data = buf.subarray(offset, readLen + offset);
-        return [data, len + readLen];
-    }
-    [DataType.error](buf: Buffer, offset: number): [Error, number] {
+    [DataType.error](buf: Uint8Array, offset: number): [Error, number] {
         let [{ message, cause, ...attr }, len] = this[DataType.map](buf, offset) as [Error, number];
         const error = new Error(message, { cause });
         Object.assign(error, attr);
         return [error, len];
     }
-    [key: number]: (buf: Buffer, offset: number) => [any, number];
+    [key: number]: (buf: Uint8Array, offset: number) => [any, number];
 }
 
 type DataWriter = (data: any, write: StreamWriter) => number;
@@ -133,7 +135,6 @@ export class JBSONWriter {
                 break;
             case "object":
                 if (Array.isArray(data)) type = DataType.array;
-                else if (data instanceof Buffer) type = DataType.buffer;
                 else if (data instanceof ArrayBuffer) type = DataType.arrayBuffer;
                 else if (data instanceof RegExp) type = DataType.regExp;
                 else if (data instanceof Error) type = DataType.error;
@@ -149,47 +150,47 @@ export class JBSONWriter {
     /** 支持写入void类型 */
     writeArrayItem(data: unknown, write: StreamWriter): number {
         if (data === VOID) {
-            write(Buffer.from([DataType.void]));
+            write(createDataTypeBuf(DataType.void));
             return 1;
         }
         const type = this.toType(data);
-        write(Buffer.from([type]));
+        write(createDataTypeBuf(type));
         if (this.isNoContentData(type)) return 1;
 
         if (typeof this[type] !== "function") throw new UnsupportedDataTypeError(DataType[type] ?? type);
         return this[type](data, write);
     }
     [DataType.int](data: number, write: StreamWriter) {
-        let buf = Buffer.allocUnsafe(4);
-        buf.writeInt32BE(data);
+        let buf = new Uint8Array(4);
+        numTransf.writeInt32BE(buf, data);
         write(buf);
         return 4;
     }
     [DataType.bigint](data: bigint, write: StreamWriter) {
-        let buf = Buffer.allocUnsafe(8);
-        buf.writeBigInt64BE(data);
+        let buf = new Uint8Array(8);
+        numTransf.writeBigInt64BE(buf, data);
         write(buf);
         return 8;
     }
     [DataType.double](data: number, write: StreamWriter) {
-        let buf = Buffer.allocUnsafe(8);
-        buf.writeDoubleBE(data);
+        let buf = new Uint8Array(8);
+        numTransf.writeDoubleBE(buf, data);
         write(buf);
         return 8;
     }
 
     [DataType.objectId](data: ObjectId, write: StreamWriter) {
-        const buf = data.toBuffer();
+        const buf = numToDLD(data.value);
         write(buf);
         return buf.byteLength;
     }
-    [DataType.arrayBuffer](data: ArrayBufferLike, write: StreamWriter) {
+    [DataType.arrayBuffer](data: ArrayBuffer, write: StreamWriter) {
         write(numToDLD(data.byteLength));
-        write(Buffer.from(data));
+        write(new Uint8Array(data));
         return data.byteLength;
     }
     [DataType.string](data: string, write: StreamWriter) {
-        return this[DataType.buffer](Buffer.from(data, "utf-8"), write);
+        return this[DataType.arrayBuffer](strTransf.writeByUtf8(data), write);
     }
 
     [DataType.regExp](data: RegExp, write: StreamWriter) {
@@ -201,7 +202,7 @@ export class JBSONWriter {
         for (let i = 0; i < array.length; i++) {
             writeTotalLen += this.writeArrayItem(array[i], write);
         }
-        if (!ignoreVoid) write(Buffer.from([DataType.void]));
+        if (!ignoreVoid) write(createDataTypeBuf(DataType.void));
         return writeTotalLen + 1;
     }
     [DataType.map](map: Record<string, any>, write: StreamWriter, ignoreVoid?: boolean): number {
@@ -210,13 +211,13 @@ export class JBSONWriter {
             const type = this.toType(data);
             {
                 //type
-                const typeBuf = Buffer.from([type]);
+                const typeBuf = createDataTypeBuf(type);
                 if (!typeBuf) throw new UnsupportedDataTypeError(type);
                 write(typeBuf);
                 writeTotalLen++;
 
                 ///key
-                const keyBuf = Buffer.from(key);
+                const keyBuf = strTransf.writeByUtf8(key);
                 const lenDesc = numToDLD(keyBuf.length);
                 write(lenDesc);
                 write(keyBuf);
@@ -228,14 +229,10 @@ export class JBSONWriter {
             if (typeof this[type] !== "function") throw new UnsupportedDataTypeError(DataType[type] ?? type);
             writeTotalLen += this[type](data, write);
         }
-        if (!ignoreVoid) write(Buffer.from([DataType.void]));
+        if (!ignoreVoid) write(createDataTypeBuf(DataType.void));
         return writeTotalLen + 1;
     }
-    [DataType.buffer](data: Buffer, write: StreamWriter) {
-        write(numToDLD(data.byteLength));
-        write(data as Buffer);
-        return data.byteLength;
-    }
+
     [DataType.error](error: Error, write: StreamWriter) {
         const errorMap = { ...error, message: error.message, name: error.name };
         if (error.cause) errorMap.cause = error.cause;
@@ -243,3 +240,10 @@ export class JBSONWriter {
     }
     [key: number]: DataWriter;
 }
+function createDataTypeBuf(type: number) {
+    const buf = new Uint8Array(1);
+    buf[0] = type;
+    return buf;
+}
+
+type StreamWriter = (chunk: Uint8Array) => void;

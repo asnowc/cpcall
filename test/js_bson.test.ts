@@ -91,7 +91,7 @@ describe("异步转换器", function () {
 });
 
 /** 固定 Buffer 的 StreamReader*/
-export function createFixedStreamReader(buffer: Buffer) {
+export function createFixedStreamReader(buffer: Uint8Array) {
     let offset = 0;
     return async function streamReader(size: number) {
         let end = offset + size;

@@ -1,13 +1,13 @@
-import { DLD } from "../stream_util.js";
-import type { StreamReader } from "../stream_util.js";
+import { DLD } from "../dynamic_len_data.js";
 import { DataType, ObjectId, UnsupportedDataTypeError, VOID } from "./bson.type.js";
-
+import { strTransf, numTransf } from "./uit_array_util.js";
+type StreamReader = (size: number) => Promise<Uint8Array>;
 type DataReader = (read: StreamReader) => Promise<unknown>;
 
 export class JBSONScanner {
     /** 如果读取到 void类型, 则返回VOID */
     async readArrayItem(read: StreamReader) {
-        const type = (await read(1)).readUint8();
+        const type = (await read(1))[0];
         if (type === DataType.void) return VOID;
         if (typeof this[type] !== "function") throw new UnsupportedDataTypeError(DataType[type] ?? type);
         return this[type](read);
@@ -27,13 +27,13 @@ export class JBSONScanner {
     }
 
     async [DataType.int](read: StreamReader) {
-        return (await read(4)).readInt32BE();
+        return numTransf.readInt32BE(await read(4));
     }
     async [DataType.bigint](read: StreamReader) {
-        return (await read(8)).readBigInt64BE();
+        return numTransf.readBigInt64BE(await read(8));
     }
     async [DataType.double](read: StreamReader) {
-        return (await read(8)).readDoubleBE();
+        return numTransf.readDoubleBE(await read(8));
     }
 
     async [DataType.objectId](read: StreamReader) {
@@ -42,15 +42,15 @@ export class JBSONScanner {
     }
 
     async [DataType.arrayBuffer](read: StreamReader): Promise<ArrayBuffer> {
-        const buffer = await this[DataType.buffer](read);
+        const buffer = await this.uInt8Array(read);
         const arrayBuffer = new ArrayBuffer(buffer.byteLength);
-        const view = Buffer.from(arrayBuffer);
+        const view = new Uint8Array(arrayBuffer);
         view.set(buffer);
         return arrayBuffer;
     }
     async [DataType.string](read: StreamReader): Promise<string> {
-        const buf = await this[DataType.buffer](read);
-        return buf.toString("utf-8");
+        const buf = await this.uInt8Array(read);
+        return strTransf.readByUtf8(buf);
     }
 
     async [DataType.regExp](read: StreamReader) {
@@ -70,7 +70,7 @@ export class JBSONScanner {
         const map: Record<string, unknown> = {};
         let key: string;
         while (true) {
-            const type = (await read(1)).readUint8();
+            const type = (await read(1))[0];
             if (type === DataType.void) break;
             key = (await this[DataType.string](read)) as string;
             if (typeof this[type] !== "function") throw new UnsupportedDataTypeError(DataType[type] ?? type);
@@ -79,10 +79,15 @@ export class JBSONScanner {
 
         return map as any;
     }
-    async [DataType.buffer](read: StreamReader) {
+    private async uInt8Array(read: StreamReader): Promise<Uint8Array> {
         const len = await DLD.readNumber(read);
-        if (len <= 0) return Buffer.alloc(0);
-        return read(Number(len));
+        if (len <= 0) return new Uint8Array(0);
+        let raw = await read(len);
+        if (raw.byteOffset !== 0) {
+            const arr = new Uint8Array(len);
+            arr.set(raw);
+            return arr;
+        } else return raw;
     }
     async [DataType.error](read: StreamReader) {
         const { message, cause, ...attr } = await this[DataType.map](read);

@@ -1,7 +1,13 @@
 import { CpcCmdList, Cpc, CpcEvents, CpcFrame } from "./cpc.js";
 import { readCpcFrame, sendCpcFrame } from "../cpc/transition_frame.js";
-import { DLD, numToDLD, type StreamReader, type StreamWriter } from "#lib/stream_util.js";
+import { DLD, numToDLD } from "#lib/dynamic_len_data.js";
 
+type StreamWriter = (chunk: Uint8Array) => void;
+export interface StreamReader {
+    (len: number, safe?: false): Promise<Uint8Array>;
+    (len: number, safe: true): Promise<Uint8Array | null>;
+    (len: number, safe?: boolean): Promise<Uint8Array | null>;
+}
 export interface CpcStreamCtrl {
     read: StreamReader;
     write: StreamWriter;
@@ -25,7 +31,7 @@ export class StreamCpc<
     }
     async #start(handshake?: number) {
         if (handshake && handshake > 0) {
-            this.#write(Buffer.alloc(handshake)); //HAND_SHAKE_LEN 个字节的 0, 握手机制, 确认连接
+            this.#write(new Uint8Array(handshake)); //HAND_SHAKE_LEN 个字节的 0, 握手机制, 确认连接
             if (!(await this.initCheck(handshake))) return;
         }
         return this.readFrame();

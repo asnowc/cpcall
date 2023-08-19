@@ -1,16 +1,18 @@
-import type { StreamReader, StreamWriter } from "../stream_util.js";
-import { DataType, UnsupportedDataTypeError, VOID } from "./bson.type.js";
+// import type { StreamReader } from "../stream_util.js";
+import { DataType, UnsupportedDataTypeError } from "./bson.type.js";
 import { BsonScanItem, JBSONScanner } from "./scanner.js";
 import { JBSONReader, JBSONWriter } from "./transformer.js";
 export * from "./scanner.js";
 export * from "./transformer.js";
+
+type StreamReader = (size: number) => Promise<Uint8Array>;
 
 const syncReader = new JBSONReader();
 const jbsonScanner = new JBSONScanner();
 
 async function* scanDataType(read: StreamReader) {
     do {
-        const type = (await read(1)).readUint8();
+        const type = (await read(1))[0];
         if (type === DataType.void) return;
         yield type;
     } while (true);
@@ -56,21 +58,21 @@ async function* scanMap(read: StreamReader): AsyncGenerator<BsonScanItem, void, 
 }
 
 export const JBSON = {
-    toArray<T = unknown>(buffer: Buffer, offset: number = 0): T[] {
-        if (!Buffer.isBuffer(buffer)) throw new Error("第一个参数应该是Buffer类型");
+    toArray<T = unknown>(buffer: Uint8Array, offset: number = 0): T[] {
+        if (!(buffer instanceof Uint8Array)) throw new Error("The parameter must be of Uint8Array type");
 
         return syncReader[DataType.array](buffer, offset)[0];
     },
-    toMap<T = Record<string, unknown>>(buffer: Buffer, offset = 0): T {
-        if (!Buffer.isBuffer(buffer)) throw new Error("第一个参数应该是Buffer类型");
+    toMap<T = Record<string, unknown>>(buffer: Uint8Array, offset = 0): T {
+        if (!(buffer instanceof Uint8Array)) throw new Error("The parameter must be of Uint8Array type");
 
         return syncReader[DataType.map](buffer, offset)[0] as T;
     },
     /**
      * 读取一个Array项
      */
-    toArrayItem<T = unknown>(buffer: Buffer, offset: number = 0): [T, number] {
-        if (!Buffer.isBuffer(buffer)) throw new Error("第一个参数应该是Buffer类型");
+    toArrayItem<T = unknown>(buffer: Uint8Array, offset: number = 0): [T, number] {
+        if (!(buffer instanceof Uint8Array)) throw new Error("The parameter must be of Uint8Array type");
         return syncReader.readArrayItem(buffer, offset);
     },
 
@@ -91,41 +93,53 @@ const writer = new JBSONWriter();
  * @description 将对象转为 array 类型的 JBSON. 顶层不写入类型
  * @param ignoreVoid 如果为true, 则在Array结束位置忽略写入Void类型(仅在顶层忽略写入)
  */
-export function toArrayJBSON(arr: any[], ignoreVoid?: boolean) {
-    const bufferList: Buffer[] = [];
-    let totalSize = 0;
-    const write: StreamWriter = function (data: Buffer) {
-        bufferList.push(data);
-        totalSize += data.byteLength;
-    };
+export function toArrayJBSON(arr: any[], ignoreVoid?: boolean): Uint8Array {
+    const [write, concat] = collectDebris();
     writer[DataType.array](arr, write, ignoreVoid);
-    return Buffer.concat(bufferList);
+    return concat();
 }
 /**
  * @description 将对象类型转为 map 类型的 JBSON. 顶层不写入类型
  * @param ignoreVoid 如果为true, 则在Map结束位置忽略写入Void类型(仅在顶层忽略写入)
  */
 export function toMapJBSON(arr: object, ignoreVoid?: boolean) {
-    const bufferList: Buffer[] = [];
-    let totalSize = 0;
-    const write: StreamWriter = function (data: Buffer) {
-        bufferList.push(data);
-        totalSize += data.byteLength;
-    };
+    const [write, concat] = collectDebris();
     writer[DataType.map](arr, write, ignoreVoid);
-    return Buffer.concat(bufferList);
+    return concat();
 }
 /**
  * 转为Array项
  */
 export function toArrayItemJBSON(data: any) {
-    const bufferList: Buffer[] = [];
+    const [write, concat] = collectDebris();
+    writer.writeArrayItem(data, write);
+    return concat();
+}
+
+function collectDebris(): [(data: Uint8Array) => void, () => Uint8Array] {
+    let bufferList: Uint8Array[] = [];
     let totalSize = 0;
-    const write: StreamWriter = function (data: Buffer) {
+    function write(data: Uint8Array) {
         bufferList.push(data);
         totalSize += data.byteLength;
-    };
-    writer.writeArrayItem(data, write);
+    }
+    function concat() {
+        if (bufferList.length === 1) {
+            let value = bufferList[0];
+            totalSize = 0;
+            bufferList = [];
+            return value;
+        }
+        const buf = new Uint8Array(totalSize);
+        let offset = 0;
+        for (let i = 0; i < bufferList.length; i++) {
+            buf.set(bufferList[i], offset);
+            offset += bufferList[i].byteLength;
+        }
+        totalSize = 0;
+        bufferList = [];
+        return buf;
+    }
 
-    return Buffer.concat(bufferList);
+    return [write, concat];
 }

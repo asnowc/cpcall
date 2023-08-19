@@ -1,5 +1,3 @@
-import { numToDLD } from "../stream_util.js";
-
 export enum DataType {
     void = 0,
     null = 1,
@@ -19,7 +17,6 @@ export enum DataType {
     function = 12,
     array = 13,
     map = 14,
-    buffer = 15,
 
     error = 16,
 }
@@ -40,9 +37,6 @@ export class ObjectId {
     }
     toString() {
         return this.#value.toString();
-    }
-    toBuffer(): Buffer {
-        return numToDLD(this.#value);
     }
 }
 
