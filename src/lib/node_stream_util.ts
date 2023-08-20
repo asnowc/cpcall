@@ -1,6 +1,5 @@
 import type { Duplex, Readable, Writable } from "node:stream";
 import type { ReadableByteStreamController } from "node:stream/web";
-import { StreamReader } from "./stream_util.js";
 import { ReadableStream, WritableStream } from "node:stream/web";
 
 function duplexToWebStream(duplex: Duplex) {
@@ -113,4 +112,9 @@ function concatBufferList(size: number, bufList: Buffer[]) {
     }
     while (offset < size) buf[offset++] = 0;
     return buf;
+}
+export interface StreamReader {
+    (len: number, safe?: false): Promise<Buffer>;
+    (len: number, safe: true): Promise<Buffer | null>;
+    (len: number, safe?: boolean): Promise<Buffer | null>;
 }

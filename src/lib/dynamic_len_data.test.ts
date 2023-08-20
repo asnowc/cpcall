@@ -1,5 +1,5 @@
 import { it, describe, expect } from "vitest";
-import { numToDLD, DLD } from "./stream_util.js";
+import { numToDLD, DLD } from "./dynamic_len_data.js";
 
 describe("DLD", function () {
     describe("numToDLD", function () {
@@ -20,6 +20,7 @@ describe("DLD", function () {
             expect(formatBin(buf), input.toString(16)).toBe(output);
         });
         it("负数", () => expect(() => numToDLD(-1)).toThrowError());
+        it("小数", () => expect(() => numToDLD(2.25)).toThrowError());
     });
     /** 极值 */
     const cases2 = [
@@ -62,7 +63,7 @@ describe("DLD", function () {
     });
 });
 
-function formatBin(num_buf: number | Buffer) {
+function formatBin(num_buf: number | Uint8Array) {
     let str = "";
     if (typeof num_buf === "number") {
         str = num_buf.toString(2);

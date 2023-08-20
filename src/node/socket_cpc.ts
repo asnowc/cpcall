@@ -4,17 +4,15 @@ import { StreamCpc } from "../cpc/stream_cpc.js";
 import type { CpcCmdList, Cpc } from "../cpc/cpc.js";
 
 /**
- * 事件触发顺序：end->close
- * end 触发后如果在调 call() 则会抛出异常
- *
- * `Fcp`依赖一个`Duplex`.
+ * @remark
+ * 依赖一个`Duplex`.
  * 如果 `duplex.writableEnded` || `duplex.readableEnded` || `duplex.destroyed` 为真，则 `Fcp`默认就是`closed`状态.
  * `duplex` 的`end`和`close`事件会触发 Fcp 的`close`
  *
  */
 class CpcSocket<
-    CallableCmd extends CpcCmdList = CpcCmdList,
-    CmdList extends CpcCmdList = CpcCmdList,
+    CallableCmd extends object = CpcCmdList,
+    CmdList extends object = CpcCmdList,
     Dp extends Duplex = Duplex
 > extends StreamCpc<CallableCmd, CmdList> {
     #duplex: Dp;
@@ -44,7 +42,12 @@ class CpcSocket<
         return super.finalClose();
     }
 }
-export function createSocketCpc<CallableCmd extends CpcCmdList = CpcCmdList, CmdList extends CpcCmdList = CpcCmdList>(
+/**
+ * @public
+ * @param duplex - 如果 `duplex.writableEnded` || `duplex.readableEnded` || `duplex.destroyed` 为真，则 `Fcp`默认就是`closed`状态.
+ * `duplex` 的`end`和`close`事件会触发 Fcp 的`close`
+ */
+export function createSocketCpc<CallableCmd extends object = CpcCmdList, CmdList extends object = CpcCmdList>(
     duplex: Duplex
 ): Cpc<CallableCmd, CmdList> {
     return new CpcSocket(duplex);

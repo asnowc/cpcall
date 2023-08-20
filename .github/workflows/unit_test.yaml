@@ -8,7 +8,7 @@ on:
             - release
             - main
 jobs:
-    build:
+    test:
         runs-on: ubuntu-latest
         steps:
             - uses: asnow-c/template@v1
@@ -20,3 +20,5 @@ jobs:
               run: pnpm ci:build
             - name: Unit test
               run: pnpm ci:test
+            - name: API extractor
+              run: pnpm api:extractor-all

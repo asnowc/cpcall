@@ -1,0 +1,15 @@
+{
+    "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
+    "extends": "./api-extractor.json",
+
+    "mainEntryPointFilePath": "<projectFolder>/out/ws_cpc.d.ts",
+    "apiReport": {
+        "enabled": true,
+        "reportFileName": "web.api.md",
+        "includeForgottenExports": false
+    },
+    "docModel": {
+        "enabled": false,
+        "apiJsonFilePath": "etc/web.api.json"
+    }
+}

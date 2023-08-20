@@ -1,10 +1,8 @@
-type EvListener = (...args: any[]) => any;
-
-export class EventEmitter<T extends object = Actions> {
-    #listeners = new Map<string | symbol, Set<EvListener>>();
-    on<E extends keyof PickFn<T>, Fn extends EvListener = GetFn<T[E]>>(name: E, fn: Fn): Fn;
-    on<Fn extends EvListener>(name: string | symbol, fn: Fn): Fn;
-    on(name: string | symbol, fn: EvListener) {
+export class EventEmitter<T extends EventList = {}> {
+    #listeners = new Map<EventName, Set<EvListener>>();
+    on<E extends keyof T, Fn extends T[E]>(name: E, fn: Fn): Fn;
+    on<E extends EventName, Fn extends LimitEvListener<T, E>>(name: E, fn: Fn): Fn;
+    on(name: EventName, fn: EvListener) {
         let list = this.#listeners.get(name);
         if (!list) {
             list = new Set();
@@ -13,15 +11,15 @@ export class EventEmitter<T extends object = Actions> {
         list.add(fn);
         return fn;
     }
-    off<E extends keyof PickFn<T>>(name: E, fn: Function): void;
-    off(name: string | symbol, fn: Function): void;
-    off(name: string | symbol, fn: EvListener) {
+    off<E extends keyof T>(name: E, fn: Function): void;
+    off(name: EventName, fn: Function): void;
+    off(name: EventName, fn: EvListener) {
         this.#listeners.get(name)?.delete(fn);
         return this;
     }
-    emit<E extends keyof PickFn<T>, Prams extends any[] = GetPrams<T[E]>>(name: E, ...args: Prams): boolean;
-    emit(name: string | symbol, ...args: any[]): boolean;
-    emit(name: string | symbol, ...args: any[]) {
+    emit<E extends keyof T, Prams extends T[E]>(name: E, ...args: Prams): boolean;
+    emit<E extends EventName, Prams extends LimitEmitPrams<T, E>>(name: E, ...args: Prams): boolean;
+    emit(name: EventName, ...args: any[]) {
         if (name === "error") return this.#emitError(args);
 
         const listeners = this.#listeners.get(name);
@@ -51,16 +49,17 @@ export class EventEmitter<T extends object = Actions> {
         }
     }
 }
+type EvListener = (...args: any[]) => void;
+type EventName = string | symbol;
 
-type Actions = {
-    [key: string | symbol]: EvListener;
+export type EventList = {
+    [key: EventName]: any[];
 };
 
-type GetPrams<T> = T extends EvListener ? Parameters<T> : never;
-type GetFn<T> = T extends EvListener ? T : never;
-type PickFn<T> = {
-    [key in keyof T as T[key] extends (...args: any[]) => any ? key : never]: T[key];
-};
+type LimitEmitPrams<T extends EventList, K> = K extends keyof T ? T[K] : any[];
+type LimitEvListener<T extends EventList, K extends EventName> = T[K] extends any[]
+    ? (...args: T[K]) => void
+    : EvListener;
 
 class EventError extends Error {
     constructor(cause: any) {

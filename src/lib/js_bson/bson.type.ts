@@ -1,5 +1,7 @@
-import { numToDLD } from "../stream_util.js";
-
+/**
+ * @public
+ * @remark JBSON 数据类型
+ */
 export enum DataType {
     void = 0,
     null = 1,
@@ -15,16 +17,17 @@ export enum DataType {
     arrayBuffer = 9,
     string = 10,
     regExp = 11,
-    /** @deprecated 暂不支持*/
+    /** @internal 暂不支持*/
     function = 12,
     array = 13,
     map = 14,
-    buffer = 15,
 
     error = 16,
 }
+/** @public */
 export class ObjectId {
     #value: bigint;
+    /** @remark ObjectId的原始值 */
     get value() {
         return this.#value;
     }
@@ -41,12 +44,16 @@ export class ObjectId {
     toString() {
         return this.#value.toString();
     }
-    toBuffer(): Buffer {
-        return numToDLD(this.#value);
-    }
 }
-
+/**
+ * @public
+ * @remark 代表void值，用于写入或响应 array 或 map 的结束标志
+ */
 export const VOID = Symbol("void");
+/**
+ * @public
+ * @remark 当读取到一个未知类型的错误
+ */
 export class UnsupportedDataTypeError extends Error {
     constructor(desc?: string | number) {
         super("Unsupported data type: " + desc);

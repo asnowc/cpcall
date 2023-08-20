@@ -1,8 +1,8 @@
-import { DLD, numToDLD } from "#lib/stream_util.js";
+import { DLD, numToDLD } from "#lib/dynamic_len_data.js";
 import { DataType, JBSON, VOID, toArrayJBSON, toArrayItemJBSON } from "#lib/js_bson.js";
 import { CpcFrame, CpcUnknownFrameTypeError, FrameType } from "./cpc.js";
 
-export function readCpcFrame(frame: Buffer): CpcFrame {
+export function readCpcFrame(frame: Uint8Array): CpcFrame {
     const type: FrameType = frame[0];
     if (type === FrameType.call || type === FrameType.exec) {
         const args = JBSON.toArray(frame, 1);
@@ -35,9 +35,9 @@ export function readCpcFrame(frame: Buffer): CpcFrame {
     }
 }
 
-export function sendCpcFrame(frame: CpcFrame): [Buffer[], number] {
+export function sendCpcFrame(frame: CpcFrame): [Uint8Array[], number] {
     const type = frame[0];
-    const writeList: Buffer[] = [Buffer.from([type])];
+    const writeList: Uint8Array[] = [createTypeFlagBuf(type)];
     let contentLen = 1;
     if (type === FrameType.call || type === FrameType.exec) {
         const argBuf = toArrayJBSON(frame[1], true);
@@ -61,7 +61,7 @@ export function sendCpcFrame(frame: CpcFrame): [Buffer[], number] {
             case FrameType.throw: {
                 //isNoExist
                 if (frame[1] === VOID) {
-                    writeList.push(Buffer.from([DataType.void])); //write void
+                    writeList.push(createTypeFlagBuf(DataType.void)); //write void
                     contentLen += 1;
                 } else {
                     const valueBuf = toArrayItemJBSON(frame[1]);
@@ -79,4 +79,9 @@ export function sendCpcFrame(frame: CpcFrame): [Buffer[], number] {
         }
     }
     return [writeList, contentLen];
+}
+function createTypeFlagBuf(type: number) {
+    const t = new Uint8Array(1);
+    t[0] = type;
+    return t;
 }
