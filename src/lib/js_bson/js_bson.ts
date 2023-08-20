@@ -2,8 +2,6 @@
 import { DataType, UnsupportedDataTypeError } from "./bson.type.js";
 import { BsonScanItem, JBSONScanner } from "./scanner.js";
 import { JBSONReader, JBSONWriter } from "./transformer.js";
-export * from "./scanner.js";
-export * from "./transformer.js";
 
 type StreamReader = (size: number) => Promise<Uint8Array>;
 
@@ -57,41 +55,42 @@ async function* scanMap(read: StreamReader): AsyncGenerator<BsonScanItem, void, 
     return map as any;
 }
 
-export const JBSON = {
-    toArray<T = unknown>(buffer: Uint8Array, offset: number = 0): T[] {
+/** @public */
+export class JBSON {
+    static toArray<T = unknown>(buffer: Uint8Array, offset: number = 0): T[] {
         if (!(buffer instanceof Uint8Array)) throw new Error("The parameter must be of Uint8Array type");
 
         return syncReader[DataType.array](buffer, offset)[0];
-    },
-    toMap<T = Record<string, unknown>>(buffer: Uint8Array, offset = 0): T {
+    }
+    static toMap<T = Record<string, unknown>>(buffer: Uint8Array, offset = 0): T {
         if (!(buffer instanceof Uint8Array)) throw new Error("The parameter must be of Uint8Array type");
 
         return syncReader[DataType.map](buffer, offset)[0] as T;
-    },
+    }
     /**
      * 读取一个Array项
      */
-    toArrayItem<T = unknown>(buffer: Uint8Array, offset: number = 0): [T, number] {
+    static toArrayItem<T = unknown>(buffer: Uint8Array, offset: number = 0): [T, number] {
         if (!(buffer instanceof Uint8Array)) throw new Error("The parameter must be of Uint8Array type");
         return syncReader.readArrayItem(buffer, offset);
-    },
+    }
+    static scanMap = scanMap;
+    static scanArray = scanArray;
 
-    scanArray,
-    scanMap,
-
-    readArray<T = unknown>(read: StreamReader): Promise<T[]> {
+    static readArray<T = unknown>(read: StreamReader): Promise<T[]> {
         return jbsonScanner[DataType.array](read) as any;
-    },
-    readMap<T = unknown>(read: StreamReader): Promise<T> {
+    }
+    static readMap<T = unknown>(read: StreamReader): Promise<T> {
         return jbsonScanner[DataType.map](read) as any;
-    },
-};
+    }
+}
 
 const writer = new JBSONWriter();
 
 /**
- * @description 将对象转为 array 类型的 JBSON. 顶层不写入类型
- * @param ignoreVoid 如果为true, 则在Array结束位置忽略写入Void类型(仅在顶层忽略写入)
+ * @public
+ * @remark 将对象转为 array 类型的 JBSON. 顶层不写入类型
+ * @param ignoreVoid - 如果为true, 则在Array结束位置忽略写入Void类型(仅在顶层忽略写入)
  */
 export function toArrayJBSON(arr: any[], ignoreVoid?: boolean): Uint8Array {
     const [write, concat] = collectDebris();
@@ -99,8 +98,9 @@ export function toArrayJBSON(arr: any[], ignoreVoid?: boolean): Uint8Array {
     return concat();
 }
 /**
- * @description 将对象类型转为 map 类型的 JBSON. 顶层不写入类型
- * @param ignoreVoid 如果为true, 则在Map结束位置忽略写入Void类型(仅在顶层忽略写入)
+ * @public
+ * @remark 将对象类型转为 map 类型的 JBSON. 顶层不写入类型
+ * @param ignoreVoid - 如果为true, 则在Map结束位置忽略写入Void类型(仅在顶层忽略写入)
  */
 export function toMapJBSON(arr: object, ignoreVoid?: boolean) {
     const [write, concat] = collectDebris();
@@ -108,7 +108,8 @@ export function toMapJBSON(arr: object, ignoreVoid?: boolean) {
     return concat();
 }
 /**
- * 转为Array项
+ * @public
+ * @remark 转为JBSON的 Array 项
  */
 export function toArrayItemJBSON(data: any) {
     const [write, concat] = collectDebris();

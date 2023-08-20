@@ -3,16 +3,25 @@ import { readCpcFrame, sendCpcFrame } from "../cpc/transition_frame.js";
 import { DLD, numToDLD } from "#lib/dynamic_len_data.js";
 
 type StreamWriter = (chunk: Uint8Array) => void;
+/**
+ * @public
+ */
 export interface StreamReader {
     (len: number, safe?: false): Promise<Uint8Array>;
     (len: number, safe: true): Promise<Uint8Array | null>;
     (len: number, safe?: boolean): Promise<Uint8Array | null>;
 }
+/**
+ * @public
+ */
 export interface CpcStreamCtrl {
     read: StreamReader;
     write: StreamWriter;
     handshake?: number;
 }
+/**
+ * @public
+ */
 export class StreamCpc<
     CallableCmd extends object = CpcCmdList,
     CmdList extends object = CpcCmdList,

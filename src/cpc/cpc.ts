@@ -14,9 +14,10 @@ import { VOID } from "#lib/js_bson.js";
 export * from "./cpc_frame.type.js";
 
 /**
+ * @public
  * @description Cross-process call (跨进程调用-CPC)
  *
- * 事件触发顺序：end->close
+ * 事件触发顺序：end \> close
  */
 export abstract class Cpc<
     CallList extends object = CpcCmdList,
@@ -91,8 +92,7 @@ export abstract class Cpc<
     }
 
     /**
-     * @param options 执行选项
-     *
+     * @param options - 执行选项
      * @throws {CpcUnregisteredCommandError} 调用未注册的命令
      * @throws {CpcFailRespondError}  在返回前断开连接
      * @throws {CpcFailAsyncRespondError} 已返回 AsyncId (命令已被执行), 但Promise状态在变化前断开连接
@@ -303,4 +303,6 @@ type F_throw = [type: FrameType.throw, value: any];
 type F_returnAsync = [type: FrameType.returnAsync, id: number];
 type F_asyncRes = [type: FrameType.reject | FrameType.resolve, id: number, value: any];
 type F_end = [type: FrameType.fin];
+
+/** @public */
 export type CpcFrame = F_call | F_asyncRes | F_returnAsync | F_end | F_return | F_throw;

@@ -5,12 +5,15 @@
     "type": "module",
     "scripts": {
         "build": "tsc -p tsconfig.build.json && tsc -p web/tsconfig.json",
+        "build:line": "pnpm build && pnpm api:extractor-all && pnpm publish:test",
         "test": "vitest",
         "test:ui": "vitest --ui",
         "test:coverage": "vitest --coverage --ui",
         "ci:test": "vitest run",
         "ci:build": "pnpm build",
-        "publish:test": "pnpm publish --no-git-checks --dry-run"
+        "publish:test": "pnpm publish --no-git-checks --dry-run",
+        "api:extractor": "api-extractor run -vlc",
+        "api:extractor-all": "pnpm api:extractor api/api-e.jbson.json && pnpm api:extractor api/api-e.cpc.json && pnpm api:extractor api/api-e.node.json &&  pnpm api:extractor api/api-e.web.json "
     },
     "devDependencies": {
         "@types/node": "^20.4.4",

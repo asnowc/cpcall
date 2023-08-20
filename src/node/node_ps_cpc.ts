@@ -7,10 +7,11 @@ interface NodeProcess extends EventEmitter {
 /** 进程通信Cpc */
 class NodeProcessCpc<CallList extends CpcCmdList = CpcCmdList, CmdList extends CpcCmdList = CpcCmdList> extends Cpc {
     /**
-     * @param noAdvSerialization NodeProcessCpc 使用二进制传送数据.
-     * 如果node进程不支持传送ArrayBuffer, 则可以设置 noAdvSerialization为 true, 这会将Arraybuffer 使用 ascii 编码转为字符串后传输
+     * @remark 创建Node进程 CPC 通信
+     * @param advSerialization - Node进程发送数据帧时默认将二进制转成ascii字符串后发再发送.
+     * 如果Node进程通信已开启高级序列号, advSerialization 传入 true 将直接使用二进制发送数据值
      */
-    constructor(private process: NodeProcess, private noAdvSerialization?: boolean) {
+    constructor(private process: NodeProcess, private advSerialization?: boolean) {
         super();
         if (typeof process.send !== "function") throw new Error();
         this.send = process.send;
@@ -30,26 +31,42 @@ class NodeProcessCpc<CallList extends CpcCmdList = CpcCmdList, CmdList extends C
     }
 
     private onData = (data: string | Buffer) => {
-        const bufData: Buffer = this.noAdvSerialization ? Buffer.from(data as string, "ascii") : (data as Buffer);
+        let bufData: Buffer;
+        if (this.advSerialization) bufData = data as Buffer;
+        else {
+            bufData = Buffer.allocUnsafe(data.length);
+            for (let i = 0; i < data.length; i++) {
+                bufData[i] = (data as string).charCodeAt(i);
+            }
+        }
         const frame: CpcFrame = readCpcFrame(bufData);
         this.onCpcFrame(frame);
     };
 
     protected sendFrame(frame: CpcFrame): void {
-        const chunks = sendCpcFrame(frame)[0];
-        let buffer: Buffer | string = Buffer.concat(chunks);
-        if (this.noAdvSerialization) buffer = buffer.toString("ascii");
-        this.send(buffer);
+        const [chunks, len] = sendCpcFrame(frame);
+        if (this.advSerialization) {
+            this.send(Buffer.concat(chunks));
+        } else {
+            let str = "";
+            for (let i = 0; i < chunks.length; i++) {
+                const chunk = chunks[i];
+                str += String.fromCharCode(...chunk);
+            }
+            this.send(str);
+        }
     }
 }
 
 /**
- * @param noAdvSerialization NodeProcessCpc 使用二进制传送数据.
- * 如果node进程不支持传送ArrayBuffer, 则可以设置 noAdvSerialization为 true, 这会将Arraybuffer 使用 ascii 编码转为字符串后传输
+ * @public
+ * @remark 创建Node进程 CPC 通信
+ * @param advSerialization - Node进程发送数据帧时默认将二进制转成ascii字符串后发再发送.
+ * 如果Node进程通信已开启高级序列号, advSerialization 传入 true 将直接使用二进制发送数据值
  */
 export function createNodePsCpc<CallableCmd extends object = CpcCmdList, CmdList extends object = CpcCmdList>(
     process: NodeProcess,
-    noAdvSerialization?: boolean
+    advSerialization?: boolean
 ): Cpc<CallableCmd, CmdList> {
-    return new NodeProcessCpc(process, noAdvSerialization);
+    return new NodeProcessCpc(process, advSerialization);
 }
