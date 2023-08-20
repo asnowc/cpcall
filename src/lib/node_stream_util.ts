@@ -47,43 +47,83 @@ function writeableToWebStream(writeable: Writable) {
 export function createReaderFromReadable(readable: Readable): StreamReader {
     if (Object.hasOwn(readable, asyncStreamReadSymbol)) throw new Error("The stream has been controlled");
     (readable as any)[asyncStreamReadSymbol] = true;
+    readable.pause();
+
+    type WaitReaderHandle = {
+        resolve(buf: Buffer | null): void;
+        reject(reason?: any): void;
+        size: number;
+        safe?: boolean;
+    };
 
     let cacheTotal = 0;
     let cache: Buffer[] = [];
-    let iterable: AsyncIterableIterator<Buffer> = readable[Symbol.asyncIterator]();
-    let reading = false;
+    let handles: WaitReaderHandle[] = [];
+    let ended = false;
 
-    async function read(size: number): Promise<Buffer>;
-    async function read(size: number, safe: true): Promise<Buffer | null>;
-    async function read(size: number, safe?: boolean): Promise<Buffer | null> {
-        if (reading) throw new Error("不能连续读取");
-
-        reading = true;
-        do {
-            if (cacheTotal > size) {
-                cacheTotal -= size;
-                reading = false;
-                return concatBufferList(size, cache);
-            } else if (cacheTotal === size) {
-                let buf = cache.length === 1 ? cache[0] : Buffer.concat(cache);
-                cache = [];
-                cacheTotal = 0;
-                reading = false;
-                return buf;
+    function read(size: number): Promise<Buffer>;
+    function read(size: number, safe: boolean): Promise<Buffer | null>;
+    function read(size: number, safe?: boolean) {
+        if (size <= 0) throw new Error("size must be greater than 0");
+        return new Promise<Buffer | null>(function (resolve, reject) {
+            if (handles.length === 0) {
+                if (cacheTotal >= size) {
+                    const buf = concatBufferList(size, cache);
+                    cacheTotal -= size;
+                    resolve(buf);
+                    return;
+                } else if (ended) {
+                    if (safe) resolve(null);
+                    else reject(new Error("Stream is ended"));
+                    return;
+                }
             }
-
-            const { value, done } = await iterable.next();
-            if (done) break;
-            cache.push(value);
-            cacheTotal += value.byteLength;
-        } while (true);
-
-        cache = [];
-        cacheTotal = 0;
-        reading = false;
-        if (safe) return null;
-        else throw new Error("Stream is ended");
+            handles.push({ resolve, reject, size, safe: Boolean(safe) });
+        });
     }
+
+    function onReadable() {
+        if (handles.length <= 0) return;
+        const chunk: Buffer = readable.read();
+        if (!Buffer.isBuffer(chunk)) return;
+
+        cache.push(chunk);
+        cacheTotal += chunk.byteLength;
+        while (handles[0] && cacheTotal >= handles[0].size) {
+            const item = handles.shift()!;
+            const buf = concatBufferList(item.size, cache);
+            cacheTotal -= item.size;
+            item.resolve(buf);
+        }
+    }
+    function onEnd() {
+        ended = true;
+
+        readable.off("readable", onReadable);
+        readable.off("end", onEnd);
+        readable.off("close", onEnd);
+
+        for (let i = 0; i < handles.length; i++) {
+            if (handles[i].safe) handles[i].resolve(null);
+            else handles[i].reject(new Error("Stream is ended"));
+        }
+        handles = [];
+    }
+    if (!readable.readableEnded) {
+        readable.on("readable", onReadable);
+        readable.on("end", onEnd);
+        readable.on("close", onEnd);
+    } else ended = true;
+    function cancel(): null | Buffer {
+        onEnd();
+        if (cache.length) {
+            const buf = Buffer.concat(cache);
+            cache = [];
+            return buf;
+        }
+        return null;
+    }
+    read.cancel = cancel;
 
     return read;
 }
@@ -94,6 +134,8 @@ const asyncStreamReadSymbol = Symbol("asyncStreamRead");
  * 如果bufList中的buffer总长度小于size，则用0填充
  */
 function concatBufferList(size: number, bufList: Buffer[]) {
+    if (size === bufList[0].byteLength) return bufList.shift()!;
+
     const buf = Buffer.allocUnsafe(size);
     let offset = 0;
     for (let i = 0; i < bufList.length; i++) {
@@ -108,13 +150,16 @@ function concatBufferList(size: number, bufList: Buffer[]) {
             buf.set(chunk, offset);
             bufList.splice(0, i);
             return buf;
+        } else {
+            buf.set(chunk, offset);
+            offset += chunk.byteLength;
         }
     }
     while (offset < size) buf[offset++] = 0;
     return buf;
 }
 export interface StreamReader {
-    (len: number, safe?: false): Promise<Buffer>;
-    (len: number, safe: true): Promise<Buffer | null>;
-    (len: number, safe?: boolean): Promise<Buffer | null>;
+    (len: number): Promise<Buffer>;
+    (len: number, safe: boolean): Promise<Buffer | null>;
+    cancel(): null | Buffer;
 }

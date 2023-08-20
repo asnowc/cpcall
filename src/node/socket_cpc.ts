@@ -32,7 +32,6 @@ class CpcSocket<
         if (duplex.destroyed || duplex.writableEnded || duplex.readableEnded) {
             this.finalEnd();
         }
-        duplex.on("finish", () => this.end());
     }
 
     /** 最后的Fcp对象清理操作 */
