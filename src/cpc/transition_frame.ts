@@ -1,5 +1,4 @@
-import { DLD, numToDLD } from "#lib/dynamic_len_data.js";
-import { DataType, JBSON, VOID, toArrayJBSON, toArrayItemJBSON } from "#lib/js_bson.js";
+import { DataType, JBSON, VOID, toArrayJBSON, toArrayItemJBSON, DLD, numToDLD } from "#lib/js_bson.js";
 import { CpcFrame, CpcUnknownFrameTypeError, FrameType } from "./cpc.js";
 
 export function readCpcFrame(frame: Uint8Array): CpcFrame {

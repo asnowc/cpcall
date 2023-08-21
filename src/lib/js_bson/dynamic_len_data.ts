@@ -20,6 +20,10 @@ function readBigIntCore(desc: int, buf: Uint8Array): [bigint, int] {
     return [(BigInt(hi) << 32n) + BigInt(lo), len];
 }
 
+/**
+ * @public
+ * @remark 将二进制动态数据转为数字的类
+ */
 export class DLD {
     static readonly MAX_INT = Number.MAX_SAFE_INTEGER;
     static readonly MAX_BIG_ING = 0xffffffffffffffn;
@@ -151,6 +155,11 @@ function numberToDLD(value: int): Uint8Array {
     return buf;
 }
 const MAX_INT = 0xffffffff;
+
+/**
+ * @public
+ * @remark 将整数转为动态二进制数据
+ */
 export function numToDLD(data: number | bigint): Uint8Array {
     if (data < 0) throw new Error("The number cannot be less than 0");
     if (typeof data === "number") {
@@ -214,6 +223,7 @@ function concatUint8Array(arr: Uint8Array[], useLen?: int) {
     return buf;
 }
 
+/** @public */
 export interface StreamReader {
     (len: number, safe?: false): Promise<Uint8Array>;
     (len: number, safe: true): Promise<Uint8Array | null>;

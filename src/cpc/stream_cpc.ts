@@ -1,6 +1,6 @@
 import { CpcCmdList, Cpc, CpcEvents, CpcFrame } from "./cpc.js";
 import { readCpcFrame, sendCpcFrame } from "../cpc/transition_frame.js";
-import { DLD, numToDLD } from "#lib/dynamic_len_data.js";
+import { DLD, numToDLD } from "#lib/js_bson.js";
 
 type StreamWriter = (chunk: Uint8Array) => void;
 /**

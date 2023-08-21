@@ -1,4 +1,4 @@
-import { DLD } from "../dynamic_len_data.js";
+import { DLD } from "./dynamic_len_data.js";
 import { DataType, ObjectId, UnsupportedDataTypeError, VOID } from "./bson.type.js";
 import { strTransf, numTransf } from "./uit_array_util.js";
 type StreamReader = (size: number) => Promise<Uint8Array>;
@@ -116,4 +116,5 @@ interface BsonScanMapValue {
     value: AsyncGenerator<BsonScanItem, void, void>;
     isIterator: true;
 }
+/** @public */
 export type BsonScanItem = BsonScanArrayValue | BsonScanMapValue | BsonScanValue;

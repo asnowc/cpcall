@@ -1,4 +1,4 @@
-import { numToDLD, DLD } from "../dynamic_len_data.js";
+import { numToDLD, DLD } from "./dynamic_len_data.js";
 import { DataType, ObjectId, UnsupportedDataTypeError, VOID } from "./bson.type.js";
 import { numTransf, strTransf } from "./uit_array_util.js";
 
