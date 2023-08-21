@@ -4,6 +4,13 @@
 
 ```ts
 
+// Warning: (ae-forgotten-export) The symbol "BsonScanArrayValue" needs to be exported by the entry point js_bson.d.ts
+// Warning: (ae-forgotten-export) The symbol "BsonScanMapValue" needs to be exported by the entry point js_bson.d.ts
+// Warning: (ae-forgotten-export) The symbol "BsonScanValue" needs to be exported by the entry point js_bson.d.ts
+//
+// @public (undocumented)
+export type BsonScanItem = BsonScanArrayValue | BsonScanMapValue | BsonScanValue;
+
 // @public
 export enum DataType {
     // (undocumented)
@@ -40,14 +47,36 @@ export enum DataType {
     void = 0
 }
 
-// @public (undocumented)
-export class JBSON {
-    // Warning: (ae-forgotten-export) The symbol "StreamReader" needs to be exported by the entry point js_bson.d.ts
+// @public
+export class DLD {
+    // (undocumented)
+    static readonly MAX_BIG_ING = 72057594037927935n;
+    // (undocumented)
+    static readonly MAX_INT: number;
+    // (undocumented)
+    static readBigInt(read: StreamReader, safe?: false): Promise<bigint>;
+    // (undocumented)
+    static readBigInt(read: StreamReader, safe?: boolean): Promise<bigint | undefined>;
+    // (undocumented)
+    static readBigIntSync(buf: Uint8Array, offset?: number): [bigint, int];
+    // (undocumented)
+    static readNumber(read: StreamReader, safe?: false): Promise<number>;
+    // (undocumented)
+    static readNumber(read: StreamReader, safe?: boolean): Promise<number | undefined>;
+    // Warning: (ae-forgotten-export) The symbol "int" needs to be exported by the entry point js_bson.d.ts
     //
     // (undocumented)
-    static readArray<T = unknown>(read: StreamReader): Promise<T[]>;
+    static readNumberSync(buf: Uint8Array, offset?: number): [int, int];
+}
+
+// @public (undocumented)
+export class JBSON {
+    // Warning: (ae-forgotten-export) The symbol "StreamReader_2" needs to be exported by the entry point js_bson.d.ts
+    //
     // (undocumented)
-    static readMap<T = unknown>(read: StreamReader): Promise<T>;
+    static readArray<T = unknown>(read: StreamReader_2): Promise<T[]>;
+    // (undocumented)
+    static readMap<T = unknown>(read: StreamReader_2): Promise<T>;
     // Warning: (ae-forgotten-export) The symbol "scanArray" needs to be exported by the entry point js_bson.d.ts
     //
     // (undocumented)
@@ -63,6 +92,9 @@ export class JBSON {
     static toMap<T = Record<string, unknown>>(buffer: Uint8Array, offset?: number): T;
 }
 
+// @public
+export function numToDLD(data: number | bigint): Uint8Array;
+
 // @public (undocumented)
 export class ObjectId {
     constructor(value: bigint | number);
@@ -71,6 +103,16 @@ export class ObjectId {
     get value(): bigint;
     // (undocumented)
     valueOf(): bigint;
+}
+
+// @public (undocumented)
+export interface StreamReader {
+    // (undocumented)
+    (len: number, safe?: false): Promise<Uint8Array>;
+    // (undocumented)
+    (len: number, safe: true): Promise<Uint8Array | null>;
+    // (undocumented)
+    (len: number, safe?: boolean): Promise<Uint8Array | null>;
 }
 
 // @public

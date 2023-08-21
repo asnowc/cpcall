@@ -7,7 +7,7 @@ type StreamReader = (size: number) => Promise<Uint8Array>;
 
 const syncReader = new JBSONReader();
 const jbsonScanner = new JBSONScanner();
-
+export type { BsonScanItem };
 async function* scanDataType(read: StreamReader) {
     do {
         const type = (await read(1))[0];
