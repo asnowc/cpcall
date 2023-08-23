@@ -97,26 +97,42 @@ describe("createReaderFromReadable", function () {
     });
 
     describe("取消reader", function () {
-        test("缓存有剩余", async function () {
+        test("cancel()", function () {
             const { read, readable } = createMockRead();
             readable.push(Buffer.allocUnsafe(4));
-            await read(2);
+            readable.push(null);
 
-            const val = read.cancel();
+            read.cancel();
             expect(readable.isPaused(), "流处于暂停状态").toBeTruthy();
 
             /** 已经移除事件 */
             expect(readable.listenerCount("readable")).toBe(0);
             expect(readable.listenerCount("close")).toBe(0);
             expect(readable.listenerCount("end")).toBe(0);
-
-            expect(val).toBeInstanceOf(Buffer);
-            expect(val!.byteLength).toBe(2);
             expect(read.cancel()).toBe(null);
+        });
+        test("缓存有剩余", async function () {
+            const { read, readable } = createMockRead();
+            readable.push(Buffer.allocUnsafe(4));
+            readable.push(null);
+            await read(2);
+
+            const val = read.cancel() as Buffer;
+            expect(val!.byteLength).toBe(2);
         });
         test("缓存无剩余", async function () {
             const { read, readable } = createMockRead();
             expect(read.cancel()).toBe(null);
+        });
+        test("缓存推回Readable", async function () {
+            const { read, readable } = createMockRead();
+            const pms = read(4);
+            readable.push(Buffer.from("abcdefgh"));
+            await pms;
+            expect(read.cancel()).toBe(null);
+            readable.push(null);
+            expect(readable.readableLength).toBe(4); // efgh
+            expect(readable.read().toString()).toBe("efgh");
         });
     });
 }, 1000);

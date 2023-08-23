@@ -1,50 +1,10 @@
-import type { Duplex, Readable, Writable } from "node:stream";
-import type { ReadableByteStreamController } from "node:stream/web";
-import { ReadableStream, WritableStream } from "node:stream/web";
+import type { Readable } from "node:stream";
 
-function duplexToWebStream(duplex: Duplex) {
-    const read = readableToWebStream(duplex);
-    const write = writeableToWebStream(duplex);
-    return { read, write };
-}
-function readableToWebStream(readable: Readable) {
-    return new ReadableStream(
-        {
-            type: "bytes",
-            start(ctrl: ReadableByteStreamController) {
-                readable.on("readable", () => {
-                    let size = ctrl.desiredSize ?? undefined;
-                    if (readable.readableLength > 0 && (size === undefined || size > 0)) {
-                        ctrl.enqueue(readable.read(size));
-                    }
-                });
-            },
-            cancel(reason: any) {
-                readable.destroy(reason);
-            },
-        },
-        { highWaterMark: readable.readableHighWaterMark }
-    );
-}
-function writeableToWebStream(writeable: Writable) {
-    return new WritableStream(
-        {
-            abort(reason: any) {
-                writeable.destroy(reason);
-            },
-            close() {
-                writeable.end();
-            },
-            write(chunk: any, ctrl) {
-                writeable.write(chunk, (e) => {
-                    if (e) ctrl.error(e);
-                });
-            },
-        },
-        { highWaterMark: writeable.writableHighWaterMark }
-    );
-}
-export function createReaderFromReadable(readable: Readable): StreamReader {
+/**
+ * @public
+ * @remark 创建对 Readable 的 StreamScanner
+ */
+export function createReaderFromReadable(readable: Readable): StreamScanner {
     if (Object.hasOwn(readable, asyncStreamReadSymbol)) throw new Error("The stream has been controlled");
     (readable as any)[asyncStreamReadSymbol] = true;
     readable.pause();
@@ -70,8 +30,7 @@ export function createReaderFromReadable(readable: Readable): StreamReader {
                 if (cacheTotal >= size) {
                     const buf = concatBufferList(size, cache);
                     cacheTotal -= size;
-                    resolve(buf);
-                    return;
+                    return resolve(buf);
                 } else if (ended) {
                     if (safe) resolve(null);
                     else reject(new Error("Stream is ended"));
@@ -96,7 +55,7 @@ export function createReaderFromReadable(readable: Readable): StreamReader {
             item.resolve(buf);
         }
     }
-    function onEnd() {
+    function onEnd(reason?: any) {
         ended = true;
 
         readable.off("readable", onReadable);
@@ -105,7 +64,7 @@ export function createReaderFromReadable(readable: Readable): StreamReader {
 
         for (let i = 0; i < handles.length; i++) {
             if (handles[i].safe) handles[i].resolve(null);
-            else handles[i].reject(new Error("Stream is ended"));
+            else handles[i].reject(reason === undefined ? new Error("Stream is ended") : reason);
         }
         handles = [];
     }
@@ -114,12 +73,18 @@ export function createReaderFromReadable(readable: Readable): StreamReader {
         readable.on("end", onEnd);
         readable.on("close", onEnd);
     } else ended = true;
-    function cancel(): null | Buffer {
-        onEnd();
+    function cancel(reason?: any): null | Buffer {
+        onEnd(reason);
         if (cache.length) {
-            const buf = Buffer.concat(cache);
-            cache = [];
-            return buf;
+            if (readable.readableEnded) {
+                const buf = Buffer.concat(cache);
+                cache = [];
+                return buf;
+            } else {
+                for (let i = 0; i < cache.length; i++) readable.unshift(cache[i]);
+                cache = [];
+                return null;
+            }
         }
         return null;
     }
@@ -158,8 +123,19 @@ function concatBufferList(size: number, bufList: Buffer[]) {
     while (offset < size) buf[offset++] = 0;
     return buf;
 }
-export interface StreamReader {
-    (len: number): Promise<Buffer>;
-    (len: number, safe: boolean): Promise<Buffer | null>;
-    cancel(): null | Buffer;
+
+/**
+ * @public
+ * @remark 异步扫描器
+ */
+export interface StreamScanner<T = Buffer> {
+    /** @remark 读取指定长度，如果Stream不足该长度，则抛出异常 */
+    (len: number): Promise<T>;
+    /** @remark 安全读取指定长度，如果Stream不足该长度，则返回 null */
+    (len: number, safe: boolean): Promise<T | null>;
+    /**
+     * @remark 取消对流的扫描。
+     * 取消时如果流已经发出end事件，并且未完全扫描所有chunk则返回剩余未扫描的部分
+     */
+    cancel(reason?: any): null | T;
 }

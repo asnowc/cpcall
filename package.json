@@ -1,7 +1,11 @@
 {
     "name": "cpcall",
-    "version": "0.0.1-3",
+    "version": "0.0.1-4",
     "description": "",
+    "author": {
+        "name": "Asnow",
+        "url": "https://github.com/asnow-c"
+    },
     "type": "module",
     "scripts": {
         "build": "tsc -p tsconfig.build.json && tsc -p web/tsconfig.json",
