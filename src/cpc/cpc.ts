@@ -71,7 +71,7 @@ export abstract class Cpc<
     protected finalEnd() {
         this.#end = true;
         this.emit("end");
-        this.testClose();
+        this.closeable && this.dispose();
     }
     #licensers = new Map<string | number, CmdFx>();
     // setCmd(cmd: string | number, target: Cpc, insp?: (returns: any) => any): void;
@@ -121,6 +121,20 @@ export abstract class Cpc<
         if (this.#end) throw new Error("Cpc is ended");
         this.sendCall(command, args, true);
     }
+    #handelReturnAsync(pms: Promise<any>) {
+        const id = this.#sendingUniqueKey.allowKeySet(pms);
+        pms.then(
+            (data) => this.sendAsyncRes(id, data),
+            (err) => this.sendAsyncRes(id, err, true)
+        ).finally(() => {
+            this.#sendingUniqueKey.delete(id);
+            this.closeable && this.dispose();
+        });
+        this.sendReturnAsync(id);
+    }
+    /** 等待返回给对方的 Promise 队列 */
+    readonly #sendingUniqueKey: UniqueKeyMap;
+    /** 等待对方返回的 Promise 队列 */
     #syncReturnQueue = new SyncReturnQueue<CallOptions>();
 
     protected onCpcError(error: Error) {
@@ -132,7 +146,7 @@ export abstract class Cpc<
         else {
             handle.resolve(value);
         }
-        this.testClose();
+        this.closeable && this.dispose();
     }
     private beforeSendReturn(value: any, isError?: boolean): void {
         this.sendReturn(value, isError);
@@ -246,28 +260,22 @@ export abstract class Cpc<
         this.sendFrame(frame);
     }
 
-    protected testClose() {
-        if (this.closeable) this.dispose();
-    }
+    /**
+     * @remark Cpc 是否可正常关闭。Cpc需要等待各种队列清空
+     */
     protected get closeable() {
         if (!this.#end) return false;
-        if (this.#syncReturnQueue.hasItem || this.#sendingUniqueKey.size) return false;
+        if (this.waitingResultNum || this.waitingResponseNum) return false;
         return true;
     }
-
-    #handelReturnAsync(pms: Promise<any>) {
-        const id = this.#sendingUniqueKey.allowKeySet(pms);
-        pms.then(
-            (data) => this.sendAsyncRes(id, data),
-            (err) => this.sendAsyncRes(id, err, true)
-        ).finally(() => {
-            this.#sendingUniqueKey.delete(id);
-            this.testClose();
-        });
-        this.sendReturnAsync(id);
+    /** @remark 等待对方返回的Promise队列的数量 */
+    protected get waitingResultNum() {
+        return this.#syncReturnQueue.size;
     }
-    /** 等待异步发送的堆 */
-    readonly #sendingUniqueKey: UniqueKeyMap;
+    /** @remark 等待返回给对方的Promise队列的数量 */
+    protected get waitingResponseNum() {
+        return this.#sendingUniqueKey.size;
+    }
 }
 
 interface CallOptions {}

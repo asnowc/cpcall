@@ -35,8 +35,8 @@ export class ResponseQueue<T, J> extends PromiseQueue<T, J> {
 }
 export class SyncReturnQueue<T extends object = {}> extends PromiseQueue<any, any, T> {
     readonly asyncMap = new Map<number, PromiseHandel<any, any> & T>();
-    get hasItem() {
-        return this.length || this.asyncMap.size;
+    get size() {
+        return this.length + this.asyncMap.size;
     }
     swapInAsyncMap(id: number) {
         const item = this.shift();

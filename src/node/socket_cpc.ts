@@ -26,6 +26,7 @@ class CpcSocket<
             write: (buf: ArrayBufferView) => {
                 duplex.write(buf);
             },
+            isWriteable: () => !(duplex.closed || duplex.writableEnded),
             handshake: 5,
         });
         this.#duplex = duplex;

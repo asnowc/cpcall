@@ -26,7 +26,6 @@ export abstract class Cpc<CallList extends object = CpcCmdList_2, CmdList extend
     //
     // (undocumented)
     call<T extends GetCmds<CallList>, Fn extends CmdFx = GetFn<CallList[T]>>(cmd: T, arg: Parameters<Fn>, options: CallOptions): Promise<ReturnType<Fn>>;
-    // (undocumented)
     protected get closeable(): boolean;
     get closed(): boolean;
     dispose(error?: Error): void;
@@ -57,8 +56,8 @@ export abstract class Cpc<CallList extends object = CpcCmdList_2, CmdList extend
     //
     // (undocumented)
     setCmd<T extends GetCmds<CmdList>, Fn extends GetFn<CmdList[T]>>(cmd: T, fx: Fn): void;
-    // (undocumented)
-    protected testClose(): void;
+    protected get waitingResponseNum(): number;
+    protected get waitingResultNum(): number;
 }
 
 // @public
@@ -105,6 +104,8 @@ export type CpcFrame = F_call | F_asyncRes | F_returnAsync | F_end | F_return | 
 export interface CpcStreamCtrl {
     // (undocumented)
     handshake?: number;
+    // (undocumented)
+    isWriteable?: () => boolean;
     // (undocumented)
     read: StreamReader;
     // Warning: (ae-forgotten-export) The symbol "StreamWriter" needs to be exported by the entry point cpc.d.ts

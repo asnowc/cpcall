@@ -17,6 +17,7 @@ export interface StreamReader {
 export interface CpcStreamCtrl {
     read: StreamReader;
     write: StreamWriter;
+    isWriteable?: () => boolean;
     handshake?: number;
 }
 /**
@@ -29,14 +30,13 @@ export class StreamCpc<
 > extends Cpc<CallableCmd, CmdList, Ev> {
     #read: StreamReader;
     #write: StreamWriter;
+    #isWriteable: () => boolean;
     constructor(streamCtrl: CpcStreamCtrl) {
         super(2 ** 32 - 1);
         this.#read = streamCtrl.read;
         this.#write = streamCtrl.write;
-        this.#start(streamCtrl.handshake).then(
-            () => this.end(),
-            (error) => this.dispose(error)
-        );
+        this.#isWriteable = streamCtrl.isWriteable ?? (() => false);
+        this.#start(streamCtrl.handshake).catch((error) => this.dispose(error));
     }
     async #start(handshake?: number) {
         if (handshake && handshake > 0) {
@@ -61,19 +61,29 @@ export class StreamCpc<
         const read = this.#read;
         while (true) {
             const frameLen = await DLD.readNumber(read, true);
-            if (frameLen === undefined) break;
+            if (frameLen === undefined) break; // 流已结束或关闭
 
             const frameBuf = await read(frameLen);
             const frame = readCpcFrame(frameBuf);
             this.onCpcFrame(frame);
         }
+        if (!this.isEnded) this.finalEnd(); //对方未发送 fin 帧
+        if (!this.closed) {
+            //waitingResultNum可能不为0 (存在等待对方返回结果的Promise)，但是此时流已经 end
+            if (this.waitingResponseNum === 0) this.dispose(); //无等待响应
+            else if (!this.#isWriteable()) this.dispose(); //有等待响应并且流已经不可写
+        }
     }
 
     protected sendFrame(frame: CpcFrame) {
         const [chunks, totalLen] = sendCpcFrame(frame);
-        this.#write(numToDLD(totalLen));
-        for (let i = 0; i < chunks.length; i++) {
-            this.#write(chunks[i]);
+        try {
+            this.#write(numToDLD(totalLen));
+            for (let i = 0; i < chunks.length; i++) {
+                this.#write(chunks[i]);
+            }
+        } catch (error) {
+            this.dispose(new Error("Unable to write data", { cause: error }));
         }
     }
 }

@@ -107,4 +107,17 @@ describe.concurrent("状态更改/cpc_socket", function () {
         expect(s.socket.destroyed).toBeTruthy();
         expect(c.socket.destroyed).toBeTruthy();
     });
+    it("有等待响应,但对方已销毁流", async function () {
+        const { s, c } = getInitedStateConnectedCpc();
+        s.cpc.setCmd("neverRespond", () => new Promise(() => {}));
+        c.cpc.call("neverRespond").catch(() => {});
+        await nextMacaoTask();
+        c.socket.destroy(); //客户端未等待服务端响应, 直接销毁流
+
+        await nextMacaoTask();
+        expect(s.onEnd).toBeCalledTimes(1);
+
+        expectFcpClose(s.cpc, s.onClose);
+        expect(s.socket.destroyed).toBeTruthy();
+    });
 });
