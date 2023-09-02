@@ -2,7 +2,7 @@
     "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
     "extends": "./api-extractor.json",
 
-    "mainEntryPointFilePath": "<projectFolder>/out/cpc.d.ts",
+    "mainEntryPointFilePath": "<projectFolder>/packages/cpcall/index.d.ts",
     "apiReport": {
         "enabled": true,
         "reportFileName": "cpc.api.md",

@@ -1,0 +1,10 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@eavid/js-bson": ["./src/js_bson.js"]
+        },
+        "noEmit": true
+    }
+}

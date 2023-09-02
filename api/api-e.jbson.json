@@ -2,7 +2,7 @@
     "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
 
     "extends": "./api-extractor.json",
-    "mainEntryPointFilePath": "<projectFolder>/out/lib/js_bson.d.ts",
+    "mainEntryPointFilePath": "<projectFolder>/packages/js-bson/out/js_bson.d.ts",
     "apiReport": {
         "enabled": true,
         "reportFileName": "jbson.api.md",
