@@ -17,6 +17,10 @@
         "out/**/*.js",
         "out/**/*d.ts"
     ],
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://registry.npmjs.org"
+    },
     "keywords": [],
     "author": "Eavid",
     "license": "MIT"

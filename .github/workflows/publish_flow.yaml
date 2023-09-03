@@ -1,14 +1,8 @@
-name: Unit Test
+name: publish flow
 on:
-    pull_request:
-        types:
-            - opened
-            - reopened
-        branches:
-            - release
-            - main
+    push:
 jobs:
-    test:
+    publish-flow:
         runs-on: ubuntu-latest
         steps:
             - uses: ieavid/template@v1
@@ -22,3 +16,6 @@ jobs:
               run: pnpm ci:test
             - name: API extractor
               run: pnpm ci:api-extractor
+            - name: publish
+              if: ${{ github.ref_name == 'main'}}
+              run: pnpm publish --tag beta

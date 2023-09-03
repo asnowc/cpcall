@@ -1,6 +1,5 @@
 {
-    "name": "cpcall",
-    "version": "0.0.1-4",
+    "name": "workspace",
     "description": "",
     "type": "module",
     "scripts": {
@@ -11,7 +10,9 @@
         "ci:build": "cd packages/js-bson && pnpm build && cd ../cpcall && pnpm build",
         "ci:api-extractor": "api-extractor -vc api/api-e.jbson.json & api-extractor run -vc api/api-e.cpc.json",
         "api:extractor/js-bson": "api-extractor run -vlc api/api-e.jbson.json",
-        "api:extractor/cpcall": "api-extractor run -vlc api/api-e.cpc.json"
+        "api:extractor/cpcall": "api-extractor run -vlc api/api-e.cpc.json",
+        "publish": "pnpm -r publish",
+        "publish:test": "pnpm -r publish --no-git-checks --dry-run"
     },
     "devDependencies": {
         "@microsoft/api-extractor": "^7.36.4",
