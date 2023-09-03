@@ -20,7 +20,7 @@
         "./web": "./out/web/index.js"
     },
     "imports": {
-        "#lib/*": "./out/lib/*"
+        "#lib/*": "./out/core/lib/*"
     },
     "publishConfig": {
         "access": "public",
