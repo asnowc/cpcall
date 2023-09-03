@@ -1,0 +1,21 @@
+name: publish flow
+on:
+    push:
+jobs:
+    publish-flow:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: ieavid/template@v1
+              with:
+                  nodev: 20
+                  pnpmv: 8
+                  run_install: true
+            - name: build
+              run: pnpm ci:build
+            - name: Unit test
+              run: pnpm ci:test
+            - name: API extractor
+              run: pnpm ci:api-extractor
+            - name: publish
+              if: ${{ github.ref_name == 'main'}}
+              run: pnpm publish --tag beta

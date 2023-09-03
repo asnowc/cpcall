@@ -5,14 +5,9 @@
         "moduleResolution": "NodeNext",
         "lib": ["ESNext"],
         "strict": true,
-        "skipDefaultLibCheck": true,
-        "baseUrl": ".",
-        "paths": {
-            "#rt/*": ["./src/*"],
-            "#lib/*": ["./src/lib/*"]
-        },
-        "noEmit": true
+        "skipLibCheck": true,
+        "noEmit": true,
+        "isolatedModules": true
     },
-    "exclude": ["node_modules"],
-    "include": ["src", "test"]
+    "exclude": ["node_modules"]
 }

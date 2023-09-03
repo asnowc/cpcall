@@ -1,0 +1,27 @@
+{
+    "name": "@eavid/js-bson",
+    "version": "1.0.0-1",
+    "description": "",
+    "type": "module",
+    "scripts": {
+        "build": "tsc -p src/tsconfig.json",
+        "publish:test": "pnpm publish --no-git-checks --dry-run"
+    },
+    "exports": {
+        ".": {
+            "import": "./out/js_bson.js",
+            "types": "./out/js_bson.d.ts"
+        }
+    },
+    "files": [
+        "out/**/*.js",
+        "out/**/*d.ts"
+    ],
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://registry.npmjs.org"
+    },
+    "keywords": [],
+    "author": "Eavid",
+    "license": "MIT"
+}

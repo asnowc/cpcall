@@ -1,0 +1,40 @@
+{
+    "name": "cpcall",
+    "version": "0.0.1-4",
+    "description": "",
+    "author": {
+        "name": "Eavid",
+        "url": "https://github.com/ieavid"
+    },
+    "type": "module",
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "publish:test": "pnpm publish --no-git-checks --dry-run"
+    },
+    "devDependencies": {
+        "@types/node": "^20.4.4"
+    },
+    "exports": {
+        ".": "./out/core/cpc.js",
+        "./node": "./out/node/index.js",
+        "./web": "./out/web/index.js"
+    },
+    "imports": {
+        "#lib/*": "./out/core/lib/*"
+    },
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://registry.npmjs.org"
+    },
+    "files": [
+        "**/out/**/*.js",
+        "**/out/**/*d.ts"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ieavid/cpcall"
+    },
+    "dependencies": {
+        "@eavid/js-bson": "workspace:1.0.0-1"
+    }
+}
