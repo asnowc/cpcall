@@ -15,7 +15,7 @@ jobs:
             - name: Unit test
               run: pnpm ci:test
             - name: API extractor
-              run: pnpm ci:api-extractor
+              run: pnpm -r run api:extractor
             - name: publish
               if: ${{ github.ref_name == 'main'}}
-              run: pnpm publish --tag beta
+              run: pnpm ci:publish
