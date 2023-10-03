@@ -1,21 +1,17 @@
 {
-    "name": "workspace",
-    "description": "",
+    "name": "libs",
+    "version": "0.0.1",
     "type": "module",
     "scripts": {
         "test": "vitest",
         "test:ui": "vitest --ui",
         "test:coverage": "vitest --coverage --ui",
+        "ci:build": "pnpm run -r ci:build",
         "ci:test": "vitest run --coverage",
-        "ci:build": "cd packages/js-bson && pnpm build && cd ../cpcall && pnpm build",
-        "ci:api-extractor": "api-extractor -vc api/api-e.jbson.json & api-extractor run -vc api/api-e.cpc.json",
-        "api:extractor/js-bson": "api-extractor run -vlc api/api-e.jbson.json",
-        "api:extractor/cpcall": "api-extractor run -vlc api/api-e.cpc.json",
-        "publish": "pnpm -r publish",
-        "publish:test": "pnpm -r publish --no-git-checks --dry-run"
+        "ci:publish": "pnpm publish --tag beta -r",
+        "publish:test": "pnpm publish --no-git-checks --dry-run -r"
     },
     "devDependencies": {
-        "@microsoft/api-extractor": "^7.36.4",
         "@vitest/coverage-v8": "^0.33.0",
         "@vitest/ui": "^0.33.0",
         "vitest": "^0.33.0"

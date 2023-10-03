@@ -89,7 +89,7 @@ const writer = new JBSONWriter();
 
 /**
  * @public
- * @remark 将对象转为 array 类型的 JBSON. 顶层不写入类型
+ * @remarks 将对象转为 array 类型的 JBSON. 顶层不写入类型
  * @param ignoreVoid - 如果为true, 则在Array结束位置忽略写入Void类型(仅在顶层忽略写入)
  */
 export function toArrayJBSON(arr: any[], ignoreVoid?: boolean): Uint8Array {
@@ -99,7 +99,7 @@ export function toArrayJBSON(arr: any[], ignoreVoid?: boolean): Uint8Array {
 }
 /**
  * @public
- * @remark 将对象类型转为 map 类型的 JBSON. 顶层不写入类型
+ * @remarks 将对象类型转为 map 类型的 JBSON. 顶层不写入类型
  * @param ignoreVoid - 如果为true, 则在Map结束位置忽略写入Void类型(仅在顶层忽略写入)
  */
 export function toMapJBSON(arr: object, ignoreVoid?: boolean) {
@@ -109,7 +109,7 @@ export function toMapJBSON(arr: object, ignoreVoid?: boolean) {
 }
 /**
  * @public
- * @remark 转为JBSON的 Array 项
+ * @remarks 转为JBSON的 Array 项
  */
 export function toArrayItemJBSON(data: any) {
     const [write, concat] = collectDebris();

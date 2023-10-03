@@ -18,7 +18,7 @@ it("握手不通过", async function () {
     const { clientSocket, serverSocket } = createConnectedSocket();
     let cpc = createSocketCpc(clientSocket);
     let onError = vi.fn();
-    cpc.on("error", onError);
+    cpc.$error.on(onError);
 
     serverSocket.write(Buffer.from([0, 0, 3, 3]));
     await nextMacaoTask();

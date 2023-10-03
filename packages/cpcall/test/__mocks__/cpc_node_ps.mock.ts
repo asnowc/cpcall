@@ -13,8 +13,8 @@ export class PsCpcMocks extends CpcMocks {
         const cpcServer = createNodePsCpc(serverSocket);
         const cpcClient = createNodePsCpc(clientSocket);
         const onErr = vi.fn();
-        cpcClient.on("error", onErr);
-        cpcServer.on("error", onErr);
+        cpcClient.$error.on(onErr);
+        cpcServer.$error.on(onErr);
         (cpcClient as any).name = "client";
         (cpcServer as any).name = "server";
 

@@ -19,7 +19,7 @@ export class WebSocketCpc<CallableCmd extends object = CpcCmdList, CmdList exten
     private constructor(private socket: WebSocket) {
         super();
         socket.onmessage = this.onMsg;
-        socket.onerror = (e) => this.emit("error", new Error("websocket error", { cause: Event }));
+        socket.onerror = (e) => this.$error.emit(new Error("websocket error", { cause: Event }));
         socket.onclose = (e) => this.dispose();
     }
     private onMsg = (event: MessageEvent<ArrayBuffer>) => {

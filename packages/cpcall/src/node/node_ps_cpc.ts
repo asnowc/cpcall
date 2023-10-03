@@ -7,7 +7,7 @@ interface NodeProcess extends EventEmitter {
 /** 进程通信Cpc */
 class NodeProcessCpc<CallList extends CpcCmdList = CpcCmdList, CmdList extends CpcCmdList = CpcCmdList> extends Cpc {
     /**
-     * @remark 创建Node进程 CPC 通信
+     * @remarks 创建Node进程 CPC 通信
      * @param advSerialization - Node进程发送数据帧时默认将二进制转成ascii字符串后发再发送.
      * 如果Node进程通信已开启高级序列号, advSerialization 传入 true 将直接使用二进制发送数据值
      */
@@ -60,7 +60,7 @@ class NodeProcessCpc<CallList extends CpcCmdList = CpcCmdList, CmdList extends C
 
 /**
  * @public
- * @remark 创建Node进程 CPC 通信
+ * @remarks 创建Node进程 CPC 通信
  * @param advSerialization - Node进程发送数据帧时默认将二进制转成ascii字符串后发再发送.
  * 如果Node进程通信已开启高级序列号, advSerialization 传入 true 将直接使用二进制发送数据值
  */

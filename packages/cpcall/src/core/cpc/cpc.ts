@@ -1,9 +1,7 @@
-import { UniqueKeyMap } from "#lib/virtual_heap.js";
-import { EventEmitter } from "#lib/event_emitter.js";
+import { UniqueKeyMap } from "#lib/data_struct.js";
 import { PromiseHandel, SyncReturnQueue } from "./promise_queue.js";
 import {
     CpcError,
-    CpcEvents,
     CpcFailAsyncRespondError,
     CpcFailRespondError,
     CpcUnknownFrameTypeError,
@@ -11,21 +9,17 @@ import {
     FrameType,
 } from "./cpc_frame.type.js";
 import { VOID } from "@eavid/js-bson";
+import { Listenable } from "#lib/evlib.js";
 export * from "./cpc_frame.type.js";
 
 /**
  * @public
- * @description Cross-process call (跨进程调用-CPC)
+ * @remarks Cross-process call (跨进程调用-CPC)
  *
  * 事件触发顺序：end \> close
  */
-export abstract class Cpc<
-    CallList extends object = CpcCmdList,
-    CmdList extends object = CpcCmdList,
-    Ev extends CpcEvents = CpcEvents
-> extends EventEmitter<Ev> {
+export abstract class Cpc<CallList extends object = CpcCmdList, CmdList extends object = CpcCmdList> {
     constructor(maxAsyncId = 4294967295) {
-        super();
         this.#sendingUniqueKey = new UniqueKeyMap(maxAsyncId);
     }
     #closed: boolean = false;
@@ -47,6 +41,9 @@ export abstract class Cpc<
         this.sendEnd();
         this.finalEnd();
     }
+    $end = new Listenable<void>();
+    $closed = new Listenable<Error | undefined>();
+    $error = new Listenable<Error>();
 
     /**
      * 销毁Cpc实例，这将会调用 Duplex 的 end() 和 destroy()
@@ -55,7 +52,7 @@ export abstract class Cpc<
         if (this.closed) return;
         if (!this.#end) {
             this.#end = true;
-            this.emit("end");
+            this.$end.emit();
         }
         this.finalClose(error);
     }
@@ -65,12 +62,12 @@ export abstract class Cpc<
         this.#licensers.clear();
         this.#syncReturnQueue.rejectAllByClass(CpcFailRespondError);
         this.#syncReturnQueue.rejectAsyncAllByClass(CpcFailAsyncRespondError);
-        this.emit("close", error);
+        this.$closed.emit(error);
     }
     /** 最后的End操作 */
     protected finalEnd() {
         this.#end = true;
-        this.emit("end");
+        this.$end.emit();
         this.closeable && this.dispose();
     }
     #licensers = new Map<string | number, CmdFx>();
@@ -138,7 +135,7 @@ export abstract class Cpc<
     #syncReturnQueue = new SyncReturnQueue<CallOptions>();
 
     protected onCpcError(error: Error) {
-        this.emit("error", error);
+        this.$error.emit(error);
     }
 
     private handleAwait(handle: PromiseHandel<any, any> & CallOptions, value: any, error?: boolean) {
@@ -261,18 +258,18 @@ export abstract class Cpc<
     }
 
     /**
-     * @remark Cpc 是否可正常关闭。Cpc需要等待各种队列清空
+     * @remarks Cpc 是否可正常关闭。Cpc需要等待各种队列清空
      */
     protected get closeable() {
         if (!this.#end) return false;
         if (this.waitingResultNum || this.waitingResponseNum) return false;
         return true;
     }
-    /** @remark 等待对方返回的Promise队列的数量 */
+    /** @remarks 等待对方返回的Promise队列的数量 */
     protected get waitingResultNum() {
         return this.#syncReturnQueue.size;
     }
-    /** @remark 等待返回给对方的Promise队列的数量 */
+    /** @remarks 等待返回给对方的Promise队列的数量 */
     protected get waitingResponseNum() {
         return this.#sendingUniqueKey.size;
     }

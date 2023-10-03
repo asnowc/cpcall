@@ -1,4 +1,4 @@
-import { CpcCmdList, Cpc, CpcEvents, CpcFrame } from "./cpc.js";
+import { CpcCmdList, Cpc, CpcFrame } from "./cpc.js";
 import { readCpcFrame, sendCpcFrame } from "../cpc/transition_frame.js";
 import { DLD, numToDLD } from "@eavid/js-bson";
 
@@ -23,11 +23,10 @@ export interface CpcStreamCtrl {
 /**
  * @public
  */
-export class StreamCpc<
-    CallableCmd extends object = CpcCmdList,
-    CmdList extends object = CpcCmdList,
-    Ev extends CpcEvents = CpcEvents
-> extends Cpc<CallableCmd, CmdList, Ev> {
+export class StreamCpc<CallableCmd extends object = CpcCmdList, CmdList extends object = CpcCmdList> extends Cpc<
+    CallableCmd,
+    CmdList
+> {
     #read: StreamReader;
     #write: StreamWriter;
     #isWriteable: () => boolean;

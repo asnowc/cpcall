@@ -2,7 +2,7 @@ import type { Readable } from "node:stream";
 
 /**
  * @public
- * @remark 创建对 Readable 的 StreamScanner
+ * @remarks 创建对 Readable 的 StreamScanner
  */
 export function createReaderFromReadable(readable: Readable): StreamScannerCtrl {
     if (Object.hasOwn(readable, asyncStreamReadSymbol)) throw new Error("The stream has been controlled");
@@ -138,19 +138,19 @@ function concatBufferList(size: number, bufList: Buffer[]) {
 
 /**
  * @public
- * @remark 异步扫描器
+ * @remarks 异步扫描器
  */
 export interface StreamScanner<T = Buffer> {
-    /** @remark 读取指定长度，如果Stream不足该长度，则抛出异常 */
+    /** @remarks 读取指定长度，如果Stream不足该长度，则抛出异常 */
     (len: number): Promise<T>;
-    /** @remark 安全读取指定长度，如果Stream不足该长度，则返回 null */
+    /** @remarks 安全读取指定长度，如果Stream不足该长度，则返回 null */
     (len: number, safe: boolean): Promise<T | null>;
 }
 export type StreamScannerCtrl<T = Buffer> = {
     read: StreamScanner<T>;
 
     /**
-     * @remark 取消对流的扫描。
+     * @remarks 取消对流的扫描。
      * 取消时如果流已经发出end事件，并且未完全扫描所有chunk则返回剩余未扫描的部分
      */
     cancel(reason?: any): null | T;

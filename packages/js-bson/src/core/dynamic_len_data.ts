@@ -22,7 +22,7 @@ function readBigIntCore(desc: int, buf: Uint8Array): [bigint, int] {
 
 /**
  * @public
- * @remark 将二进制动态数据转为数字的类
+ * @remarks 将二进制动态数据转为数字的类
  */
 export class DLD {
     static readonly MAX_INT = Number.MAX_SAFE_INTEGER;
@@ -158,7 +158,7 @@ const MAX_INT = 0xffffffff;
 
 /**
  * @public
- * @remark 将整数转为动态二进制数据
+ * @remarks 将整数转为动态二进制数据
  */
 export function numToDLD(data: number | bigint): Uint8Array {
     if (data < 0) throw new Error("The number cannot be less than 0");

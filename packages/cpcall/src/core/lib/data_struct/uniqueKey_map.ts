@@ -1,8 +1,8 @@
-import { NumericalRangeException } from "./errors.js";
+import { NumericalRangeException } from "../errors.js";
 
 /**
- * @description 自动控制key的Map
- * @description 双指针控制已使用的key的范围, 当双指针已满时, 会遍历扫描碎片空间
+ * @remarks 自动控制key的Map
+ * @remarks 双指针控制已使用的key的范围, 当双指针已满时, 会遍历扫描碎片空间
  */
 export class UniqueKeyMap<T = any> extends Map<number, T> {
     constructor(readonly maxSize: number) {
@@ -31,7 +31,7 @@ export class UniqueKeyMap<T = any> extends Map<number, T> {
     }
 
     /**
-     * @description 申请一个未使用的key
+     * @remarks 申请一个未使用的key
      * @returns {number} 唯一key
      * @returns {null} key已满
      */

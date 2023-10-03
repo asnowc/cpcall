@@ -29,7 +29,7 @@ export class CpcError extends Error {}
 
 /**
  * @public
- * @description 调用失败异常
+ * @remarks 调用失败异常
  */
 export class CpcCallError extends Error {
     constructor(msg: string = "Call failed") {
@@ -38,7 +38,7 @@ export class CpcCallError extends Error {
 }
 /**
  * @public
- * @description 在返回前断开连接
+ * @remarks 在返回前断开连接
  */
 export class CpcFailRespondError extends CpcCallError {
     constructor() {

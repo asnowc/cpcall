@@ -1,3 +1,6 @@
+export * from "./errors/type.error.js";
+export * from "./errors/validation.error.js";
+
 export class NumericalRangeException extends Error {
     constructor(min?: number, max?: number, valueName = "numerical range") {
         const invalid = valueName + " exception";

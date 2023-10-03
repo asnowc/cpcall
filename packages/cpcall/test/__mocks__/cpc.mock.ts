@@ -23,10 +23,10 @@ export abstract class CpcMocks {
             onClose: vi.fn(),
             cpc: cpcServer,
         };
-        cpcClient.on("end", c.onEnd);
-        cpcClient.on("close", c.onClose);
-        cpcServer.on("end", s.onEnd);
-        cpcServer.on("close", s.onClose);
+        cpcClient.$end.on(c.onEnd);
+        cpcClient.$closed.on(c.onClose);
+        cpcServer.$end.on(s.onEnd);
+        cpcServer.$closed.on(s.onClose);
         return { s, c, onErr };
     }
 }

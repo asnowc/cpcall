@@ -1,6 +1,6 @@
 {
     "name": "cpcall",
-    "version": "0.0.1-4",
+    "version": "0.0.2",
     "description": "",
     "author": {
         "name": "Eavid",
@@ -8,10 +8,13 @@
     },
     "type": "module",
     "scripts": {
-        "build": "tsc -p tsconfig.build.json",
-        "publish:test": "pnpm publish --no-git-checks --dry-run"
+        "ci:build": "tsc -p tsconfig.build.json",
+        "publish:test": "pnpm publish --no-git-checks --dry-run",
+        "api:extractor": "api-extractor run -v",
+        "api:extractor-local": "pnpm run api:extractor -lc api-extractor.json"
     },
     "devDependencies": {
+        "@microsoft/api-extractor": "^7.36.4",
         "@types/node": "^20.4.4"
     },
     "exports": {
@@ -35,6 +38,6 @@
         "url": "https://github.com/ieavid/cpcall"
     },
     "dependencies": {
-        "@eavid/js-bson": "workspace:1.0.0-1"
+        "@eavid/js-bson": "workspace:^"
     }
 }

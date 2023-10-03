@@ -37,8 +37,8 @@ export function createConnectedFcp(
     const cpcServer = createSocketCpc(serverSocket);
     const cpcClient = createSocketCpc(clientSocket);
     const onErr = vi.fn();
-    cpcClient.on("error", onErr);
-    cpcServer.on("error", onErr);
+    cpcClient.$error.on(onErr);
+    cpcServer.$error.on(onErr);
     if (setClientCmd) {
         let cpc = cpcClient;
         for (const [cmd, fn] of Object.entries(setClientCmd)) cpc.setCmd(cmd, fn);
@@ -103,11 +103,11 @@ export function getInitedStateConnectedCpc() {
         socket: serverSocket,
     };
 
-    cpcClient.on("end", c.onEnd);
-    cpcClient.on("close", c.onClose);
+    cpcClient.$end.on(c.onEnd);
+    cpcClient.$closed.on(c.onClose);
 
-    cpcServer.on("end", s.onEnd);
-    cpcServer.on("close", s.onClose);
+    cpcServer.$end.on(s.onEnd);
+    cpcServer.$closed.on(s.onClose);
     return { s, c, onErr };
 }
 

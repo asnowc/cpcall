@@ -4,7 +4,7 @@ import { StreamCpc } from "cpcall";
 import type { CpcCmdList, Cpc } from "cpcall";
 
 /**
- * @remark
+ * @remarks
  * 依赖一个`Duplex`.
  * 如果 `duplex.writableEnded` || `duplex.readableEnded` || `duplex.destroyed` 为真，则 `Fcp`默认就是`closed`状态.
  * `duplex` 的`end`和`close`事件会触发 Fcp 的`close`

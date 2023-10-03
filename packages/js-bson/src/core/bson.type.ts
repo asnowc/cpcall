@@ -1,6 +1,6 @@
 /**
  * @public
- * @remark JBSON 数据类型
+ * @remarks JBSON 数据类型
  */
 export enum DataType {
     void = 0,
@@ -27,7 +27,7 @@ export enum DataType {
 /** @public */
 export class ObjectId {
     #value: bigint;
-    /** @remark ObjectId的原始值 */
+    /** @remarks ObjectId的原始值 */
     get value() {
         return this.#value;
     }
@@ -47,12 +47,12 @@ export class ObjectId {
 }
 /**
  * @public
- * @remark 代表void值，用于写入或响应 array 或 map 的结束标志
+ * @remarks 代表void值，用于写入或响应 array 或 map 的结束标志
  */
 export const VOID = Symbol("void");
 /**
  * @public
- * @remark 当读取到一个未知类型的错误
+ * @remarks 当读取到一个未知类型的错误
  */
 export class UnsupportedDataTypeError extends Error {
     constructor(desc?: string | number) {
