@@ -8,30 +8,34 @@
     },
     "type": "module",
     "scripts": {
-        "ci:build": "tsc -p tsconfig.build.json",
+        "ci:build": "pnpm rollup -c",
         "publish:test": "pnpm publish --no-git-checks --dry-run",
-        "api:extractor": "api-extractor run -v",
-        "api:extractor-local": "pnpm run api:extractor -lc api-extractor.json"
+        "api:extractor2": "api-extractor run -v",
+        "api:extractor": "api-extractor run -vc ../../api/api-extractor-cpcall.jsonc",
+        "api:extractor-local": "pnpm run api:extractor -l"
     },
     "devDependencies": {
+        "@eavid/lib-dev": "^0.0.1",
         "@microsoft/api-extractor": "^7.36.4",
-        "@types/node": "^20.4.4"
+        "@types/node": "^20.4.4",
+        "tslib": "^2.6.2",
+        "typescript": "^5.2.2"
     },
     "exports": {
-        ".": "./out/core/cpc.js",
-        "./node": "./out/node/index.js",
-        "./web": "./out/web/index.js"
+        ".": "./dist/cpc/cpc.js",
+        "./node": "./dist/node/node.js",
+        "./web": "./dist/web/web.js"
     },
     "imports": {
-        "#lib/*": "./out/core/lib/*"
+        "#lib/*": "./dist/cpc/lib/*"
     },
     "publishConfig": {
         "access": "public",
         "registry": "https://registry.npmjs.org"
     },
     "files": [
-        "**/out/**/*.js",
-        "**/out/**/*d.ts"
+        "dist/**/*.js",
+        "dist/**/*d.ts"
     ],
     "repository": {
         "type": "git",

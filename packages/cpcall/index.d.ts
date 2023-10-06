@@ -2,7 +2,7 @@
  * api抽取
  */
 
-import * as core from "./out/core/cpc.js";
-import * as node from "./out/node/index.js";
-import * as web from "./out/web/index.js";
+import * as core from "./dist/cpc/cpc.js";
+import * as node from "./dist/node/node.js";
+import * as web from "./dist/web/web.js";
 export { core, web, node };

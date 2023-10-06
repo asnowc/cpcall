@@ -7,10 +7,9 @@
         "paths": {
             "cpcall/node": ["./src/node/index.js"],
             "cpcall/web": ["./src/web/index.js"],
-            "cpcall": ["./src/core/cpc.js"],
-            "#lib/*": ["./src/core/lib/*"]
-        },
-        "outDir": "./out"
+            "cpcall": ["./src/cpc/cpc.js"],
+            "#lib/*": ["./src/cpc/lib/*"]
+        }
     },
     "exclude": ["node_modules", "out"]
 }

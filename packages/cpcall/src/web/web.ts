@@ -1,5 +1,5 @@
-import { CpcFrame, Cpc, CpcCmdList } from "../core/cpc.js";
-import { sendCpcFrame, readCpcFrame } from "../core/cpc/transition_frame.js";
+import { CpcFrame, Cpc, CpcCmdList } from "../cpc/cpc.js";
+import { sendCpcFrame, readCpcFrame } from "../cpc/cpc/transition_frame.js";
 
 /**
  * @beta

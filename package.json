@@ -3,7 +3,7 @@
     "version": "0.0.1",
     "type": "module",
     "scripts": {
-        "test": "vitest",
+        "test": "vitest run",
         "test:ui": "vitest --ui",
         "test:coverage": "vitest --coverage --ui",
         "ci:build": "pnpm run -r ci:build",

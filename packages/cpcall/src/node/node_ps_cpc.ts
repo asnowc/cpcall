@@ -1,6 +1,6 @@
 import type { EventEmitter } from "node:events";
 import { CpcCmdList, Cpc, CpcFrame } from "cpcall";
-import { readCpcFrame, sendCpcFrame } from "../core/cpc/transition_frame.js";
+import { readCpcFrame, sendCpcFrame } from "../cpc/cpc/transition_frame.js";
 interface NodeProcess extends EventEmitter {
     send?: typeof process.send;
 }

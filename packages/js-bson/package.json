@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
         "ci:build": "tsc -p src/tsconfig.json",
-        "api:extractor": "api-extractor run -vc ../../api/api-extractor.json",
+        "api:extractor": "api-extractor run -vc ../../api/api-extractor-js-bson.jsonc",
         "api:extractor-local": "pnpm run api:extractor -l",
         "publish:test": "pnpm publish --no-git-checks --dry-run"
     },

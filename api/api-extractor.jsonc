@@ -1,21 +1,12 @@
 {
     "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
 
-    // "extends": "./shared/api-extractor-base.json"
-    // "extends": "my-package/include/api-extractor-base.json"
     "projectFolder": "..",
-    "mainEntryPointFilePath": "<projectFolder>/packages/js-bson/out/js_bson.d.ts",
     "bundledPackages": [],
     // "newlineKind": "crlf",
     // "testMode": false,
     // "enumMemberOrder": "by-name",
-    "compiler": {
-        "tsconfigFilePath": "<projectFolder>/packages/js-bson/tsconfig.json",
-        "overrideTsconfig": {
-            "$schema": "http://json.schemastore.org/tsconfig"
-        },
-        "skipLibCheck": true
-    },
+
     "apiReport": {
         "enabled": true,
         "reportFileName": "jbson.api.md",
@@ -45,10 +36,6 @@
     },
     "messages": {
         "tsdocMessageReporting": {
-            "default": {
-                "logLevel": "warning"
-                // "addToApiReportFile": false
-            },
             "tsdoc-escape-right-brace": {
                 "logLevel": "none"
             },
