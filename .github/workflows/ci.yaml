@@ -3,6 +3,10 @@ on:
     push:
 jobs:
     publish-flow:
+        strategy:
+            fail-fast: false
+            matrix:
+                node-version: [18, 20]
         runs-on: ubuntu-latest
         steps:
             - uses: ieavid/template@v1
@@ -15,7 +19,8 @@ jobs:
             - name: Unit test
               run: pnpm ci:test
             - name: API extractor
+              if: ${{matrix.node-version==20}}
               run: pnpm -r run api:extractor
             - name: publish
-              if: ${{ github.ref_name == 'main'}}
+              if: ${{matrix.node-version==20 && github.ref_name=='main'}}
               run: pnpm ci:publish

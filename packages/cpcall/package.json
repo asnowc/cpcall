@@ -10,7 +10,6 @@
     "scripts": {
         "ci:build": "pnpm rollup -c",
         "publish:test": "pnpm publish --no-git-checks --dry-run",
-        "api:extractor2": "api-extractor run -v",
         "api:extractor": "api-extractor run -vc ../../api/api-extractor-cpcall.jsonc",
         "api:extractor-local": "pnpm run api:extractor -l"
     },
@@ -31,7 +30,7 @@
     },
     "publishConfig": {
         "access": "public",
-        "registry": "https://registry.npmjs.org"
+        "registry": "https://registry.npmjs.org/"
     },
     "files": [
         "dist/**/*.js",
@@ -43,5 +42,8 @@
     },
     "dependencies": {
         "@eavid/js-bson": "workspace:^"
+    },
+    "engines": {
+        "node": ">=18"
     }
 }
