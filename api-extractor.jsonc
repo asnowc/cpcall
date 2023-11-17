@@ -1,17 +1,17 @@
 {
     "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
 
-    "projectFolder": "..",
+    "mainEntryPointFilePath": "<projectFolder>/index.d.ts",
     "bundledPackages": [],
+
     // "newlineKind": "crlf",
     // "testMode": false,
     // "enumMemberOrder": "by-name",
-
     "apiReport": {
         "enabled": true,
-        "reportFileName": "jbson.api.md",
-        "reportFolder": "api/",
-        "reportTempFolder": "api/temp/"
+        "reportFileName": "<unscopedPackageName>.api.md",
+        "reportFolder": "<projectFolder>/api/",
+        "reportTempFolder": "<projectFolder>/api/temp/"
         // "includeForgottenExports": false
     },
 
@@ -35,13 +35,6 @@
         // "tsdocMetadataFilePath": "<projectFolder>/dist/tsdoc-metadata.json"
     },
     "messages": {
-        "tsdocMessageReporting": {
-            "tsdoc-escape-right-brace": {
-                "logLevel": "none"
-            },
-            "tsdoc-malformed-inline-tag": {
-                "logLevel": "none"
-            }
-        }
+        "tsdocMessageReporting": {}
     }
 }

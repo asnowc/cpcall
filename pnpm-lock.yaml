@@ -28,8 +28,8 @@ importers:
         specifier: ^0.0.1
         version: registry.npmmirror.com/@eavid/lib-dev@0.0.1(tslib@2.6.2)(typescript@5.2.2)
       '@microsoft/api-extractor':
-        specifier: ^7.36.4
-        version: registry.npmmirror.com/@microsoft/api-extractor@7.36.4(@types/node@20.4.4)
+        specifier: ^7.38.3
+        version: registry.npmmirror.com/@microsoft/api-extractor@7.38.3(@types/node@20.4.4)
       '@types/node':
         specifier: ^20.4.4
         version: registry.npmmirror.com/@types/node@20.4.4
@@ -43,8 +43,8 @@ importers:
   packages/js-bson:
     devDependencies:
       '@microsoft/api-extractor':
-        specifier: ^7.36.4
-        version: registry.npmmirror.com/@microsoft/api-extractor@7.36.4(@types/node@20.4.4)
+        specifier: ^7.38.3
+        version: registry.npmmirror.com/@microsoft/api-extractor@7.38.3(@types/node@20.4.4)
 
 packages:
 
@@ -400,32 +400,32 @@ packages:
       '@jridgewell/sourcemap-codec': registry.npmmirror.com/@jridgewell/sourcemap-codec@1.4.14
     dev: true
 
-  registry.npmmirror.com/@microsoft/api-extractor-model@7.27.6(@types/node@20.4.4):
-    resolution: {integrity: sha512-eiCnlayyum1f7fS2nA9pfIod5VCNR1G+Tq84V/ijDrKrOFVa598BLw145nCsGDMoFenV6ajNi2PR5WCwpAxW6Q==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@microsoft/api-extractor-model/-/api-extractor-model-7.27.6.tgz}
-    id: registry.npmmirror.com/@microsoft/api-extractor-model/7.27.6
+  registry.npmmirror.com/@microsoft/api-extractor-model@7.28.2(@types/node@20.4.4):
+    resolution: {integrity: sha512-vkojrM2fo3q4n4oPh4uUZdjJ2DxQ2+RnDQL/xhTWSRUNPF6P4QyrvY357HBxbnltKcYu+nNNolVqc6TIGQ73Ig==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@microsoft/api-extractor-model/-/api-extractor-model-7.28.2.tgz}
+    id: registry.npmmirror.com/@microsoft/api-extractor-model/7.28.2
     name: '@microsoft/api-extractor-model'
-    version: 7.27.6
+    version: 7.28.2
     dependencies:
       '@microsoft/tsdoc': registry.npmmirror.com/@microsoft/tsdoc@0.14.2
       '@microsoft/tsdoc-config': registry.npmmirror.com/@microsoft/tsdoc-config@0.16.2
-      '@rushstack/node-core-library': registry.npmmirror.com/@rushstack/node-core-library@3.59.7(@types/node@20.4.4)
+      '@rushstack/node-core-library': registry.npmmirror.com/@rushstack/node-core-library@3.61.0(@types/node@20.4.4)
     transitivePeerDependencies:
       - '@types/node'
     dev: true
 
-  registry.npmmirror.com/@microsoft/api-extractor@7.36.4(@types/node@20.4.4):
-    resolution: {integrity: sha512-21UECq8C/8CpHT23yiqTBQ10egKUacIpxkPyYR7hdswo/M5yTWdBvbq+77YC9uPKQJOUfOD1FImBQ1DzpsdeQQ==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@microsoft/api-extractor/-/api-extractor-7.36.4.tgz}
-    id: registry.npmmirror.com/@microsoft/api-extractor/7.36.4
+  registry.npmmirror.com/@microsoft/api-extractor@7.38.3(@types/node@20.4.4):
+    resolution: {integrity: sha512-xt9iYyC5f39281j77JTA9C3ISJpW1XWkCcnw+2vM78CPnro6KhPfwQdPDfwS5JCPNuq0grm8cMdPUOPvrchDWw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@microsoft/api-extractor/-/api-extractor-7.38.3.tgz}
+    id: registry.npmmirror.com/@microsoft/api-extractor/7.38.3
     name: '@microsoft/api-extractor'
-    version: 7.36.4
+    version: 7.38.3
     hasBin: true
     dependencies:
-      '@microsoft/api-extractor-model': registry.npmmirror.com/@microsoft/api-extractor-model@7.27.6(@types/node@20.4.4)
+      '@microsoft/api-extractor-model': registry.npmmirror.com/@microsoft/api-extractor-model@7.28.2(@types/node@20.4.4)
       '@microsoft/tsdoc': registry.npmmirror.com/@microsoft/tsdoc@0.14.2
       '@microsoft/tsdoc-config': registry.npmmirror.com/@microsoft/tsdoc-config@0.16.2
-      '@rushstack/node-core-library': registry.npmmirror.com/@rushstack/node-core-library@3.59.7(@types/node@20.4.4)
-      '@rushstack/rig-package': registry.npmmirror.com/@rushstack/rig-package@0.4.1
-      '@rushstack/ts-command-line': registry.npmmirror.com/@rushstack/ts-command-line@4.15.2
+      '@rushstack/node-core-library': registry.npmmirror.com/@rushstack/node-core-library@3.61.0(@types/node@20.4.4)
+      '@rushstack/rig-package': registry.npmmirror.com/@rushstack/rig-package@0.5.1
+      '@rushstack/ts-command-line': registry.npmmirror.com/@rushstack/ts-command-line@4.17.1
       colors: registry.npmmirror.com/colors@1.2.5
       lodash: registry.npmmirror.com/lodash@4.17.21
       resolve: registry.npmmirror.com/resolve@1.22.4
@@ -557,11 +557,11 @@ packages:
       rollup: registry.npmmirror.com/rollup@3.29.4
     dev: true
 
-  registry.npmmirror.com/@rushstack/node-core-library@3.59.7(@types/node@20.4.4):
-    resolution: {integrity: sha512-ln1Drq0h+Hwa1JVA65x5mlSgUrBa1uHL+V89FqVWQgXd1vVIMhrtqtWGQrhTnFHxru5ppX+FY39VWELF/FjQCw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@rushstack/node-core-library/-/node-core-library-3.59.7.tgz}
-    id: registry.npmmirror.com/@rushstack/node-core-library/3.59.7
+  registry.npmmirror.com/@rushstack/node-core-library@3.61.0(@types/node@20.4.4):
+    resolution: {integrity: sha512-tdOjdErme+/YOu4gPed3sFS72GhtWCgNV9oDsHDnoLY5oDfwjKUc9Z+JOZZ37uAxcm/OCahDHfuu2ugqrfWAVQ==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@rushstack/node-core-library/-/node-core-library-3.61.0.tgz}
+    id: registry.npmmirror.com/@rushstack/node-core-library/3.61.0
     name: '@rushstack/node-core-library'
-    version: 3.59.7
+    version: 3.61.0
     peerDependencies:
       '@types/node': '*'
     peerDependenciesMeta:
@@ -578,19 +578,19 @@ packages:
       z-schema: registry.npmmirror.com/z-schema@5.0.5
     dev: true
 
-  registry.npmmirror.com/@rushstack/rig-package@0.4.1:
-    resolution: {integrity: sha512-AGRwpqlXNSp9LhUSz4HKI9xCluqQDt/obsQFdv/NYIekF3pTTPzc+HbQsIsjVjYnJ3DcmxOREVMhvrMEjpiq6g==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@rushstack/rig-package/-/rig-package-0.4.1.tgz}
+  registry.npmmirror.com/@rushstack/rig-package@0.5.1:
+    resolution: {integrity: sha512-pXRYSe29TjRw7rqxD4WS3HN/sRSbfr+tJs4a9uuaSIBAITbUggygdhuG0VrO0EO+QqH91GhYMN4S6KRtOEmGVA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@rushstack/rig-package/-/rig-package-0.5.1.tgz}
     name: '@rushstack/rig-package'
-    version: 0.4.1
+    version: 0.5.1
     dependencies:
       resolve: registry.npmmirror.com/resolve@1.22.4
       strip-json-comments: registry.npmmirror.com/strip-json-comments@3.1.1
     dev: true
 
-  registry.npmmirror.com/@rushstack/ts-command-line@4.15.2:
-    resolution: {integrity: sha512-5+C2uoJY8b+odcZD6coEe2XNC4ZjGB4vCMESbqW/8DHRWC/qIHfANdmN9F1wz/lAgxz72i7xRoVtPY2j7e4gpQ==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@rushstack/ts-command-line/-/ts-command-line-4.15.2.tgz}
+  registry.npmmirror.com/@rushstack/ts-command-line@4.17.1:
+    resolution: {integrity: sha512-2jweO1O57BYP5qdBGl6apJLB+aRIn5ccIRTPDyULh0KMwVzFqWtw6IZWt1qtUoZD/pD2RNkIOosH6Cq45rIYeg==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@rushstack/ts-command-line/-/ts-command-line-4.17.1.tgz}
     name: '@rushstack/ts-command-line'
-    version: 4.15.2
+    version: 4.17.1
     dependencies:
       '@types/argparse': registry.npmmirror.com/@types/argparse@1.0.38
       argparse: registry.npmmirror.com/argparse@1.0.10

@@ -10,12 +10,12 @@
     "scripts": {
         "ci:build": "pnpm rollup -c",
         "publish:test": "pnpm publish --no-git-checks --dry-run",
-        "api:extractor": "api-extractor run -vc ../../api/api-extractor-cpcall.jsonc",
+        "api:extractor": "api-extractor run -v",
         "api:extractor-local": "pnpm run api:extractor -l"
     },
     "devDependencies": {
         "@eavid/lib-dev": "^0.0.1",
-        "@microsoft/api-extractor": "^7.36.4",
+        "@microsoft/api-extractor": "^7.38.3",
         "@types/node": "^20.4.4",
         "tslib": "^2.6.2",
         "typescript": "^5.2.2"

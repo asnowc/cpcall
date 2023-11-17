@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
         "ci:build": "tsc -p src/tsconfig.json",
-        "api:extractor": "api-extractor run -vc ../../api/api-extractor-js-bson.jsonc",
+        "api:extractor": "api-extractor run -v",
         "api:extractor-local": "pnpm run api:extractor -l",
         "publish:test": "pnpm publish --no-git-checks --dry-run"
     },
@@ -27,6 +27,6 @@
     "author": "Eavid",
     "license": "MIT",
     "devDependencies": {
-        "@microsoft/api-extractor": "^7.36.4"
+        "@microsoft/api-extractor": "^7.38.3"
     }
 }

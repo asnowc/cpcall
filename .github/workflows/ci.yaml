@@ -1,4 +1,4 @@
-name: publish flow
+name: ci
 on:
     push:
 jobs:
@@ -20,7 +20,7 @@ jobs:
               run: pnpm ci:test
             - name: API extractor
               if: ${{matrix.node-version==20}}
-              run: pnpm -r run api:extractor
+              run: pnpm ci:api-extractor
             - name: publish
               if: ${{matrix.node-version==20 && github.ref_name=='main'}}
               run: pnpm ci:publish

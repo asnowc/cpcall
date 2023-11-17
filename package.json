@@ -9,6 +9,7 @@
         "ci:build": "pnpm run -r ci:build",
         "ci:test": "vitest run --coverage",
         "ci:publish": "pnpm publish --tag beta -r",
+        "ci:api-extractor": "pnpm run -r api:extractor",
         "publish:test": "pnpm publish --no-git-checks --dry-run -r"
     },
     "devDependencies": {
