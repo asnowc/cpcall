@@ -1,4 +1,4 @@
-### Cross-process call protocol(CPCP) 数据帧格式:
+### RPC 数据帧格式:
 
 ```
 |---8bit---|---n---|

@@ -24,7 +24,10 @@
         "registry": "https://registry.npmjs.org"
     },
     "keywords": [],
-    "author": "Eavid",
+    "author": {
+        "name": "Eavid",
+        "url": "https://github.com/ieavid"
+    },
     "license": "MIT",
     "devDependencies": {
         "@microsoft/api-extractor": "^7.38.3"

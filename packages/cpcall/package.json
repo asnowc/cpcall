@@ -2,16 +2,15 @@
     "name": "cpcall",
     "version": "0.0.1-6",
     "description": "",
-    "author": {
-        "name": "Eavid",
-        "url": "https://github.com/ieavid"
-    },
     "type": "module",
     "scripts": {
         "ci:build": "pnpm rollup -c",
         "publish:test": "pnpm publish --no-git-checks --dry-run",
         "api:extractor": "api-extractor run -v",
         "api:extractor-local": "pnpm run api:extractor -l"
+    },
+    "dependencies": {
+        "@eavid/js-bson": "workspace:^"
     },
     "devDependencies": {
         "@eavid/lib-dev": "^0.0.1",
@@ -30,7 +29,7 @@
     },
     "publishConfig": {
         "access": "public",
-        "registry": "https://registry.npmjs.org/"
+        "registry": "https://registry.npmjs.org"
     },
     "files": [
         "dist/**/*.js",
@@ -38,10 +37,12 @@
     ],
     "repository": {
         "type": "git",
-        "url": "https://github.com/ieavid/cpcall"
+        "url": "https://github.com/asnowc/cpcall"
     },
-    "dependencies": {
-        "@eavid/js-bson": "workspace:^"
+    "license": "MIT",
+    "author": {
+        "name": "Eavid",
+        "url": "https://github.com/ieavid"
     },
     "engines": {
         "node": ">=18"
