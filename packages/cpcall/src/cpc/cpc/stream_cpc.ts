@@ -1,5 +1,5 @@
 import { CpcCmdList, Cpc, CpcFrame } from "./cpc.js";
-import { readCpcFrame, sendCpcFrame } from "../cpc/transition_frame.js";
+import { readCpcFrame, sendCpcFrame, concatUint8ArrayList } from "../cpc/transition_frame.js";
 import { DLD, numToDLD } from "@eavid/js-bson";
 
 type StreamWriter = (chunk: Uint8Array) => void;
@@ -75,12 +75,13 @@ export class StreamCpc<CallableCmd extends object = CpcCmdList, CmdList extends 
     }
 
     protected sendFrame(frame: CpcFrame) {
-        const [chunks, totalLen] = sendCpcFrame(frame);
+        let [chunks, totalLen] = sendCpcFrame(frame);
+        const lenChunk = numToDLD(totalLen);
+        chunks.unshift(lenChunk);
+        totalLen += lenChunk.byteLength;
+        const frameBuf = concatUint8ArrayList(chunks, totalLen);
         try {
-            this.#write(numToDLD(totalLen));
-            for (let i = 0; i < chunks.length; i++) {
-                this.#write(chunks[i]);
-            }
+            this.#write(frameBuf);
         } catch (error) {
             this.dispose(new Error("Unable to write data", { cause: error }));
         }

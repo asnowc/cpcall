@@ -79,6 +79,15 @@ export function sendCpcFrame(frame: CpcFrame): [Uint8Array[], number] {
     }
     return [writeList, contentLen];
 }
+export function concatUint8ArrayList(list: Uint8Array[], totalLen: number) {
+    let frameBuf = new Uint8Array(totalLen);
+    let offset = 0;
+    for (let i = 0; i < list.length; i++) {
+        frameBuf.set(list[i], offset);
+        offset += list[i].byteLength;
+    }
+    return frameBuf;
+}
 function createTypeFlagBuf(type: number) {
     const t = new Uint8Array(1);
     t[0] = type;

@@ -1,5 +1,5 @@
 import { CpcFrame, Cpc, CpcCmdList } from "../cpc/cpc.js";
-import { sendCpcFrame, readCpcFrame } from "../cpc/cpc/transition_frame.js";
+import { sendCpcFrame, readCpcFrame, concatUint8ArrayList } from "../cpc/cpc/transition_frame.js";
 
 /**
  * @beta
@@ -31,12 +31,7 @@ export class WebSocketCpc<CallableCmd extends object = CpcCmdList, CmdList exten
     };
     protected sendFrame(frame: CpcFrame): void {
         const [chunks, size] = sendCpcFrame(frame);
-        let buf = new Uint8Array(size);
-        let offset = 0;
-        for (let i = 0; i < chunks.length; i++) {
-            buf.set(chunks[i], offset);
-            offset += chunks[i].length;
-        }
+        const buf = concatUint8ArrayList(chunks, size);
         this.socket.send(buf);
     }
 }
