@@ -23,6 +23,7 @@ export enum DataType {
     map = 14,
 
     error = 16,
+    symbol = 17,
 }
 /** @public */
 export class ObjectId {

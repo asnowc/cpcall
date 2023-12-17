@@ -52,7 +52,11 @@ export class JBSONScanner {
         const buf = await this.uInt8Array(read);
         return strTransf.readByUtf8(buf);
     }
-
+    async [DataType.symbol](read: StreamReader): Promise<Symbol> {
+        const data = await this.readArrayItem(read);
+        if (data === VOID) return Symbol();
+        else return Symbol(data as string);
+    }
     async [DataType.regExp](read: StreamReader) {
         const str = await this[DataType.string](read);
         return RegExp(str);

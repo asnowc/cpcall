@@ -62,7 +62,14 @@ export class JBSONReader {
         const [buffer, len] = this.uInt8Array(buf, offset);
         return [strTransf.readByUtf8(buffer), len];
     }
-
+    [DataType.symbol](buf: Uint8Array, offset: number): [Symbol, number] {
+        const data = this.readArrayItem(buf, offset);
+        if (data[0] === VOID) data[0] = Symbol();
+        else {
+            data[0] = Symbol(data[0]);
+        }
+        return data;
+    }
     [DataType.regExp](buf: Uint8Array, offset: number): [RegExp, number] {
         const data = this[DataType.string](buf, offset);
         data[0] = new RegExp(data[0]) as any;
@@ -115,14 +122,13 @@ export class JBSONWriter {
             type === DataType.true || type === DataType.false || type === DataType.null || type === DataType.undefined
         );
     }
-    toType(data: any): number {
-        if (data === true) return DataType.true;
-        else if (data === false) return DataType.false;
-        else if (data === undefined) return DataType.undefined;
-        else if (data === null) return DataType.null;
-
+    toType(data: any, safe?: boolean): number {
         let type: number;
         switch (typeof data) {
+            case "undefined":
+                return DataType.undefined;
+            case "boolean":
+                return data ? DataType.true : DataType.false;
             case "number":
                 if (data % 1 !== 0 || data < -2147483648 || data > 2147483647) type = DataType.double;
                 else type = DataType.int;
@@ -133,7 +139,11 @@ export class JBSONWriter {
             case "bigint":
                 type = DataType.bigint;
                 break;
+            case "symbol":
+                type = DataType.symbol;
+                break;
             case "object":
+                if (data === null) return DataType.null;
                 if (Array.isArray(data)) type = DataType.array;
                 else if (data instanceof ArrayBuffer) type = DataType.arrayBuffer;
                 else if (data instanceof RegExp) type = DataType.regExp;
@@ -142,18 +152,19 @@ export class JBSONWriter {
                 else type = DataType.map;
                 break;
             default:
+                if (safe) return DataType.undefined;
                 throw new UnsupportedDataTypeError(typeof data);
         }
         return type;
     }
 
     /** 支持写入void类型 */
-    writeArrayItem(data: unknown, write: StreamWriter): number {
+    writeArrayItem(data: unknown, write: StreamWriter, safe?: boolean): number {
         if (data === VOID) {
             write(createDataTypeBuf(DataType.void));
             return 1;
         }
-        const type = this.toType(data);
+        const type = this.toType(data, safe);
         write(createDataTypeBuf(type));
         if (this.isNoContentData(type)) return 1;
 
@@ -185,9 +196,10 @@ export class JBSONWriter {
         return buf.byteLength;
     }
     [DataType.arrayBuffer](data: ArrayBuffer, write: StreamWriter) {
-        write(numToDLD(data.byteLength));
+        const dld = numToDLD(data.byteLength);
+        write(dld);
         write(new Uint8Array(data));
-        return data.byteLength;
+        return data.byteLength + dld.byteLength;
     }
     [DataType.string](data: string, write: StreamWriter) {
         return this[DataType.arrayBuffer](strTransf.writeByUtf8(data), write);
@@ -196,11 +208,19 @@ export class JBSONWriter {
     [DataType.regExp](data: RegExp, write: StreamWriter) {
         return this[DataType.string](data.source, write);
     }
-
+    [DataType.symbol](data: Symbol, write: StreamWriter) {
+        if (data.description === undefined) {
+            write(createDataTypeBuf(DataType.void));
+            return 1;
+        } else {
+            write(createDataTypeBuf(DataType.string));
+            return this[DataType.string](data.description, write) + 1;
+        }
+    }
     [DataType.array](array: unknown[], write: StreamWriter, ignoreVoid?: boolean): number {
         let writeTotalLen = 0;
         for (let i = 0; i < array.length; i++) {
-            writeTotalLen += this.writeArrayItem(array[i], write);
+            writeTotalLen += this.writeArrayItem(array[i], write, true);
         }
         if (!ignoreVoid) write(createDataTypeBuf(DataType.void));
         return writeTotalLen + 1;
@@ -208,12 +228,10 @@ export class JBSONWriter {
     [DataType.map](map: Record<string, any>, write: StreamWriter, ignoreVoid?: boolean): number {
         let writeTotalLen = 0;
         for (const [key, data] of Object.entries(map)) {
-            const type = this.toType(data);
+            const type = this.toType(data, true);
             {
                 //type
-                const typeBuf = createDataTypeBuf(type);
-                if (!typeBuf) throw new UnsupportedDataTypeError(type);
-                write(typeBuf);
+                write(createDataTypeBuf(type));
                 writeTotalLen++;
 
                 ///key

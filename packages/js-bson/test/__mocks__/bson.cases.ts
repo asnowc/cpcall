@@ -40,4 +40,17 @@ export const objectDataTypes = {
             expect(data.source).toBe(rawData.source);
         },
     },
+    symbol: {
+        data: [Symbol("abc"), Symbol(""), Symbol()],
+        expect(rawData: Symbol, data: any) {
+            expect(data).toBeTypeOf("symbol");
+            expect(rawData.description).toBe(data.description);
+        },
+    },
+    function: {
+        data: [() => true, function name() {}, function () {}],
+        expect(rawData: Symbol, data: any) {
+            expect(data).toBe(undefined);
+        },
+    },
 };

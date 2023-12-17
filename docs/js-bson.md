@@ -12,35 +12,35 @@
 | 5   | 0101 | int         | 4                                           |
 | 6   | 0110 | bigint      | 8                                           |
 | 7   | 0111 | double      | 8                                           |
-| 8   | 1000 | objectId    | dynamicLenData                              |
+| 8   | 1000 | \*objectId  | dynamicLenData                              |
 | 9   | 1001 | arrayBuffer | contentLen(dynamicLenData) + content        |
-| 10  | 1010 | string      | arrayBuffer                                 |
-| 11  | 1011 | regExp      | string                                      |
+| 10  | 1010 | \*string    | arrayBuffer                                 |
+| 11  | 1011 | \*regExp    | string                                      |
 | 12  | 1100 | function    | string[]&string //暂未实现                  |
 | 13  | 1101 | array       | n                                           |
 | 14  | 1110 | map(json)   | n                                           |
-| 15  | 1111 | buffer      | arrayBuffer                                 |
+| 15  | 1111 | \*buffer    | arrayBuffer                                 |
 
 +1_0000 :
 
-| DEC | BIN  | type  | content length |
-| --- | ---- | ----- | -------------- |
-| 16  | 0000 | Error | map            |
-| 17  | 0001 |       |                |
-| 18  | 0010 |       |                |
-| 19  | 0011 |       |                |
-| 20  | 0100 |       |                |
-| 21  | 0101 |       |                |
-| 22  | 0110 |       |                |
-| 23  | 0111 |       |                |
-| 24  | 1000 |       |                |
-| 25  | 1001 |       |                |
-| 26  | 1010 |       |                |
-| 27  | 1011 |       |                |
-| 28  | 1100 |       |                |
-| 29  | 1101 |       |                |
-| 30  | 1110 |       |                |
-| 31  | 1111 |       |                |
+| DEC | BIN  | type     | content length |
+| --- | ---- | -------- | -------------- |
+| 16  | 0000 | \*Error  | map            |
+| 17  | 0001 | \*symbol |                |
+| 18  | 0010 |          |                |
+| 19  | 0011 |          |                |
+| 20  | 0100 |          |                |
+| 21  | 0101 |          |                |
+| 22  | 0110 |          |                |
+| 23  | 0111 |          |                |
+| 24  | 1000 |          |                |
+| 25  | 1001 |          |                |
+| 26  | 1010 |          |                |
+| 27  | 1011 |          |                |
+| 28  | 1100 |          |                |
+| 29  | 1101 |          |                |
+| 30  | 1110 |          |                |
+| 31  | 1111 |          |                |
 
 #### BSON Array:
 
