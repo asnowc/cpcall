@@ -1,5 +1,5 @@
 import { DLD } from "./dynamic_len_data.js";
-import { DataType, ObjectId, UnsupportedDataTypeError, VOID } from "./bson.type.js";
+import { DataType, JsBsonError, ObjectId, UnsupportedDataTypeError, VOID } from "./const.js";
 import { strTransf, numTransf } from "./uit_array_util.js";
 type StreamReader = (size: number) => Promise<Uint8Array>;
 type DataReader = (read: StreamReader) => Promise<unknown>;
@@ -95,7 +95,7 @@ export class JBSONScanner {
     }
     async [DataType.error](read: StreamReader) {
         const { message, cause, ...attr } = await this[DataType.map](read);
-        const error = new Error(message, { cause });
+        const error = new JsBsonError(message, { cause });
         Object.assign(error, attr);
         return error;
     }

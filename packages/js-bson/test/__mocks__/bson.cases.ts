@@ -1,4 +1,4 @@
-import { ObjectId } from "@eavid/js-bson";
+import { ObjectId, JsBsonError } from "@eavid/js-bson";
 import { vi, expect } from "vitest";
 
 export const baseDataTypes = {
@@ -22,7 +22,7 @@ export const objectDataTypes = {
     error: {
         data: [new Error("abc"), new Error("abc", { cause: 23 })],
         expect(rawData: Error, data: any) {
-            expect(data).instanceof(Error);
+            expect(data).instanceof(JsBsonError);
             expect(rawData).toMatchObject(data);
         },
     },

@@ -1,5 +1,5 @@
 import { numToDLD, DLD } from "./dynamic_len_data.js";
-import { DataType, ObjectId, UnsupportedDataTypeError, VOID } from "./bson.type.js";
+import { DataType, JsBsonError, ObjectId, UnsupportedDataTypeError, VOID } from "./const.js";
 import { numTransf, strTransf } from "./uit_array_util.js";
 
 export class JBSONReader {
@@ -108,7 +108,7 @@ export class JBSONReader {
 
     [DataType.error](buf: Uint8Array, offset: number): [Error, number] {
         let [{ message, cause, ...attr }, len] = this[DataType.map](buf, offset) as [Error, number];
-        const error = new Error(message, { cause });
+        const error = new JsBsonError(message, { cause });
         Object.assign(error, attr);
         return [error, len];
     }

@@ -60,3 +60,8 @@ export class UnsupportedDataTypeError extends Error {
         super("Unsupported data type: " + desc);
     }
 }
+/**
+ * @public
+ * @remarks 远程发送的异常类型
+ */
+export class JsBsonError extends Error {}

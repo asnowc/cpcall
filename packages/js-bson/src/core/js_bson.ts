@@ -1,5 +1,5 @@
 // import type { StreamReader } from "../stream_util.js";
-import { DataType, UnsupportedDataTypeError } from "./bson.type.js";
+import { DataType, UnsupportedDataTypeError } from "./const.js";
 import { BsonScanItem, JBSONScanner } from "./scanner.js";
 import { JBSONReader, JBSONWriter } from "./transformer.js";
 
