@@ -40,6 +40,8 @@ export enum DataType {
     // (undocumented)
     string = 10,
     // (undocumented)
+    symbol = 17,
+    // (undocumented)
     true = 3,
     // (undocumented)
     undefined = 2,
@@ -90,6 +92,10 @@ export class JBSON {
     static toArrayItem<T = unknown>(buffer: Uint8Array, offset?: number): [T, number];
     // (undocumented)
     static toMap<T = Record<string, unknown>>(buffer: Uint8Array, offset?: number): T;
+}
+
+// @public (undocumented)
+export class JsBsonError extends Error {
 }
 
 // @public (undocumented)
