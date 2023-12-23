@@ -1,35 +1,32 @@
 {
-    "name": "@eavid/js-bson",
-    "version": "1.1.0",
-    "description": "",
-    "type": "module",
-    "scripts": {
-        "ci:build": "tsc -p src/tsconfig.json",
-        "api:extractor": "api-extractor run -v",
-        "api:extractor-local": "pnpm run api:extractor -l",
-        "publish:test": "pnpm publish --no-git-checks --dry-run"
-    },
-    "exports": {
-        ".": {
-            "import": "./out/js_bson.js",
-            "types": "./out/js_bson.d.ts"
-        }
-    },
-    "files": [
-        "out/**/*.js",
-        "out/**/*d.ts"
-    ],
-    "publishConfig": {
-        "access": "public",
-        "registry": "https://registry.npmjs.org"
-    },
-    "keywords": [],
-    "author": {
-        "name": "Eavid",
-        "url": "https://github.com/ieavid"
-    },
-    "license": "MIT",
-    "devDependencies": {
-        "@microsoft/api-extractor": "^7.38.3"
+  "name": "@eavid/js-bson",
+  "version": "1.1.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "ci:build": "tsc -p src/tsconfig.json",
+    "api:extractor": "api-extractor run -v",
+    "api:extractor-local": "pnpm run api:extractor -l",
+    "publish:test": "pnpm publish --no-git-checks --dry-run"
+  },
+  "exports": {
+    ".": {
+      "import": "./out/js_bson.js",
+      "types": "./out/js_bson.d.ts"
     }
+  },
+  "files": [
+    "out/**/*.js",
+    "out/**/*d.ts"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "keywords": [],
+  "author": {
+    "name": "Eavid",
+    "url": "https://github.com/ieavid"
+  },
+  "license": "MIT"
 }

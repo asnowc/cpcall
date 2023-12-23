@@ -1,15 +1,15 @@
 {
-    "extends": "../../tsconfig.json",
-    "compilerOptions": {
-        "lib": ["ESNext", "DOM"],
-        "baseUrl": ".",
-        "rootDir": ".",
-        "paths": {
-            "cpcall/node": ["./src/node/index.js"],
-            "cpcall/web": ["./src/web/index.js"],
-            "cpcall": ["./src/cpc/cpc.js"],
-            "#lib/*": ["./src/cpc/lib/*"]
-        }
-    },
-    "exclude": ["node_modules", "out"]
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM"],
+    "baseUrl": ".",
+    "rootDir": ".",
+    "paths": {
+      "cpcall/node": ["./src/node/index.js"],
+      "cpcall/web": ["./src/web/index.js"],
+      "cpcall": ["./src/cpc/cpc.js"],
+      "#lib/*": ["./src/cpc/lib/*"]
+    }
+  },
+  "exclude": ["node_modules", "out"]
 }

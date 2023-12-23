@@ -1,13 +1,14 @@
 {
-    "compilerOptions": {
-        "module": "NodeNext",
-        "moduleResolution": "NodeNext",
-        "target": "ES2022",
-        "lib": ["ESNext"],
-        "strict": true,
-        "skipDefaultLibCheck": true,
-        "noEmit": true,
-        "isolatedModules": true
-    },
-    "exclude": ["node_modules"]
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "lib": ["ESNext"],
+    "strict": true,
+    "skipDefaultLibCheck": true,
+    "noEmit": true,
+    "allowJs": true,
+    "isolatedModules": true
+  },
+  "exclude": ["node_modules"]
 }

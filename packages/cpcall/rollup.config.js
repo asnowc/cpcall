@@ -1,8 +1,7 @@
-import * as rollup from "@eavid/lib-dev/rollup";
+// @ts-check
+import { defineEvConfig } from "@eavid/lib-dev/rollup";
 import * as path from "node:path";
 
-/** @type {typeof import("@eavid/lib-dev/out/rollup/mod")} */
-const { defineEvConfig } = rollup
 const dir = process.cwd()
 console.log("cwd:" + dir);
 const libDir = path.resolve(dir, "src/cpc/lib")
@@ -30,6 +29,6 @@ export default defineEvConfig({
             noEmit: false,
             declaration: true,
             declarationMap: true
-        }
+        }, resolve: {}
     }
 });
