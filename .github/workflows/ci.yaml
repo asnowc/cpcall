@@ -1,28 +1,42 @@
 name: ci
 on:
-    push:
+  push:
+    branches:
+      - main
+      - develop
+permissions:
+  contents: write
 jobs:
-    publish-flow:
-        strategy:
-            fail-fast: false
-            matrix:
-                node-version: [18, 20]
-        runs-on: ubuntu-latest
-        steps:
-            - uses: ieavid/template@v1
-              with:
-                  nodev: 20
-                  pnpmv: 8
-                  run_install: true
-            - name: build
-              run: pnpm ci:build
-            - name: Unit test
-              run: pnpm ci:test
-            - name: API extractor
-              if: ${{matrix.node-version==20}}
-              run: pnpm ci:api-extractor
-            - name: publish
-              if: ${{matrix.node-version==20 && github.ref_name=='main'}}
-              run: pnpm publish -r
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  build-publish:
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18, 20]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup NodeJS
+        uses: asnowc/actions@setup-node/v2
+        with:
+          node_v: 20
+          pnpm_v: 8
+          run_install: true
+
+      - name: Build
+        run: pnpm ci:build
+      - name: Unit test
+        run: pnpm ci:test
+      - name: Check API
+        if: ${{matrix.node-version==20 }}
+        run: pnpm ci:api-extractor
+      - name: Setup Deno
+        if: ${{ github.ref_name=='main'}}
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: publish
+        if: ${{matrix.node-version==20 && github.ref_name=='main'}}
+        run: deno run -A ./.github/scripts/publish.ts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
