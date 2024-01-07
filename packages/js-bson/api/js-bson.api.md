@@ -52,7 +52,7 @@ export enum DataType {
 // @public (undocumented)
 export class DLD {
     // (undocumented)
-    static readonly MAX_BIG_ING = 72057594037927935n;
+    static readonly MAX_BIGINT = 72057594037927935n;
     // (undocumented)
     static readonly MAX_INT: number;
     // (undocumented)
