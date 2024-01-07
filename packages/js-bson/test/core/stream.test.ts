@@ -1,4 +1,4 @@
-import { strTransf } from "../../src/core/uit_array_util.js";
+import { strTransf } from "../../src/core/uint_array_util/mod.js";
 import { test, expect } from "vitest";
 const { readByUtf8, writeByUtf8 } = strTransf;
 const cases: { code: number; char: string }[] = [
