@@ -66,7 +66,7 @@ export function writeByUtf8(str: string): Uint8Array {
       buf[offset + 1] = 0b10000000 + (code & 0b111111);
       code >>= 6;
       buf[offset] = 0b11100000 + code;
-      utf8Len += 3;
+      offset += 3;
     } else if (code < 0x200000) {
       buf[offset + 3] = 0b10000000 + (code & 0b111111);
       code >>= 6;
@@ -75,7 +75,7 @@ export function writeByUtf8(str: string): Uint8Array {
       buf[offset + 1] = 0b10000000 + (code & 0b111111);
       code >>= 6;
       buf[offset] = 0b11110000 + code;
-      utf8Len += 4;
+      offset += 4;
     } else if (code < 0x4000000) {
       buf[offset + 4] = 0b10000000 + (code & 0b111111);
       code >>= 6;
@@ -86,7 +86,7 @@ export function writeByUtf8(str: string): Uint8Array {
       buf[offset + 1] = 0b10000000 + (code & 0b111111);
       code >>= 6;
       buf[offset] = 0b11111000 + code;
-      utf8Len += 5;
+      offset += 5;
     } else {
       buf[offset + 5] = 0b10000000 + (code & 0b111111);
       code >>= 6;
@@ -99,7 +99,7 @@ export function writeByUtf8(str: string): Uint8Array {
       buf[offset + 1] = 0b10000000 + (code & 0b111111);
       code >>= 6;
       buf[offset] = 0b11111100 + code;
-      utf8Len += 6;
+      offset += 6;
     }
   }
   return buf;
