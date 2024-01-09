@@ -8,7 +8,14 @@
     "skipDefaultLibCheck": true,
     "noEmit": true,
     "allowJs": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+
+    "paths": {
+      "cpcall/node": ["./src/node/index.js"],
+      "cpcall/web": ["./src/web/index.js"],
+      "cpcall": ["./src/cpc/cpc.js"],
+      "#lib/*": ["./src/cpc/lib/*"]
+    }
   },
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "out"]
 }

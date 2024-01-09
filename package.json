@@ -1,16 +1,18 @@
 {
-  "name": "libs",
-  "version": "0.0.1",
+  "name": "cpcall",
+  "version": "0.0.5",
+  "description": "",
   "type": "module",
   "scripts": {
     "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage --ui",
-    "ci:build": "pnpm run -r ci:build",
+    "api:check": "pnpm run ci:api-extractor -l",
+    "ci:build": "pnpm rollup -c",
     "ci:test": "vitest run --coverage",
-    "ci:api-extractor": "pnpm run -r api:extractor",
-    "publish:test": "pnpm publish --no-git-checks --dry-run -r"
+    "ci:api-extractor": "api-extractor run -v"
   },
+  "dependencies": {},
   "devDependencies": {
     "@eavid/lib-dev": "^0.0.3",
     "@microsoft/api-extractor": "^7.39.0",
@@ -20,5 +22,33 @@
     "tslib": "^2.6.2",
     "typescript": "^5.3.3",
     "vitest": "^1.1.0"
+  },
+  "exports": {
+    ".": "./dist/cpc/cpc.js",
+    "./node": "./dist/node/node.js",
+    "./web": "./dist/web/web.js"
+  },
+  "imports": {
+    "#lib/*": "./dist/cpc/lib/*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*d.ts"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/asnowc/cpcall"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Eavid",
+    "url": "https://github.com/ieavid"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

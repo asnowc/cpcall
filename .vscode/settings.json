@@ -1,4 +1,3 @@
 {
-    "deno.enablePaths": ["./.github/scripts"],
-    "cSpell.words": ["bson", "JBSON"]
+  "cSpell.words": ["bson", "JBSON"]
 }
