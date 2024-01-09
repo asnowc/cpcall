@@ -1,18 +1,19 @@
-name: ci
+name: CI
 on:
   push:
     branches:
       - main
       - develop
-permissions:
-  contents: write
+
 jobs:
-  build-publish:
+  build:
     strategy:
       fail-fast: false
       matrix:
         node-version: [18, 20]
     runs-on: ubuntu-latest
+    outputs:
+      publish: ${{steps.check_tag.outputs.return}}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,21 +23,62 @@ jobs:
           node_v: 20
           pnpm_v: 8
           run_install: true
-
-      - name: Build
-        run: pnpm ci:build
       - name: Unit test
         run: pnpm ci:test
       - name: Check API
-        if: ${{matrix.node-version==20 }}
+        if: ${{ github.ref_name=='main' }}
         run: pnpm ci:api-extractor
+
+      - name: Setup Deno
+        if: ${{github.ref_name=='main'}}
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: Check tag
+        if: ${{ github.ref_name=='main'}}
+        id: check_tag
+        uses: asnowc/actions@deno-script/v1
+        with:
+          script: |
+            import { writeNewTagToOutput } from "https://cdn.jsdelivr.net/gh/dnpack/action-script@0.3.x/cmd/github_repo.ts";
+            const str = await Deno.readTextFile("./package.json");
+            const version = JSON.parse(str).version;
+            await writeNewTagToOutput("v" + version, "return");
+          args: -A --no-lock
+
+      - name: Build
+        if: ${{ github.ref_name=='main'&& steps.check_tag.outputs.return}}
+        run: pnpm ci:build
+
+  publish:
+    needs: build
+    if: ${{needs.build.outputs.publish&&github.ref_name=='main'}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup Deno
         if: ${{ github.ref_name=='main'}}
         uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
-      - name: publish
-        if: ${{matrix.node-version==20 && github.ref_name=='main'}}
-        run: deno run -A ./.github/scripts/publish.ts
+      - name: Setup NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Publish
+        uses: asnowc/actions@deno-script/v1
+        with:
+          script: |
+            import { tagPublishFlow } from "https://cdn.jsdelivr.net/gh/dnpack/action-script@0.3.x/cmd/github_repo.ts";
+            import { execCmdSync } from "https://cdn.jsdelivr.net/gh/dnpack/action-script@0.3.x/lib.ts";
+
+            await tagPublishFlow("NEW_TAG", () => execCmdSync("npm", ["publish"], { exitIfFail: true }));
+          args: -A --no-lock
         env:
+          NEW_TAG: ${{needs.build.outputs.publish}}
+          GITHUB_TOKEN: ${{secrets.CI_GITHUB_TOKEN}}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
