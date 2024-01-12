@@ -8,9 +8,9 @@ importers:
 
   .:
     dependencies:
-      '@eavid/js-bson':
-        specifier: ^1.1.2
-        version: 1.1.2
+      jbod:
+        specifier: ^0.0.2
+        version: 0.0.2
     devDependencies:
       '@eavid/lib-dev':
         specifier: ^0.0.3
@@ -85,10 +85,6 @@ packages:
   /@bcoe/v8-coverage@0.2.3:
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==, tarball: https://registry.npmmirror.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz}
     dev: true
-
-  /@eavid/js-bson@1.1.2:
-    resolution: {integrity: sha512-wot3wWTmcxAUE5ZGY/xmOEfq9XF8fwWwbVFMDTboLIt+853gg2xCJXewjvZ7csFucwOGENqqTm5rxK3JUMnd3Q==, tarball: https://registry.npmmirror.com/@eavid/js-bson/-/js-bson-1.1.2.tgz}
-    dev: false
 
   /@eavid/lib-dev@0.0.3(tslib@2.6.2)(typescript@5.3.3):
     resolution: {integrity: sha512-xJVc1+aWwfMvFHpvK7kAbd+2BaC0gY2NI+XH5YVOnP1fB7KDDJwKua8AOP9zSww3+cgwYQtWiHkTBQn0fVu9yA==, tarball: https://registry.npmmirror.com/@eavid/lib-dev/-/lib-dev-0.0.3.tgz}
@@ -1229,6 +1225,10 @@ packages:
     optionalDependencies:
       '@pkgjs/parseargs': 0.11.0
     dev: true
+
+  /jbod@0.0.2:
+    resolution: {integrity: sha512-sb3J1hmthcjLwOJSRYWbwcJU6JH6l92N9f3DitUBk6cPVR2PKi+zyL9ss40caRctYSTF27LID/cLdF0m5A/xOw==, tarball: https://registry.npmmirror.com/jbod/-/jbod-0.0.2.tgz}
+    dev: false
 
   /jju@1.4.0:
     resolution: {integrity: sha512-8wb9Yw966OSxApiCt0K3yNJL8pnNeIv+OEq2YMidz4FKP6nonSRoOXc80iXY4JaN2FC11B9qsNmDsm+ZOfMROA==, tarball: https://registry.npmmirror.com/jju/-/jju-1.4.0.tgz}

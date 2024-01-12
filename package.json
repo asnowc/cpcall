@@ -13,7 +13,7 @@
     "ci:api-extractor": "api-extractor run -c api-extractor.jsonc -v"
   },
   "dependencies": {
-    "@eavid/js-bson": "^1.1.2"
+    "jbod": "^0.0.2"
   },
   "devDependencies": {
     "@eavid/lib-dev": "^0.0.3",
