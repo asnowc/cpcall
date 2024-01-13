@@ -1,7 +1,8 @@
-import { baseDataTypes as callbackBaseArgs, objectDataTypes as callBackObjectArgs } from "./bson.cases.js";
+import { baseDataTypes } from "./data_type.cases.js";
 import { Cpc, CpcFailAsyncRespondError, CpcFailRespondError, CpcUnregisteredCommandError } from "cpcall";
-import { describe, it, expect, vi, SpyInstance } from "vitest";
+import { describe, it, expect, vi, MockInstance } from "vitest";
 import { CpcMocks, nextMacaoTask } from "./cpc.mock.js";
+import "../expects/expect.js";
 
 export function createServerFnCase() {
   return {
@@ -45,37 +46,25 @@ export function cpc(mocks: CpcMocks) {
 
       /** 测试参数传输 */
       describe("单个参数调用与返回值", function () {
-        const cases = Object.entries(callbackBaseArgs);
+        const cases = Object.entries(baseDataTypes);
         cases.forEach(([type, dataList]) => {
           it.each(dataList as any[])("%s", async function (arg) {
             const { cpcClient, fn, cmd } = createBase();
             const res = await cpcClient.call(cmd, [arg]);
-
-            expect(fn.mock.calls[0], "参数").toEqual([arg]);
-            expect(res, "返回值").toEqual(arg);
-          });
-        });
-
-        const cases2 = Object.entries(callBackObjectArgs);
-        describe.each(cases2)("%s", function (type, { data, expect: cusExpect }) {
-          it.each(data as any[])("%s", async function (arg) {
-            const { cpcClient, fn, cmd } = createBase();
-            const pms = cpcClient.call(cmd, [arg]);
-            await nextMacaoTask();
-
-            cusExpect(arg, await pms);
+            expect(fn.mock.calls[0]).jbodEqual([arg]);
+            expect(res, "返回值").jbodEqual(arg);
           });
         });
       });
-      describe.concurrent("多参数写入测试", function () {
-        const args = Object.entries(callbackBaseArgs);
+      describe("多参数写入测试", function () {
+        const args = Object.entries(baseDataTypes);
         it.each(args)(
           "%s",
           async function (type, arg) {
             const { cpcClient, cmd, fn } = createBase();
             await cpcClient.call(cmd, arg);
 
-            expect(fn.mock.calls[0], type).toEqual(arg);
+            expect(fn.mock.calls[0], type).jbodEqual(arg);
           },
           100
         );
@@ -83,7 +72,7 @@ export function cpc(mocks: CpcMocks) {
       /** 测试返回顺序 */
       it("连续调用", async function () {
         const { cpcClient, cmd, fn } = createBase();
-        const dataList = callbackBaseArgs.noContent;
+        const dataList = baseDataTypes.noContent;
         const pmsList: Promise<any>[] = dataList.map((args) => cpcClient.call(cmd, [args]));
 
         await nextMacaoTask();
@@ -138,7 +127,7 @@ export function cpc(mocks: CpcMocks) {
       });
     }, 500);
     describe("状态更改", function () {
-      function expectFcpClose(cpc: Cpc, closeFn: SpyInstance) {
+      function expectFcpClose(cpc: Cpc, closeFn: MockInstance) {
         expect(closeFn).toBeCalledTimes(1);
         expect(cpc.closed).toBeTruthy();
       }

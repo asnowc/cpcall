@@ -44,11 +44,9 @@ export function sendCpcFrame(frame: CpcFrame): [Uint8Array[], number] {
     contentLen += argBuf.byteLength;
   } else if (type === FrameType.reject || type === FrameType.resolve) {
     const idBuf = DBN.numToBinary(frame[1]);
-    const valueBuf = JBOD.binaryifyContent(frame[2]);
-    writeList.push(new Uint8Array([JBOD.getType(frame[2])]));
+    const valueBuf = JBOD.binaryify(frame[2]);
     writeList.push(idBuf); //id
     writeList.push(valueBuf); //value
-    contentLen += 1;
     contentLen += idBuf.byteLength;
     contentLen += valueBuf.byteLength;
   } else {

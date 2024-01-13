@@ -5,6 +5,7 @@ const root = __dirname;
 
 export default defineConfig({
   test: {
+    api: 8809,
     alias: [
       { find: /^#lib/, replacement: path.resolve(root, "src/cpc/lib") },
       { find: /^cpcall$/, replacement: path.resolve(root, "src/cpc/cpc.js") },
