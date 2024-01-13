@@ -1,6 +1,6 @@
 {
   "name": "cpcall",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "",
   "type": "module",
   "scripts": {
@@ -13,7 +13,7 @@
     "ci:api-extractor": "api-extractor run -c api-extractor.jsonc -v"
   },
   "dependencies": {
-    "jbod": "^0.0.2"
+    "jbod": "^0.0.3"
   },
   "devDependencies": {
     "@eavid/lib-dev": "^0.0.3",
@@ -48,7 +48,7 @@
   "license": "MIT",
   "author": {
     "name": "Eavid",
-    "url": "https://github.com/ieavid"
+    "url": "https://github.com/eavidy"
   },
   "engines": {
     "node": ">=18"
