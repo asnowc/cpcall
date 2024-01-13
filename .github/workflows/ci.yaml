@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - develop
+      - feat/*
 
 jobs:
   build:
@@ -13,7 +14,7 @@ jobs:
         node-version: [18, 20]
     runs-on: ubuntu-latest
     outputs:
-      publish: ${{steps.check_tag.outputs.return}}
+      publish: ${{steps.check_tag.outputs.tags}}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,31 +26,19 @@ jobs:
           run_install: true
       - name: Unit test
         run: pnpm ci:test
+      - name: Build
+        if: ${{ github.ref_name=='main'}}
+        run: pnpm ci:build
+
       - name: Check API
         if: ${{ github.ref_name=='main' }}
         run: pnpm ci:api-extractor
 
-      - name: Setup Deno
-        if: ${{github.ref_name=='main'}}
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.x
-      - name: Check tag
-        if: ${{ github.ref_name=='main'}}
+      - name: Check Tag
         id: check_tag
-        uses: asnowc/actions@deno-script/v1
+        uses: asnowc/actions@check-tags/v1
         with:
-          script: |
-            import { writeNewTagToOutput } from "https://cdn.jsdelivr.net/gh/dnpack/action-script@0.3.x/cmd/github_repo.ts";
-            const str = await Deno.readTextFile("./package.json");
-            const version = JSON.parse(str).version;
-            await writeNewTagToOutput("v" + version, "return");
-          args: -A --no-lock
-
-      - name: Build
-        if: ${{ github.ref_name=='main'&& steps.check_tag.outputs.return}}
-        run: pnpm ci:build
-
+          file: package.json
   publish:
     needs: build
     if: ${{needs.build.outputs.publish&&github.ref_name=='main'}}
@@ -73,12 +62,12 @@ jobs:
         uses: asnowc/actions@deno-script/v1
         with:
           script: |
-            import { tagPublishFlow } from "https://cdn.jsdelivr.net/gh/dnpack/action-script@0.3.x/cmd/github_repo.ts";
+            import { tagsPublishFlow } from "https://cdn.jsdelivr.net/gh/dnpack/action-script@0.3.x/cmd/github_repo.ts";
             import { execCmdSync } from "https://cdn.jsdelivr.net/gh/dnpack/action-script@0.3.x/lib.ts";
 
-            await tagPublishFlow("NEW_TAG", () => execCmdSync("npm", ["publish"], { exitIfFail: true }));
+            await tagsPublishFlow("NEW_TAGS", () => execCmdSync("npm", ["publish"], { exitIfFail: true }));
           args: -A --no-lock
         env:
-          NEW_TAG: ${{needs.build.outputs.publish}}
+          NEW_TAGS: ${{needs.build.outputs.publish}}
           GITHUB_TOKEN: ${{secrets.CI_GITHUB_TOKEN}}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
