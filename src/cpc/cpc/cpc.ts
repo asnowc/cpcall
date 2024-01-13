@@ -9,9 +9,9 @@ import {
   FrameType,
 } from "./cpc_frame.type.js";
 import { Listenable } from "#lib/evlib.js";
+import { VOID } from "./private/const.js";
 export * from "./cpc_frame.type.js";
 
-export const VOID = Symbol("No Exist");
 /**
  * @public
  * @remarks Cross-process call (跨进程调用-CPC)

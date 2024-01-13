@@ -1,5 +1,6 @@
-import { CpcFrame, CpcUnknownFrameTypeError, FrameType, VOID } from "./cpc.js";
+import { CpcFrame, CpcUnknownFrameTypeError, FrameType } from "./cpc.js";
 import JBOD, { DBN, DataType } from "jbod";
+import { VOID } from "./private/const.js";
 
 export function readCpcFrame(frame: Uint8Array): CpcFrame {
   const type: FrameType = frame[0];

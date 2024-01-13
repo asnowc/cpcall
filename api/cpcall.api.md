@@ -229,7 +229,7 @@ class WebSocketCpc<CallableCmd extends object = CpcCmdList_2, CmdList extends ob
 
 // Warnings were encountered during analysis:
 //
-// src/cpc/cpc/cpc.ts:88:9 - (ae-forgotten-export) The symbol "CmdFx" needs to be exported by the entry point index.d.ts
+// src/cpc/cpc/cpc.ts:88:7 - (ae-forgotten-export) The symbol "CmdFx" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
