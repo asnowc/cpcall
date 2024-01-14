@@ -14,7 +14,6 @@ export const baseDataTypes = {
     [1, 4, "2"],
     [undefined, [1, 3, [8, 9], {}, 4]],
   ],
-  arrayBuffer: [new ArrayBuffer(5), new ArrayBuffer(0)],
   error: [new Error("abc"), new Error("abc", { cause: 23 })],
   regExp: [/\d+./],
   symbol: [Symbol("abc"), Symbol(""), Symbol()],

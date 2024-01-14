@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       jbod:
-        specifier: ^0.0.3
-        version: 0.0.3(vitest@1.1.3)
+        specifier: ^0.1.0
+        version: 0.1.0(vitest@1.1.3)
     devDependencies:
       '@eavid/lib-dev':
         specifier: ^0.0.3
@@ -1153,8 +1153,8 @@ packages:
       '@pkgjs/parseargs': 0.11.0
     dev: true
 
-  /jbod@0.0.3(vitest@1.1.3):
-    resolution: {integrity: sha512-um/YegJo9Jy3wy4Ca9+gHIYCW09XiX0YgfefC4yOC3khovc4u1hZXEgxQGWeqHNRlxakBl1x3oNPSvnJIaRvqw==, tarball: https://registry.npmmirror.com/jbod/-/jbod-0.0.3.tgz}
+  /jbod@0.1.0(vitest@1.1.3):
+    resolution: {integrity: sha512-7cqIBQox7Emo6OTW2mrrCn/8vofGYqJ4jVIQH7jbY6Qeaz9Ax3U1rmy0VwYcdUkSPVZln4bsjSFIRdDkW8nSyQ==, tarball: https://registry.npmmirror.com/jbod/-/jbod-0.1.0.tgz}
     dependencies:
       '@eavid/vitest-tool': 1.0.2(vitest@1.1.3)
     transitivePeerDependencies:
