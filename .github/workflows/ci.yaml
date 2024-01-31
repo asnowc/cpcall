@@ -27,14 +27,15 @@ jobs:
       - name: Unit test
         run: pnpm ci:test
       - name: Build
-        if: ${{ github.ref_name=='main'}}
+        if: ${{ github.ref_name=='main'&& matrix.node-version==20 }}
         run: pnpm ci:build
 
       - name: Check API
-        if: ${{ github.ref_name=='main' }}
-        run: pnpm ci:api-extractor
+        if: ${{ github.ref_name=='main'&& matrix.node-version==20 }}
+        run: pnpm ci:check-api
 
       - name: Check Tag
+        if: ${{ github.ref_name=='main'&& matrix.node-version==20 }}
         id: check_tag
         uses: asnowc/actions@check-tags/v1
         with:
@@ -55,10 +56,6 @@ jobs:
       - name: Build
         if: ${{ github.ref_name=='main'}}
         run: pnpm ci:build
-      - name: Gen Dts
-        if: ${{ github.ref_name=='main' }}
-        run: pnpm ci:gen-dts
-
       - name: Setup Deno
         if: ${{ github.ref_name=='main'}}
         uses: denoland/setup-deno@v1
