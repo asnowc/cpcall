@@ -47,17 +47,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup NodeJS
-        uses: actions/setup-node@v3
+        uses: asnowc/actions@setup-node/v2
         with:
-          node-version: 20
-          registry-url: https://registry.npmjs.org
+          node_v: 20
+          pnpm_v: 8
+          run_install: true
       - name: Build
-        if: ${{ github.ref_name=='main'}}
         run: pnpm ci:build
+
       - name: Setup Deno
-        if: ${{ github.ref_name=='main'}}
         uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
