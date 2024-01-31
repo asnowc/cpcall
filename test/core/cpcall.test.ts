@@ -1,0 +1,211 @@
+import { describe, test, expect, vi, beforeEach } from "vitest";
+import { FrameType, RpcFrame, CpCall } from "cpcall";
+import { PassiveDataCollector } from "evlib/async";
+import { afterTime } from "evlib";
+import { CpcFailRespondError, CpcFailAsyncRespondError } from "cpcall";
+import * as mocks from "../__mocks__/cpc_socket.mock.js";
+
+describe("CpCall", function () {
+  const onSendFrame = vi.fn();
+  let hd: PassiveDataCollector<RpcFrame>;
+  let cpc: CpCall;
+  beforeEach(() => {
+    hd = new PassiveDataCollector<RpcFrame>();
+    cpc = new CpCall(hd.getAsyncGen(), onSendFrame);
+  });
+  test("close caller 和 callee 主动触发", async function () {
+    cpc.caller.end(true);
+    cpc.disable(true);
+    hd.yield([FrameType.call, []]);
+    await afterTime();
+    expect(cpc.$close.done).toBeTruthy();
+  });
+  test("被动触发", async function () {
+    hd.yield([FrameType.end]);
+    hd.yield([FrameType.disable]);
+    await afterTime();
+    expect(cpc.caller.$finish.done, "caller finish").toBeTruthy();
+    hd.close();
+    await afterTime();
+    expect(cpc.$close.done, "cpc close").toBeTruthy();
+  });
+}, 500);
+
+describe("创建连接与关闭连接", function () {
+  let mock!: ReturnType<typeof mocks.createConnectedCpc>;
+  beforeEach(() => {
+    mock = mocks.createConnectedCpc();
+  });
+  test("caller 关闭", async function () {
+    const { clientCpc, serverCpc } = mock;
+    const clientFinish = clientCpc.caller.end();
+    await clientCpc.caller.$disable();
+    const serverFinish = serverCpc.caller.end();
+    await serverCpc.caller.$disable();
+    await Promise.all([clientFinish, serverFinish]);
+  });
+  test("callee 关闭", async function () {
+    const { clientCpc, serverCpc } = mock;
+    const serverFinish = serverCpc.disable();
+    await clientCpc.caller.$disable();
+    const clientFinish = clientCpc.disable();
+    await serverCpc.caller.$disable();
+    await Promise.all([clientFinish, serverFinish]);
+  });
+  test("单方中断", async function () {
+    const { clientCpc, serverCpc } = mock;
+    const c1 = clientCpc.$close();
+    const s1 = serverCpc.$close();
+    clientCpc.disable(true);
+    clientCpc.caller.end(true);
+    await expect(c1).resolves.toBeUndefined();
+    await expect(s1).resolves.toBeUndefined();
+  });
+}, 500);
+describe("与返回调用", function () {
+  let mock!: ReturnType<typeof mocks.createConnectedCpc>;
+  const fn = vi.fn((...args) => args);
+  const cmd = "fn";
+  beforeEach(() => {
+    mock = mocks.createConnectedCpc();
+    mock.serverCpc.setFn(cmd, fn);
+    fn.mockRestore();
+  });
+
+  /** 测试参数传输 */
+  test("单个参数调用与返回值", async function () {
+    const { clientCpc } = mock;
+    const arg = [1, "ab", null, { a: 2, b: 8n }];
+    const res = await clientCpc.caller.call(cmd, ...arg);
+
+    expect(fn).toBeCalledWith(...arg);
+    expect(res, "返回值").toEqual(arg);
+  });
+  /** 测试返回顺序 */
+  test("连续调用", async function () {
+    const { clientCpc } = mock;
+    fn.mockImplementation((...args) => args[0]);
+    const dataList = [null, true, false];
+    const pmsList: Promise<any>[] = dataList.map((arg) => clientCpc.caller.call(cmd, arg));
+    const res = await Promise.all(pmsList);
+    expect(res).toEqual(dataList);
+  });
+  test("exec", async function () {
+    const { clientCpc, serverCpc } = mock;
+    fn.mockImplementation((...args) => args[0]);
+    serverCpc.setFn("fn", fn);
+    expect(clientCpc.caller.exec("fn", 77)).toBeUndefined();
+  });
+  test("内联调用", async function () {
+    let pms: Promise<any>;
+    const { clientCpc, serverCpc } = mock;
+    clientCpc.setFn("clientFn", () => 1);
+    serverCpc.setFn("serverFn", () => {
+      pms = serverCpc.caller.call("clientFn", true);
+      return 3;
+    });
+    await expect(clientCpc.caller.call("serverFn")).resolves.toBe(3);
+    await expect(pms!).resolves.toBe(1);
+  });
+}, 500);
+
+describe("返回值", function () {
+  let mock!: ReturnType<typeof mocks.createConnectedCpc>;
+  const fn = vi.fn();
+  const cmd = "fn";
+  beforeEach(() => {
+    mock = mocks.createConnectedCpc();
+    mock.serverCpc.setFn(cmd, fn);
+    fn.mockRestore();
+  });
+
+  test("异步返回", async function () {
+    const { clientCpc, serverCpc } = mock;
+    const arg = [true, undefined, 4];
+    fn.mockImplementation(async () => {
+      return new Promise((resolve) => setTimeout(() => resolve(8)));
+    });
+    await expect(clientCpc.caller.call("fn", arg)).resolves.toBe(8);
+  });
+  test("函数抛出Error对象", async function () {
+    const { clientCpc, serverCpc } = mock;
+    fn.mockImplementation(() => {
+      throw new Error("yy");
+    });
+    await expect(clientCpc.caller.call("fn")).rejects.toThrowError("yy");
+  });
+  test("函数抛出非Error对象", async function () {
+    const { clientCpc, serverCpc } = mock;
+    fn.mockImplementation(() => {
+      throw "abc";
+    });
+    await expect(clientCpc.caller.call("fn")).rejects.toBe("abc");
+  });
+  test("异步抛出Error对象", async function () {
+    const { clientCpc, serverCpc } = mock;
+    fn.mockImplementation(async () => {
+      throw new Error("yy");
+    });
+    await expect(clientCpc.caller.call("fn")).rejects.toThrowError("yy");
+  });
+  test("异步抛出非Error对象", async function () {
+    const { clientCpc, serverCpc } = mock;
+    fn.mockImplementation(async () => {
+      throw "abc";
+    });
+    await expect(clientCpc.caller.call("fn")).rejects.toBe("abc");
+  });
+}, 500);
+
+describe("状态更改", function () {
+  test("在返回前断开连接", async function () {
+    const cpc = mocks.getNoResponseCpc();
+    const pms = cpc.caller.call("yyy");
+    await afterTime(50);
+    cpc.caller.end(true);
+    expect(cpc.caller.$finish.done).toBeTruthy();
+    await expect(pms, "在返回前中断").rejects.toThrowError(CpcFailRespondError);
+  });
+  test("Promise状态在变化前断开连接", async function () {
+    const { serverCpc, clientCpc } = mocks.createConnectedCpc();
+
+    serverCpc.setFn("cmd", function () {
+      return new Promise(function (resolve) {
+        setTimeout(resolve, 500);
+      });
+    });
+    let pms = clientCpc.caller.call("cmd");
+    await afterTime();
+    clientCpc.caller.end(true);
+    expect(clientCpc.caller.$finish).toBeTruthy();
+
+    await expect(pms).rejects.toThrowError(CpcFailAsyncRespondError);
+  });
+}, 500);
+
+test("解析对象", async function () {
+  const { clientCpc, serverCpc } = mocks.createConnectedCpc();
+  serverCpc.setObject(new Children());
+
+  const caller = clientCpc.caller;
+  await expect(caller.call("mod")).resolves.toBe("Children" + "mod");
+  await expect(caller.call("mod2")).resolves.toBe("Parent" + "mod2");
+  await expect(caller.call("ccc")).resolves.toBe("ccc");
+});
+class Parent {
+  constructor() {}
+  mod() {
+    return "mod";
+  }
+  mod2() {
+    return this.constructor.name + "mod2";
+  }
+}
+class Children extends Parent {
+  mod(): string {
+    return this.constructor.name + "mod";
+  }
+  ccc = () => {
+    return "ccc";
+  };
+}

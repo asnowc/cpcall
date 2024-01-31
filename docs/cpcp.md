@@ -5,21 +5,21 @@
 |Frame type|Content|
 ```
 
-| dec | binary | DESC            | content length |
-| --- | ------ | --------------- | -------------- |
-| 0   | 0000   |                 |                |
-| 1   | 0001   | call            | n              |
-| 2   | 0010   | exec            | same call      |
-| 3   | 0011   |                 |                |
-| 4   | 0100   |                 |                |
-| 5   | 0101   |                 |                |
-| 6   | 0110   |                 |                |
-| 7   | 0111   | actionResponse  | same return    |
-| 8   | 1000   | return promise  |                |
-| 9   | 1001   | promise resolve | n              |
-| 10  | 1010   | promise reject  | n              |
-| 11  | 1011   | return          | n              |
-| 12  | 1100   | throw           | same return    |
+| dec | binary | DESC     | content length  | DESC            |
+| --- | ------ | -------- | --------------- | --------------- |
+| 0   | 0000   |          |                 |                 |
+| 1   | 0001   | call     | array (no void) |                 |
+| 2   | 0010   | exec     | array (no void) |                 |
+| 3   | 0011   |          |                 |                 |
+| 4   | 0100   |          |                 |                 |
+| 5   | 0101   |          |                 |                 |
+| 6   | 0110   |          |                 |                 |
+| 7   | 0111   | response | int             | 响应异常        |
+| 8   | 1000   | promise  | DBN             | 返回 Promise    |
+| 9   | 1001   | resolve  | n               | promise resolve |
+| 10  | 1010   | reject   | n               | promise reject  |
+| 11  | 1011   | return   | n               |                 |
+| 12  | 1100   | throw    | same return     |                 |
 
 | dec | binary    | Frame type length | content length |
 | --- | --------- | ----------------- | -------------- |
@@ -27,7 +27,8 @@
 | 17  | 0001_0001 |                   |                |
 |     |           |                   |                |
 | 20  | 0001_0100 |                   |                |
-| 255 | 11111111  | fin               | 0              |
+| 254 | 11111110  | end               | 0              |
+| 255 | 11111111  | disable           | 0              |
 
 ### All types of content:
 
@@ -45,54 +46,23 @@
  type    data
 ```
 
-if (type === void) throw CpcUnregisteredCommandError
-
-#### return async
+#### promise
 
 ```
-<dynamicLenData>
-    asyncId
+<--DBN-->
+ asyncId
 ```
 
-#### async resolve:
+#### resolve:
 
 ```
-<dynamicLenData> <return>
-    asyncId
+<--DBN--> <return>
+ asyncId
 ```
 
-#### async reject:
+#### reject:
 
 ```
-<dynamicLenData> <throw>
-    asyncId
+<--DBN--> |8bit| |--n--|
+ asyncId   type    data
 ```
-
-#### call/call ignore return:
-
-```
-<dynamicLenData> |cmdLen| <args>
-     cmdLen      command  <args>
-```
-
-#### mapping call:
-
-```
-<dynamicLenData>   <args>
-     command       <args>
-```
-
-#### dynamicLenData
-
-| byte | max              | real    | content                                                                 |
-| ---- | ---------------- | ------- | ----------------------------------------------------------------------- |
-| 1    | 0x7f             | 7bit    | 0xxxxxxx                                                                |
-| 2    | 0x3fff           | 6bit 1B | 1xxxxxxx 0xxxxxxx                                                       |
-| 3    | 0x1fffff         | 5bit 2B | 1xxxxxxx 1xxxxxxx 0xxxxxxx                                              |
-| 4    | 0xfffffff(255MB) | 4bit 3B | 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx                                     |
-| 5    | 0x7ffffffff      | 3bit 4B | 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx                            |
-| 6    | 0x3ffffffffff    | 2bit 5B | 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx                   |
-| 7    | 0x1ffffffffffff  | 1bit 6B | 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx          |
-| 8    |                  | 7B      | 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx |
-
-0~65535 TB

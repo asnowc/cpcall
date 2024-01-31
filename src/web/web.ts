@@ -1,37 +1,27 @@
-import { CpcFrame, Cpc, CpcCmdList } from "../cpc/cpc.js";
-import { sendCpcFrame, readCpcFrame, concatUint8ArrayList } from "../cpc/cpc/transition_frame.js";
+/// <reference lib="dom"/>
 
-/**
- * @beta
- */
-export class WebSocketCpc<CallableCmd extends object = CpcCmdList, CmdList extends object = CpcCmdList> extends Cpc<
-    CallableCmd,
-    CmdList
-> {
-    static createConnect(url: string | URL, protocols?: string | string[]) {
-        return new Promise<WebSocketCpc>(function (resolve, reject) {
-            const socket = new WebSocket(url, protocols);
-            socket.binaryType = "arraybuffer";
-            socket.onerror = reject;
-            socket.onopen = () => resolve(new WebSocketCpc(socket));
-        });
+import { CpCall, encodeCpcFrame, decodeCpcFrame, RpcFrame } from "cpcall";
+import { PassiveDataCollector } from "evlib/async";
+
+function webSocketToIter(webSocket: WebSocket) {
+  const collector = new PassiveDataCollector<RpcFrame, Error | void>();
+  webSocket.addEventListener("message", (e) => {
+    if (e.data instanceof ArrayBuffer) {
+      collector.yield(decodeCpcFrame(new Uint8Array(e.data)));
     }
-    private constructor(private socket: WebSocket) {
-        super();
-        socket.onmessage = this.onMsg;
-        socket.onerror = (e) => this.$error.emit(new Error("websocket error", { cause: Event }));
-        socket.onclose = (e) => this.dispose();
-    }
-    private onMsg = (event: MessageEvent<ArrayBuffer>) => {
-        const buf = event.data;
-        if (buf instanceof ArrayBuffer) {
-            const frame = readCpcFrame(new Uint8Array(buf));
-            this.onCpcFrame(frame);
-        }
-    };
-    protected sendFrame(frame: CpcFrame): void {
-        const [chunks, size] = sendCpcFrame(frame);
-        const buf = concatUint8ArrayList(chunks, size);
-        this.socket.send(buf);
-    }
+  });
+  webSocket.addEventListener("close", () => {
+    collector.close();
+  });
+  webSocket.addEventListener("error", (e) => {
+    collector.close(new Error("unknown error"));
+  });
+  return collector.getAsyncGen();
+}
+/** @public */
+export function createWebSocketCpc(websocket: WebSocket) {
+  const iter = webSocketToIter(websocket);
+  return new CpCall(iter, (frame) => {
+    websocket.send(encodeCpcFrame(frame));
+  });
 }

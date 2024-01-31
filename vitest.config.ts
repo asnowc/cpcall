@@ -7,9 +7,8 @@ export default defineConfig({
   test: {
     api: 8809,
     alias: [
-      { find: /^#lib/, replacement: path.resolve(root, "src/cpc/lib") },
-      { find: /^cpcall$/, replacement: path.resolve(root, "src/cpc/cpc.js") },
-      { find: /^cpcall\/node$/, replacement: path.resolve(root, "src/node/node.js") },
+      { find: /^cpcall$/, replacement: path.resolve(root, "src/cpc/mod.js") },
+      { find: /^cpcall\/node$/, replacement: path.resolve(root, "src/node/mod.js") },
     ],
     coverage: {
       exclude: ["**/__mocks__", "**/*errors.ts", "**/*.type.ts", "**/lib/**"],

@@ -12,12 +12,11 @@
         "moduleResolution": "nodenext",
         "skipDefaultLibCheck": true,
         "strict": true,
-        "lib": ["ESNext"],
+        "lib": ["ESNext", "dom"],
         "paths": {
           "cpcall/node": ["./dist/node/index.js"],
           "cpcall/web": ["./dist/web/index.js"],
-          "cpcall": ["./dist/cpc/cpc.js"],
-          "#lib/*": ["./dist/cpc/lib/*"]
+          "cpcall": ["./dist/cpc/cpc.js"]
         }
       },
       "files": ["index.d.ts"],
@@ -58,11 +57,8 @@
   },
   "messages": {
     "tsdocMessageReporting": {
-      "tsdoc-escape-right-brace": {
-        "logLevel": "none"
-      },
-      "tsdoc-malformed-inline-tag": {
-        "logLevel": "none"
+      "tsdoc-undefined-tag": {
+        "logLevel": "warning"
       }
     }
   }

@@ -1,25 +1,39 @@
 // @ts-check
+
 import { defineEvConfig } from "@eavid/lib-dev/rollup";
 import * as path from "node:path";
+import { isBuiltin } from "node:module";
+// @ts-ignore
+import packageJson from "./package.json" assert { type: "json" };
 
-const dir = process.cwd();
-console.log("cwd:" + dir);
-const libDir = path.resolve(dir, "src/cpc/lib");
+const { deps } = getDeps();
+const src = path.resolve("src");
 
 export default defineEvConfig({
   input: {
-    cpc: "src/cpc/cpc.ts",
-    node: "src/node/node.ts",
-    web: "src/web/web.ts",
+    cpc: "src/cpc/mod.ts",
+    node: "src/node/mod.ts",
+    web: "src/web/mod.ts",
   },
   output: {
     dir: "dist",
     chunkFileNames: "internal/[name].js",
     minifyInternalExports: false,
-    entryFileNames: "[name]/[name].js",
+    entryFileNames: "[name].js",
     manualChunks(id, meta) {
-      if (id.startsWith(libDir)) return "lib";
+      if (id.startsWith(src)) return;
+      else return "deps";
     },
+  },
+  external(source, importer, isResolved) {
+    if (isResolved) return;
+    if (path.isAbsolute(source)) return;
+    else if (source.startsWith(".")) return;
+
+    if (isBuiltin(source)) return true;
+    if (isDeps(deps, source)) {
+      return true;
+    }
   },
   extra: {
     typescript: {
@@ -36,3 +50,33 @@ export default defineEvConfig({
     resolve: {},
   },
 });
+/**
+ * @param {Set<string>} deps
+ * @param {string} id
+ */
+function isDeps(deps, id) {
+  if (deps.has(id)) return true;
+  for (const item of deps) {
+    if (id.startsWith(item + "/")) return true;
+  }
+}
+
+function getDeps() {
+  const { dependencies, devDependencies, peerDependencies } = packageJson;
+  const devDeps = new Set();
+
+  if (devDependencies) {
+    for (const item of Object.keys(devDependencies)) {
+      devDeps.add(item);
+    }
+  }
+  if (peerDependencies) {
+    for (const item of Object.keys(peerDependencies)) {
+      devDeps.add(item);
+    }
+  }
+  return {
+    deps: new Set(Object.keys(dependencies)),
+    devDeps,
+  };
+}

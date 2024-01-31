@@ -47,17 +47,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Deno
-        if: ${{ github.ref_name=='main'}}
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.x
       - name: Setup NodeJS
         uses: actions/setup-node@v3
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org
+      - name: Build
+        if: ${{ github.ref_name=='main'}}
+        run: pnpm ci:build
+      - name: Gen Dts
+        if: ${{ github.ref_name=='main' }}
+        run: pnpm ci:gen-dts
 
+      - name: Setup Deno
+        if: ${{ github.ref_name=='main'}}
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
       - name: Publish
         uses: asnowc/actions@deno-script/v1
         with:

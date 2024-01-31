@@ -6,182 +6,95 @@
 
 /// <reference types="node" />
 
-import type { Duplex } from 'node:stream';
-import type { EventEmitter } from 'node:events';
+import { Duplex } from 'node:stream';
+
+// @public (undocumented)
+class CalleeError extends Error {
+}
+
+// @public (undocumented)
+class CallerError extends Error {
+}
 
 declare namespace core {
     export {
-        Cpc,
-        CpcFrame,
-        FrameType,
-        CpcEvents,
-        CpcCmdList_2 as CpcCmdList,
+        CalleeError,
+        CallerError,
+        CpCall,
         CpcError,
-        CpcCallError,
-        CpcFailRespondError,
         CpcFailAsyncRespondError,
+        CpcFailRespondError,
         CpcUnregisteredCommandError,
-        CpcUnknownFrameTypeError,
-        StreamReader,
-        CpcStreamCtrl,
-        StreamCpc
+        FrameType,
+        RpcFrame,
+        decodeCpcFrame,
+        encodeCpcFrame,
+        packageCpcFrame
     }
 }
 export { core }
 
-// Warning: (ae-forgotten-export) The symbol "CpcCmdList" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "CpCallBase" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-abstract class Cpc<CallList extends object = CpcCmdList, CmdList extends object = CpcCmdList> {
+class CpCall extends CpCallBase {
     // (undocumented)
-    $closed: Listenable<Error | undefined>;
-    // Warning: (ae-forgotten-export) The symbol "Listenable" needs to be exported by the entry point index.d.ts
-    //
+    static fromByteIterable(iter: AsyncIterable<Uint8Array>, write: (binaryFrame: Uint8Array) => void): CpCall;
     // (undocumented)
-    $end: Listenable<void>;
-    // (undocumented)
-    $error: Listenable<Error>;
-    constructor(maxAsyncId?: number);
-    // Warning: (ae-forgotten-export) The symbol "GetAnyVoidCmd" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    call<T extends GetAnyVoidCmd<CallList>>(cmd: T): Promise<any>;
-    // Warning: (ae-forgotten-export) The symbol "GetVoidCmds" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-forgotten-export) The symbol "GetVoidFn" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    call<T extends GetVoidCmds<CallList>, R = ReturnType<GetVoidFn<CallList[T]>>>(cmd: T): Promise<R>;
-    // (undocumented)
-    call<T extends GetCmds<CallList>, Fn extends CmdFx = GetFn<CallList[T]>>(cmd: T, arg: Parameters<Fn>): Promise<ReturnType<Fn>>;
-    // Warning: (ae-forgotten-export) The symbol "CallOptions" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    call<T extends GetCmds<CallList>, Fn extends CmdFx = GetFn<CallList[T]>>(cmd: T, arg: Parameters<Fn>, options: CallOptions): Promise<ReturnType<Fn>>;
-    // (undocumented)
-    protected get closeable(): boolean;
-    get closed(): boolean;
-    dispose(error?: Error): void;
-    end(): void;
-    // (undocumented)
-    exec<T extends GetAnyVoidCmd<CallList>>(cmd: T): void;
-    // (undocumented)
-    exec<T extends GetVoidCmds<CallList>>(cmd: T): void;
-    // (undocumented)
-    exec<T extends GetCmds<CallList>, Arg extends any[] = Parameters<GetFn<CallList[T]>>>(cmd: T, arg: Arg): void;
-    protected finalClose(error?: Error): void;
-    protected finalEnd(): void;
-    getAllCmd(): {
-        [k: string]: CmdFx;
-    };
-    get isEnded(): boolean;
-    // (undocumented)
-    protected onCpcError(error: Error): void;
-    // (undocumented)
-    protected onCpcFrame(frame: CpcFrame): void;
-    // (undocumented)
-    removeCmd<T extends GetCmds<CmdList>>(cmd: T): void;
-    // (undocumented)
-    removeCmd(cmd: string | number): void;
-    protected abstract sendFrame(frame: CpcFrame): void;
-    // Warning: (ae-forgotten-export) The symbol "GetCmds" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-forgotten-export) The symbol "GetFn" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    setCmd<T extends GetCmds<CmdList>, Fn extends GetFn<CmdList[T]>>(cmd: T, fx: Fn): void;
-    // (undocumented)
-    protected get waitingResponseNum(): number;
-    // (undocumented)
-    protected get waitingResultNum(): number;
+    setObject(obj: object, cmd?: string): void;
 }
 
-// @public (undocumented)
-class CpcCallError extends Error {
-    constructor(msg?: string);
-}
-
-// @public (undocumented)
-type CpcCmdList_2 = {
-    [key: string | number]: (...args: any[]) => any;
-};
-
-// @public (undocumented)
+// @public
 class CpcError extends Error {
 }
-
-// @public (undocumented)
-type CpcEvents = {
-    end: [];
-    close: [error?: Error];
-    error: [error: Error];
-};
 
 // @public
 class CpcFailAsyncRespondError extends CpcFailRespondError {
 }
 
 // @public (undocumented)
-class CpcFailRespondError extends CpcCallError {
+class CpcFailRespondError extends Error {
     constructor();
-}
-
-// Warning: (ae-forgotten-export) The symbol "F_call" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "F_asyncRes" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "F_returnAsync" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "F_end" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "F_return" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "F_throw" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-type CpcFrame = F_call | F_asyncRes | F_returnAsync | F_end | F_return | F_throw;
-
-// @public (undocumented)
-interface CpcStreamCtrl {
-    // (undocumented)
-    handshake?: number;
-    // (undocumented)
-    isWriteable?: () => boolean;
-    // (undocumented)
-    read: StreamReader;
-    // Warning: (ae-forgotten-export) The symbol "StreamWriter" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    write: StreamWriter;
-}
-
-// @public (undocumented)
-class CpcUnknownFrameTypeError extends Error {
-    constructor(frameType: any);
 }
 
 // @public
-class CpcUnregisteredCommandError extends CpcCallError {
+class CpcUnregisteredCommandError extends Error {
     constructor();
 }
 
-// Warning: (ae-forgotten-export) The symbol "NodeProcess" needs to be exported by the entry point index.d.ts
-//
 // @public (undocumented)
-function createNodePsCpc<CallableCmd extends object = CpcCmdList_2, CmdList extends object = CpcCmdList_2>(process: NodeProcess, advSerialization?: boolean): Cpc<CallableCmd, CmdList>;
+function createSocketCpc(duplex: Duplex): CpCall;
 
 // @public (undocumented)
-function createSocketCpc<CallableCmd extends object = CpcCmdList_2, CmdList extends object = CpcCmdList_2>(duplex: Duplex): Cpc<CallableCmd, CmdList>;
+function createWebSocketCpc(websocket: WebSocket): CpCall;
+
+// @internal (undocumented)
+function decodeCpcFrame(frame: Uint8Array): RpcFrame;
+
+// @internal (undocumented)
+function encodeCpcFrame(frame: RpcFrame): Uint8Array;
 
 // @public (undocumented)
 enum FrameType {
     // (undocumented)
-    actionResponse = 7,
-    // (undocumented)
     call = 1,
+    disable = 255,
+    end = 254,
+    // (undocumented)
+    error = 7,
     // (undocumented)
     exec = 2,
+    // @deprecated (undocumented)
     fin = 254,
+    // (undocumented)
+    promise = 8,
     // (undocumented)
     reject = 10,
     // (undocumented)
     resolve = 9,
     // (undocumented)
     return = 11,
-    // (undocumented)
+    // @deprecated (undocumented)
     returnAsync = 8,
     // (undocumented)
     throw = 12
@@ -189,47 +102,27 @@ enum FrameType {
 
 declare namespace node {
     export {
-        createNodePsCpc,
         createSocketCpc
     }
 }
 export { node }
 
-// @public (undocumented)
-class StreamCpc<CallableCmd extends object = CpcCmdList_2, CmdList extends object = CpcCmdList_2> extends Cpc<CallableCmd, CmdList> {
-    constructor(streamCtrl: CpcStreamCtrl);
-    // (undocumented)
-    protected sendFrame(frame: CpcFrame): void;
-}
+// @internal (undocumented)
+function packageCpcFrame(frame: RpcFrame): Uint8Array;
 
+// Warning: (ae-forgotten-export) The symbol "CalleeFrame" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "CallerFrame" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Frame" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
-interface StreamReader {
-    // (undocumented)
-    (len: number, safe?: false): Promise<Uint8Array>;
-    // (undocumented)
-    (len: number, safe: true): Promise<Uint8Array | null>;
-    // (undocumented)
-    (len: number, safe?: boolean): Promise<Uint8Array | null>;
-}
+type RpcFrame = CalleeFrame | CallerFrame | Frame.ResponseError;
 
 declare namespace web {
     export {
-        WebSocketCpc
+        createWebSocketCpc
     }
 }
 export { web }
-
-// @beta (undocumented)
-class WebSocketCpc<CallableCmd extends object = CpcCmdList_2, CmdList extends object = CpcCmdList_2> extends Cpc<CallableCmd, CmdList> {
-    // (undocumented)
-    static createConnect(url: string | URL, protocols?: string | string[]): Promise<WebSocketCpc<CpcCmdList_2, CpcCmdList_2>>;
-    // (undocumented)
-    protected sendFrame(frame: CpcFrame): void;
-}
-
-// Warnings were encountered during analysis:
-//
-// src/cpc/cpc/cpc.ts:88:7 - (ae-forgotten-export) The symbol "CmdFx" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
