@@ -9,7 +9,7 @@
     "test:coverage": "vitest --coverage --ui",
     "api:check": "pnpm run ci:check-api -l",
     "ci:build": "pnpm rollup -c && pnpm gen-dts",
-    "ci:test": "vitest run --coverage",
+    "ci:test": "vitest run",
     "gen-dts": "node scripts/build_type.js",
     "ci:check-api": "api-extractor run -c api-extractor.jsonc -v"
   },
