@@ -1,4 +1,4 @@
-import { ByteParser } from "./async_scan.js";
+import { ByteParser } from "evlib/async";
 
 export class U32DByteParser extends ByteParser<number> {
   value = 0;

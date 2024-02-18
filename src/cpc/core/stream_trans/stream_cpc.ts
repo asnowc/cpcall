@@ -1,10 +1,11 @@
 import { FrameType } from "../const.js";
 import { RpcFrame } from "../type.js";
-import JBOD, { DataType, encodeU32DInto, calcU32DByte, decodeU32D, UnsupportedDataTypeError } from "jbod";
-import { StepsParser, LengthByteParser, U32DByteParser } from "../../lib/mod.js";
+import JBOD, { DataType, DBN, UnsupportedDataTypeError } from "jbod";
+import { StepsByteParser, LengthByteParser } from "evlib/async";
+import { U32DByteParser } from "../../lib/mod.js";
 
 function createCpcFrameParser() {
-  return new StepsParser(
+  return new StepsByteParser(
     { first: new U32DByteParser(), final: decodeCpcFrame },
     (len: number) => new LengthByteParser(len)
   );
@@ -15,7 +16,7 @@ export async function* createFrameIterator(iter: AsyncIterable<Uint8Array>) {
   for await (chunk of iter) {
     do {
       if (parser.next(chunk!)) {
-        const res = parser.end();
+        const res = parser.finish();
         yield res.value;
         chunk = res.residue;
       }
@@ -27,35 +28,37 @@ export async function* createFrameIterator(iter: AsyncIterable<Uint8Array>) {
 /** @internal */
 export function packageCpcFrame(frame: RpcFrame) {
   let bufRaw = encodeCpcFrame(frame);
-  const dbnLen = calcU32DByte(bufRaw.byteLength);
+  const dbnLen = DBN.calcU32DByte(bufRaw.byteLength);
   const u8Arr = new Uint8Array(dbnLen + bufRaw.byteLength);
-  const offset = encodeU32DInto(bufRaw.byteLength, u8Arr);
+  const offset = DBN.encodeU32DInto(bufRaw.byteLength, u8Arr);
   u8Arr.set(bufRaw, offset);
   return u8Arr;
 }
 
 /** @internal */
 export function decodeCpcFrame(frame: Uint8Array): RpcFrame {
-  const type: FrameType = frame[0];
+  let offset = 0;
+  const type: FrameType = frame[offset++];
   if (type === FrameType.call || type === FrameType.exec) {
-    const args = JBOD.parse<unknown[]>(frame.subarray(1), DataType.dyArray).data;
+    const args = JBOD.decode(frame, offset, DataType.dyArray).data as unknown[];
     return [type, args];
   } else if (type === FrameType.reject || type === FrameType.resolve) {
-    const { byte, value: id } = decodeU32D(frame.subarray(1));
-    const value = JBOD.parse(frame.subarray(byte + 1)).data;
-    return [type, id, value];
+    const res = DBN.decodeU32D(frame, offset);
+    offset += res.byte;
+    const value = JBOD.decode(frame, offset).data;
+    return [type, res.value, value];
   } else {
     switch (type) {
       case FrameType.return: {
-        const value = JBOD.parse(frame.subarray(1)).data;
+        const value = JBOD.decode(frame, offset).data;
         return [type, value];
       }
       case FrameType.throw: {
-        const value = JBOD.parse(frame.subarray(1)).data;
+        const value = JBOD.decode(frame, offset).data;
         return [type, value];
       }
       case FrameType.promise: {
-        const id = decodeU32D(frame.subarray(1)).value;
+        const id = DBN.decodeU32D(frame, offset).value;
         return [type, id];
       }
       case FrameType.end:
@@ -74,40 +77,38 @@ export function encodeCpcFrame(frame: RpcFrame): Uint8Array {
   const writeList: Uint8Array[] = [createTypeFlagBuf(type)];
   let contentLen = 1;
   if (type === FrameType.call || type === FrameType.exec) {
-    const argBuf = JBOD.binaryifyContent(frame[1]);
+    const argBuf = JBOD.encodeContent(frame[1]);
     writeList.push(argBuf);
     contentLen += argBuf.byteLength;
   } else if (type === FrameType.reject || type === FrameType.resolve) {
-    const len2 = calcU32DByte(frame[1]);
-    const pre = JBOD.calcLen(frame[2]);
-    const frameLen = pre.byteLength + len2 + 1;
+    const len2 = DBN.calcU32DByte(frame[1]);
+    const pre = JBOD.byteLength(frame[2]);
+    const frameLen = pre.byteLength + len2;
     const buf = new Uint8Array(frameLen);
-    const offset = encodeU32DInto(frame[1], buf);
-    buf[offset] = pre.type;
-    JBOD.encodeInto(pre, buf.subarray(offset + 1));
+    let offset = DBN.encodeU32DInto(frame[1], buf);
+    buf[offset++] = pre.type;
+    JBOD.encodeContentInto(pre, buf, offset);
 
     writeList.push(buf); //value
     contentLen += frameLen;
   } else {
     switch (type) {
       case FrameType.return: {
-        const valueBuf = JBOD.binaryifyContent(frame[1]);
-        writeList.push(new Uint8Array([JBOD.getType(frame[1])]));
+        const valueBuf = JBOD.encode(frame[1]);
         writeList.push(valueBuf); //value
-        contentLen += valueBuf.byteLength + 1;
+        contentLen += valueBuf.byteLength;
         break;
       }
       case FrameType.throw: {
-        const valueBuf = JBOD.binaryifyContent(frame[1]);
-        writeList.push(new Uint8Array([JBOD.getType(frame[1])]));
+        const valueBuf = JBOD.encode(frame[1]);
         writeList.push(valueBuf); //value
-        contentLen += valueBuf.byteLength + 1;
+        contentLen += valueBuf.byteLength;
         break;
       }
       case FrameType.promise: {
-        let len = calcU32DByte(frame[1]);
+        let len = DBN.calcU32DByte(frame[1]);
         const buf = new Uint8Array(len);
-        encodeU32DInto(frame[1], buf);
+        DBN.encodeU32DInto(frame[1], buf);
         writeList.push(buf); //id
         contentLen += len;
         break;
