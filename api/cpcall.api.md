@@ -26,6 +26,7 @@ declare namespace core {
         CpcFailRespondError,
         CpcUnregisteredCommandError,
         FrameType,
+        MakeCallers,
         RpcFrame,
         decodeCpcFrame,
         encodeCpcFrame,
@@ -40,6 +41,14 @@ export { core }
 class CpCall extends CpCallBase {
     // (undocumented)
     static fromByteIterable(iter: AsyncIterable<Uint8Array>, write: (binaryFrame: Uint8Array) => void): CpCall;
+    // Warning: (ae-forgotten-export) The symbol "AnyCaller" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    genCaller(prefix?: string): AnyCaller;
+    // Warning: (ae-forgotten-export) The symbol "ToAsync" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    genCaller<R extends object>(prefix?: string): ToAsync<R>;
     // (undocumented)
     setObject(obj: object, cmd?: string): void;
 }
@@ -67,6 +76,12 @@ function createSocketCpc(duplex: Duplex): CpCall;
 
 // @public (undocumented)
 function createWebSocketCpc(websocket: WebSocket): CpCall;
+
+// @public (undocumented)
+function createWebStreamCpc(stream: {
+    readable: ReadableStream<Uint8Array>;
+    writable: WritableStream<Uint8Array>;
+}): CpCall;
 
 // @internal (undocumented)
 function decodeCpcFrame(frame: Uint8Array): RpcFrame;
@@ -100,6 +115,12 @@ enum FrameType {
     throw = 12
 }
 
+// Warning: (ae-forgotten-export) The symbol "Fn_2" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "MakeAsync" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+type MakeCallers<T> = T extends Fn_2 ? MakeAsync<T> & ToAsync<T> : T extends object ? ToAsync<T> : never;
+
 declare namespace node {
     export {
         createSocketCpc
@@ -119,7 +140,8 @@ type RpcFrame = CalleeFrame | CallerFrame | Frame.ResponseError;
 
 declare namespace web {
     export {
-        createWebSocketCpc
+        createWebSocketCpc,
+        createWebStreamCpc
     }
 }
 export { web }
