@@ -74,60 +74,30 @@ export function decodeCpcFrame(frame: Uint8Array): RpcFrame {
 /** @internal */
 export function encodeCpcFrame(frame: RpcFrame): Uint8Array {
   const type = frame[0];
-  const writeList: Uint8Array[] = [createTypeFlagBuf(type)];
-  let contentLen = 1;
+  let buf: Uint8Array;
   if (type === FrameType.call || type === FrameType.exec) {
-    const argBuf = JBOD.encodeContent(frame[1]);
-    writeList.push(argBuf);
-    contentLen += argBuf.byteLength;
+    buf = JBOD.encode(frame[1]);
   } else if (type === FrameType.reject || type === FrameType.resolve) {
     const len2 = DBN.calcU32DByte(frame[1]);
     const pre = JBOD.byteLength(frame[2]);
-    const frameLen = pre.byteLength + len2;
-    const buf = new Uint8Array(frameLen);
-    let offset = DBN.encodeU32DInto(frame[1], buf);
-    buf[offset++] = pre.type;
-    JBOD.encodeContentInto(pre, buf, offset);
-
-    writeList.push(buf); //value
-    contentLen += frameLen;
+    const frameLen = 1 + pre.byteLength + len2;
+    buf = new Uint8Array(frameLen);
+    let offset = DBN.encodeU32DInto(frame[1], buf, 1);
+    JBOD.encodeInto(pre, buf, offset);
   } else {
-    switch (type) {
-      case FrameType.return: {
-        const valueBuf = JBOD.encode(frame[1]);
-        writeList.push(valueBuf); //value
-        contentLen += valueBuf.byteLength;
-        break;
-      }
-      case FrameType.throw: {
-        const valueBuf = JBOD.encode(frame[1]);
-        writeList.push(valueBuf); //value
-        contentLen += valueBuf.byteLength;
-        break;
-      }
-      case FrameType.promise: {
-        let len = DBN.calcU32DByte(frame[1]);
-        const buf = new Uint8Array(len);
-        DBN.encodeU32DInto(frame[1], buf);
-        writeList.push(buf); //id
-        contentLen += len;
-        break;
-      }
+    if (type === FrameType.return || type === FrameType.throw) {
+      const res = JBOD.byteLength(frame[1]);
+      buf = new Uint8Array(res.byteLength + 1);
+      JBOD.encodeInto(res, buf, 1);
+    } else if (type === FrameType.promise) {
+      buf = new Uint8Array(DBN.calcU32DByte(frame[1]) + 1);
+      DBN.encodeU32DInto(frame[1], buf, 1);
+    } else {
+      const t = new Uint8Array(1);
+      t[0] = type;
+      return t;
     }
   }
-  return concatUint8ArrayList(writeList, contentLen);
-}
-function concatUint8ArrayList(list: Uint8Array[], totalLen: number) {
-  let frameBuf = new Uint8Array(totalLen);
-  let offset = 0;
-  for (let i = 0; i < list.length; i++) {
-    frameBuf.set(list[i], offset);
-    offset += list[i].byteLength;
-  }
-  return frameBuf;
-}
-function createTypeFlagBuf(type: number) {
-  const t = new Uint8Array(1);
-  t[0] = type;
-  return t;
+  buf[0] = type;
+  return buf;
 }
