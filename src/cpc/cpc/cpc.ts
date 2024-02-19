@@ -9,6 +9,7 @@ import {
 import type { CpCaller } from "../type.js";
 import { createEvent } from "evlib";
 import { RpcFn, genRpcCmdMap } from "./class_gen.js";
+import { createCallerGen, MakeCallers, ToAsync } from "./callers_gen.js";
 
 /** 提供最基础的命令调用 */
 class CpCallBase {
@@ -77,6 +78,7 @@ class CpCallBase {
     return this.callee.disable(force);
   }
 }
+export { type MakeCallers };
 /**
  * @public
  */
@@ -84,10 +86,19 @@ export class CpCall extends CpCallBase {
   static fromByteIterable(iter: AsyncIterable<Uint8Array>, write: (binaryFrame: Uint8Array) => void) {
     return new this(createFrameIterator(iter), (frame) => write(packageCpcFrame(frame)));
   }
+  #sp = ".";
   setObject(obj: object, cmd: string = "") {
-    genRpcCmdMap(obj, cmd, { map: this.licensers, exclude: Object, sp: "." });
+    genRpcCmdMap(obj, cmd, { map: this.licensers, exclude: Object, sp: this.#sp });
+  }
+  genCaller(prefix?: string): AnyCaller;
+  genCaller<R extends object>(prefix?: string): ToAsync<R>;
+  genCaller(prefix = ""): object {
+    return createCallerGen(this.caller, prefix, this.#sp);
   }
 }
+type AnyCaller = {
+  [key: string]: AnyCaller;
+} & ((...args: any[]) => Promise<any>);
 
 type CmdFn = (...args: any[]) => any;
 
