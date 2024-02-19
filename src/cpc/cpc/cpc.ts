@@ -65,6 +65,9 @@ class CpCallBase {
   getAllFn() {
     return this.licensers.keys();
   }
+  clearFn() {
+    this.licensers.clear();
+  }
   protected readonly callee: CalleePassive;
   readonly caller: CpCaller;
   #errored: any;
@@ -88,7 +91,7 @@ export class CpCall extends CpCallBase {
   }
   #sp = ".";
   setObject(obj: object, cmd: string = "") {
-    genRpcCmdMap(obj, cmd, { map: this.licensers, exclude: Object, sp: this.#sp });
+    genRpcCmdMap(obj, cmd, { map: this.licensers, sp: this.#sp });
   }
   genCaller(prefix?: string): AnyCaller;
   genCaller<R extends object>(prefix?: string): ToAsync<R>;

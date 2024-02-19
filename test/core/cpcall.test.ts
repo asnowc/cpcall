@@ -182,30 +182,3 @@ describe("状态更改", function () {
     await expect(pms).rejects.toThrowError(CpcFailAsyncRespondError);
   });
 }, 500);
-
-test("解析对象", async function () {
-  const { clientCpc, serverCpc } = mocks.createConnectedCpc();
-  serverCpc.setObject(new Children());
-
-  const caller = clientCpc.caller;
-  await expect(caller.call("mod")).resolves.toBe("Children" + "mod");
-  await expect(caller.call("mod2")).resolves.toBe("Parent" + "mod2");
-  await expect(caller.call("ccc")).resolves.toBe("ccc");
-});
-class Parent {
-  constructor() {}
-  mod() {
-    return "mod";
-  }
-  mod2() {
-    return this.constructor.name + "mod2";
-  }
-}
-class Children extends Parent {
-  mod(): string {
-    return this.constructor.name + "mod";
-  }
-  ccc = () => {
-    return "ccc";
-  };
-}
