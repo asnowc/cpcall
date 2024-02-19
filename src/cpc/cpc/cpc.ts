@@ -16,6 +16,7 @@ class CpCallBase {
   constructor(frameIter: AsyncIterable<RpcFrame>, sendFrame: (frame: RpcFrame) => void) {
     const caller = new CallerCore(sendFrame);
     const callee = new CalleePassive(sendFrame);
+    this.#caller = caller;
     this.caller = caller;
     this.callee = callee;
     this.bridgeRpcFrame(callee, caller, frameIter);
@@ -24,11 +25,11 @@ class CpCallBase {
       if (!context) throw new CpcUnregisteredCommandError();
       return context.fn.apply(context.this, args);
     };
-    this.caller.$finish.on(() => {
+    this.#caller.$finish.on(() => {
       if (this.callee.$finish.done) this.#emitClose();
     });
     this.callee.$finish.on(() => {
-      if (this.caller.$finish.done) this.#emitClose();
+      if (this.#caller.$finish.done) this.#emitClose();
     });
   }
   /**
@@ -69,7 +70,8 @@ class CpCallBase {
     this.licensers.clear();
   }
   protected readonly callee: CalleePassive;
-  readonly caller: CpCaller;
+  readonly #caller: CpCaller;
+  caller: CpCaller;
   #errored: any;
   $close = createEvent<void, any>();
   #emitClose() {

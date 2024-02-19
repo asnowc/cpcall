@@ -51,11 +51,11 @@ function privateGenRpcCmdMap(rootObj: object, base: string, opts: GenConfig) {
       if (opts.exclude.has(obj)) continue;
 
       if (typeof obj === "function") {
-        opts.map.set(base + k, { fn: obj as Fn, this: current });
+        opts.map.set(base ? base + opts.sp + k : k, { fn: obj as Fn, this: current });
         add++;
       } else if (typeof obj !== "object" || obj === null) continue;
 
-      add += privateGenRpcCmdMap(obj, base + opts.sp, opts);
+      add += privateGenRpcCmdMap(obj, base ? base + opts.sp + k : k, opts);
     }
   }
   return add;

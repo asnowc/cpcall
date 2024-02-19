@@ -13,7 +13,7 @@ interface TopCall {
   cd(a: string, b?: boolean): number;
 }
 
-describe("CpCall", function () {
+describe("setObject", function () {
   const { cpc } = createCpc();
   const mockCaller = {
     call: vi.fn(),
@@ -22,6 +22,11 @@ describe("CpCall", function () {
 
   beforeEach(() => {
     mockCaller.call.mockReset();
+  });
+  test("setSub", function () {
+    cpc.setObject({ abc: { def() {} } });
+    const expectSet = new Set(["abc.def"]);
+    setEq(cpc.getAllFn(), expectSet);
   });
   test("空调用", async function () {
     const caller = cpc.genCaller<TopCall>();
@@ -40,6 +45,7 @@ describe("CpCall", function () {
 }, 500);
 describe("genCaller", function () {
   const { cpc } = createCpc();
+
   class Abc {
     static cca() {}
     constructor() {}
