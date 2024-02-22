@@ -9,12 +9,11 @@
     "noEmit": true,
     "allowJs": true,
     "isolatedModules": true,
-
     "paths": {
       "cpcall/node": ["./src/node/mod.js"],
       "cpcall/web": ["./src/web/mod.js"],
       "cpcall": ["./src/cpc/mod.js"]
     }
   },
-  "exclude": ["node_modules", "out"]
+  "exclude": ["node_modules", "dist"]
 }

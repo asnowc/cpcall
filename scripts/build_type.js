@@ -14,9 +14,9 @@ await clearDts();
 async function buildType() {
   const typeConfig = defineConfig({
     input: {
-      cpc: "dist/cpc/mod.d.ts",
-      node: "dist/node/mod.d.ts",
-      web: "dist/web/mod.d.ts",
+      cpc: "dist/types/cpc/mod.d.ts",
+      node: "dist/types/node/mod.d.ts",
+      web: "dist/types/web/mod.d.ts",
     },
     plugins: [
       dts({
@@ -24,6 +24,11 @@ async function buildType() {
         compilerOptions: {
           rootDir: "./dist",
           noEmit: false,
+          paths: {
+            "cpcall/node": ["./dist/types/node/mod.js"],
+            "cpcall/web": ["./dist/types/web/mod.js"],
+            cpcall: ["./dist/types/cpc/mod.js"],
+          },
         },
       }),
       plugins.nodeResolve(),
@@ -42,7 +47,5 @@ async function buildType() {
   });
 }
 async function clearDts() {
-  await fs.rm("dist/cpc", { recursive: true });
-  await fs.rm("dist/node", { recursive: true });
-  await fs.rm("dist/web", { recursive: true });
+  await fs.rm("dist/types", { recursive: true });
 }

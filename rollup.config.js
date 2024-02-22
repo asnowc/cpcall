@@ -43,6 +43,7 @@ export default defineEvConfig({
         outDir: "./dist",
         noEmit: false,
         declaration: true,
+        declarationDir: "dist/types",
         declarationMap: true,
         lib: ["ESNext", "dom"],
       },
