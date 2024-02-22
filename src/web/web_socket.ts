@@ -21,7 +21,11 @@ function webSocketToIter(webSocket: WebSocket) {
 /** @public */
 export function createWebSocketCpc(websocket: WebSocket) {
   const iter = webSocketToIter(websocket);
-  return new CpCall(iter, (frame) => {
-    websocket.send(encodeCpcFrame(frame));
-  });
+  return new CpCall(
+    iter,
+    (frame) => {
+      websocket.send(encodeCpcFrame(frame));
+    },
+    () => websocket.close(undefined)
+  );
 }

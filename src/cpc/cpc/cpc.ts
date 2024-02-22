@@ -13,7 +13,14 @@ import { createCallerGen, MakeCallers, ToAsync } from "./callers_gen.js";
 
 /** 提供最基础的命令调用 */
 class CpCallBase {
-  constructor(frameIter: AsyncIterable<RpcFrame>, sendFrame: (frame: RpcFrame) => void) {
+  /** 
+   * @param onDispose 调用 dispose() 时调用。它这应该中断 frameIter。
+   */
+  constructor(
+    frameIter: AsyncIterable<RpcFrame>,
+    sendFrame: (frame: RpcFrame) => void,
+    private onDispose?: () => void
+  ) {
     const caller = new CallerCore(sendFrame);
     const callee = new CalleePassive(sendFrame);
     this.#caller = caller;
@@ -82,14 +89,25 @@ class CpCallBase {
   disable(force?: boolean) {
     return this.callee.disable(force);
   }
+  dispose(): Promise<void> {
+    const close = this.$close();
+    this.disable(true);
+    this.caller.end(true);
+    this.onDispose?.();
+    return close;
+  }
 }
 export { type MakeCallers };
 /**
  * @public
  */
 export class CpCall extends CpCallBase {
-  static fromByteIterable(iter: AsyncIterable<Uint8Array>, write: (binaryFrame: Uint8Array) => void) {
-    return new this(createFrameIterator(iter), (frame) => write(packageCpcFrame(frame)));
+  static fromByteIterable(
+    iter: AsyncIterable<Uint8Array>,
+    write: (binaryFrame: Uint8Array) => void,
+    onDispose?: () => void
+  ) {
+    return new this(createFrameIterator(iter), (frame) => write(packageCpcFrame(frame)), onDispose);
   }
   #sp = ".";
   setObject(obj: object, cmd: string = "") {

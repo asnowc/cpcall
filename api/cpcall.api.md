@@ -40,7 +40,7 @@ export { core }
 // @public (undocumented)
 class CpCall extends CpCallBase {
     // (undocumented)
-    static fromByteIterable(iter: AsyncIterable<Uint8Array>, write: (binaryFrame: Uint8Array) => void): CpCall;
+    static fromByteIterable(iter: AsyncIterable<Uint8Array>, write: (binaryFrame: Uint8Array) => void, onDispose?: () => void): CpCall;
     // Warning: (ae-forgotten-export) The symbol "AnyCaller" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
