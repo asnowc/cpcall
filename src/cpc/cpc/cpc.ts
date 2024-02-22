@@ -13,7 +13,7 @@ import { createCallerGen, MakeCallers, ToAsync } from "./callers_gen.js";
 
 /** 提供最基础的命令调用 */
 class CpCallBase {
-  /** 
+  /**
    * @param onDispose 调用 dispose() 时调用。它这应该中断 frameIter。
    */
   constructor(
@@ -113,12 +113,19 @@ export class CpCall extends CpCallBase {
   setObject(obj: object, cmd: string = "") {
     genRpcCmdMap(obj, cmd, { map: this.licensers, sp: this.#sp });
   }
-  genCaller(prefix?: string): AnyCaller;
-  genCaller<R extends object>(prefix?: string): ToAsync<R>;
-  genCaller(prefix = ""): object {
-    return createCallerGen(this.caller, prefix, this.#sp);
+  genCaller(prefix?: string, opts?: GenCallerOpts): AnyCaller;
+  genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ToAsync<R>;
+  genCaller(prefix = "", opts: GenCallerOpts = {}): object {
+    const { keepThen } = opts;
+    const obj = createCallerGen(this.caller, prefix, this.#sp);
+    if (!keepThen) (obj as any).then = null;
+    return obj;
   }
 }
+type GenCallerOpts = {
+  /** @remarks 默认会添加 then 属性为 null，避免在异步函数中错误执行，如果为 true，则不添加  */
+  keepThen?: boolean;
+};
 type AnyCaller = {
   [key: string]: AnyCaller;
 } & ((...args: any[]) => Promise<any>);

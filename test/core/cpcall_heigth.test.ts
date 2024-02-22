@@ -13,7 +13,7 @@ interface TopCall {
   cd(a: string, b?: boolean): number;
 }
 
-describe("setObject", function () {
+describe("genCaller", function () {
   const { cpc } = createCpc();
   const mockCaller = {
     call: vi.fn(),
@@ -42,8 +42,20 @@ describe("setObject", function () {
     caller.sub.ef();
     expect(mockCaller.call).toBeCalledWith("sub.ef");
   });
+  describe("修改属性", function () {
+    test("修改属性", function () {
+      const caller = cpc.genCaller(undefined, { keepThen: true });
+      caller.att1 = 1 as any;
+      expect(Object.keys(caller)).toEqual(["att1"]);
+      expect(caller.att1).toBe(1);
+      delete caller.att1;
+    });
+    test("异步函数中传递", async function () {
+      expect(cpc.genCaller().then).toBeNull();
+    });
+  });
 }, 500);
-describe("genCaller", function () {
+describe("setObject", function () {
   const { cpc } = createCpc();
 
   class Abc {

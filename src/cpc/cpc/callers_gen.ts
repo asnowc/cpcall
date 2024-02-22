@@ -1,21 +1,46 @@
 import type { CpCaller } from "../type.js";
 class CallerGenHandler<T extends object> implements ProxyHandler<T> {
-  constructor(private caller: CpCaller, private prefix: string, private sp: string) {}
+  constructor(
+    private caller: CpCaller,
+    private prefix: string,
+    private sp: string,
+    private excludeProperty: Set<string> = new Set()
+  ) {}
   get(target: T, p: string | symbol) {
-    if (typeof p !== "string") return (target as any)[p];
+    if (typeof p !== "string" || this.excludeProperty?.has(p)) return (target as any)[p];
     return createCallerGen(this.caller, this.prefix ? this.prefix + this.sp + p : p, this.sp);
   }
-  set(target: T, p: string | symbol) {
-    return false;
+  set(target: any, p: string | symbol, value: any) {
+    if (typeof p === "string") this.excludeProperty.add(p);
+    target[p] = value;
+    return true;
+  }
+  ownKeys(target: T): ArrayLike<string | symbol> {
+    const keys: (string | symbol)[] = Object.getOwnPropertySymbols(target);
+    for (const key of this.excludeProperty) keys.push(key);
+    return keys;
+  }
+  defineProperty(target: T, p: string | symbol, attributes: PropertyDescriptor): boolean {
+    if (typeof p === "string") this.excludeProperty.add(p);
+    Object.defineProperty(target, p, attributes);
+    return true;
+  }
+  deleteProperty(target: T, p: string | symbol): boolean {
+    if (this.excludeProperty.has(p as any)) this.excludeProperty.delete(p as any);
+    return Reflect.deleteProperty(target, p);
   }
   apply(target: T, thisArg: any, argArray: any[]) {
     if (!this.prefix) throw new Error("Top-level calls are not allowed");
     return this.caller.call(this.prefix, ...argArray);
   }
 }
-
-export function createCallerGen<T extends object>(caller: CpCaller, prefix: string, sp: string): ToAsync<T> {
-  return new Proxy(() => {}, new CallerGenHandler(caller, prefix, sp)) as any;
+export function createCallerGen<T extends object>(
+  caller: CpCaller,
+  prefix: string,
+  sp: string,
+  excludeProperty?: Set<string>
+): ToAsync<T> {
+  return new Proxy(() => {}, new CallerGenHandler(caller, prefix, sp, excludeProperty)) as any;
 }
 
 export type ToAsync<T extends object> = {
