@@ -1,6 +1,6 @@
 {
   "name": "cpcall",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "",
   "type": "module",
   "scripts": {
@@ -29,9 +29,9 @@
     "vitest": "^1.3.0"
   },
   "exports": {
-    ".": "./dist/cpc/mod.js",
-    "./node": "./dist/node/mod.js",
-    "./web": "./dist/web/mod.js"
+    ".": "./dist/cpc.js",
+    "./node": "./dist/node.js",
+    "./web": "./dist/web.js"
   },
   "publishConfig": {
     "access": "public",
