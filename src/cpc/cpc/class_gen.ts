@@ -38,20 +38,19 @@ function privateGenRpcCmdMap(rootObj: object, base: string, opts: GenConfig) {
   const protoList = getPrototypes(rootObj, opts.exclude);
   let add = 0;
   for (let i = protoList.length - 1; i >= 0; i--) {
-    const current = protoList[i];
-    const excludeKeys = typeof current === "function" ? "prototype" : "constructor";
+    const excludeKeys = typeof protoList[i] === "function" ? "prototype" : "constructor";
 
-    let keys = Object.getOwnPropertyNames(current);
+    let keys = Object.getOwnPropertyNames(protoList[i]);
     let obj;
     for (const k of keys) {
       // if (typeof k !== "string") continue;
       if (excludeKeys === k) continue;
 
-      obj = (current as any)[k];
+      obj = (rootObj as any)[k]; //从 rootObj 取值
       if (opts.exclude.has(obj)) continue;
 
       if (typeof obj === "function") {
-        opts.map.set(base ? base + opts.sp + k : k, { fn: obj as Fn, this: current });
+        opts.map.set(base ? base + opts.sp + k : k, { fn: obj as Fn, this: rootObj });
         add++;
       } else if (typeof obj !== "object" || obj === null) continue;
 

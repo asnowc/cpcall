@@ -41,14 +41,15 @@ export { core }
 class CpCall extends CpCallBase {
     // (undocumented)
     static fromByteIterable(iter: AsyncIterable<Uint8Array>, write: (binaryFrame: Uint8Array) => void, onDispose?: () => void): CpCall;
+    // Warning: (ae-forgotten-export) The symbol "GenCallerOpts" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "AnyCaller" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
-    genCaller(prefix?: string): AnyCaller;
+    genCaller(prefix?: string, opts?: GenCallerOpts): AnyCaller;
     // Warning: (ae-forgotten-export) The symbol "ToAsync" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
-    genCaller<R extends object>(prefix?: string): ToAsync<R>;
+    genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ToAsync<R>;
     // (undocumented)
     setObject(obj: object, cmd?: string): void;
 }

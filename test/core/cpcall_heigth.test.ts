@@ -67,7 +67,9 @@ describe("setObject", function () {
     }
   }
   class Child extends Abc {
-    child() {}
+    child() {
+      return this.att;
+    }
     att = 9;
   }
   beforeEach(() => {
@@ -77,6 +79,9 @@ describe("setObject", function () {
     cpc.setObject(new Child());
     const expectSet = new Set(["cf", "yi", "child"]);
     setEq(cpc.getAllFn(), expectSet);
+  });
+  test("map", function () {
+    expect(() => cpc.setObject(new Map())).not.toThrowError();
   });
   test("static", function () {
     cpc.setObject(Child);

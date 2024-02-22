@@ -111,7 +111,11 @@ export class CpCall extends CpCallBase {
   }
   #sp = ".";
   setObject(obj: object, cmd: string = "") {
-    genRpcCmdMap(obj, cmd, { map: this.licensers, sp: this.#sp });
+    const map = new Map<string, any>();
+    genRpcCmdMap(obj, cmd, { map: map, sp: this.#sp });
+    for (const [k, v] of map) {
+      this.licensers.set(k, v);
+    }
   }
   genCaller(prefix?: string, opts?: GenCallerOpts): AnyCaller;
   genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ToAsync<R>;
