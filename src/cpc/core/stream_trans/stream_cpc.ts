@@ -5,10 +5,7 @@ import { StepsByteParser, LengthByteParser } from "evlib/async";
 import { U32DByteParser } from "../../lib/mod.js";
 
 function createCpcFrameParser() {
-  return new StepsByteParser(
-    { first: new U32DByteParser(), final: decodeCpcFrame },
-    (len: number) => new LengthByteParser(len)
-  );
+  return new StepsByteParser<Uint8Array>({ first: new U32DByteParser() }, (len: number) => new LengthByteParser(len));
 }
 export async function* createFrameIterator(iter: AsyncIterable<Uint8Array>) {
   const parser = createCpcFrameParser();
@@ -17,7 +14,11 @@ export async function* createFrameIterator(iter: AsyncIterable<Uint8Array>) {
     do {
       if (parser.next(chunk!)) {
         const res = parser.finish();
-        yield res.value;
+        let decRes: ReturnType<typeof decodeCpcFrame> = { offset: 0, frame: [] as any };
+        do {
+          decRes = decodeCpcFrame(res.value, decRes.offset);
+          yield decRes.frame;
+        } while (decRes.offset < res.value.byteLength);
         chunk = res.residue;
       }
     } while (chunk);
@@ -37,39 +38,48 @@ export function packageCpcFrame(frame: RpcFrame) {
 }
 
 /** @internal */
-export function decodeCpcFrame(frame: Uint8Array): RpcFrame {
-  let offset = 0;
-  const type: FrameType = frame[offset++];
+export function decodeCpcFrame(buf: Uint8Array, offset = 0): { frame: RpcFrame; offset: number } {
+  const type: FrameType = buf[offset++];
+  let frame: RpcFrame;
+
   if (type === FrameType.call || type === FrameType.exec) {
-    const args = JBOD.decode(frame, offset, DataType.dyArray).data as unknown[];
-    return [type, args];
+    const res = JBOD.decode(buf, offset, DataType.dyArray);
+    frame = [type, res.data];
+    offset = res.offset;
   } else if (type === FrameType.reject || type === FrameType.resolve) {
-    const res = DBN.decodeU32D(frame, offset);
+    const res = DBN.decodeU32D(buf, offset);
     offset += res.byte;
-    const value = JBOD.decode(frame, offset).data;
-    return [type, res.value, value];
+    const value = JBOD.decode(buf, offset);
+    frame = [type, res.value, value.data];
+    offset = value.offset;
   } else {
     switch (type) {
       case FrameType.return: {
-        const value = JBOD.decode(frame, offset).data;
-        return [type, value];
+        const res = JBOD.decode(buf, offset);
+        frame = [type, res.data];
+        offset = res.offset;
+        return { frame, offset };
       }
       case FrameType.throw: {
-        const value = JBOD.decode(frame, offset).data;
-        return [type, value];
+        const res = JBOD.decode(buf, offset);
+        frame = [type, res.data];
+        offset = res.offset;
+        return { frame, offset };
       }
       case FrameType.promise: {
-        const id = DBN.decodeU32D(frame, offset).value;
-        return [type, id];
+        const res = DBN.decodeU32D(buf, offset);
+        offset += res.byte;
+        return { frame: [type, res.value], offset };
       }
       case FrameType.end:
-        return [FrameType.end];
+        return { frame: [FrameType.end], offset };
       case FrameType.disable:
-        return [FrameType.disable];
+        return { frame: [FrameType.disable], offset };
       default:
         throw new UnsupportedDataTypeError(type);
     }
   }
+  return { frame, offset };
 }
 
 /** @internal */

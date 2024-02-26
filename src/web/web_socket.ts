@@ -7,7 +7,7 @@ function webSocketToIter(webSocket: WebSocket) {
   const collector = new PassiveDataCollector<RpcFrame, Error | void>();
   webSocket.addEventListener("message", (e) => {
     if (e.data instanceof ArrayBuffer) {
-      collector.yield(decodeCpcFrame(new Uint8Array(e.data)));
+      collector.yield(decodeCpcFrame(new Uint8Array(e.data)).frame);
     }
   });
   webSocket.addEventListener("close", () => {
