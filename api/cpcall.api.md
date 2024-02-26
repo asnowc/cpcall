@@ -25,11 +25,11 @@ declare namespace core {
         CpcFailAsyncRespondError,
         CpcFailRespondError,
         CpcUnregisteredCommandError,
-        FrameType,
         MakeCallers,
+        CpcFrameEncoder,
+        FrameType,
         RpcFrame,
         decodeCpcFrame,
-        encodeCpcFrame,
         packageCpcFrame
     }
 }
@@ -67,6 +67,19 @@ class CpcFailRespondError extends Error {
     constructor();
 }
 
+// @internal (undocumented)
+class CpcFrameEncoder {
+    constructor(frame: RpcFrame);
+    // (undocumented)
+    readonly byteLength: number;
+    // (undocumented)
+    encode(): Uint8Array;
+    // (undocumented)
+    encodeInto(buf: Uint8Array, offset?: number): number;
+    // (undocumented)
+    readonly type: FrameType;
+}
+
 // @public
 class CpcUnregisteredCommandError extends Error {
     constructor();
@@ -85,10 +98,10 @@ function createWebStreamCpc(stream: {
 }): CpCall;
 
 // @internal (undocumented)
-function decodeCpcFrame(frame: Uint8Array): RpcFrame;
-
-// @internal (undocumented)
-function encodeCpcFrame(frame: RpcFrame): Uint8Array;
+function decodeCpcFrame(buf: Uint8Array, offset?: number): {
+    frame: RpcFrame;
+    offset: number;
+};
 
 // @public (undocumented)
 enum FrameType {
