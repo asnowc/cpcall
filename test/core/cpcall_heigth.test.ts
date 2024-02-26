@@ -17,30 +17,29 @@ describe("genCaller", function () {
   const { cpc } = createCpc();
   const mockCaller = {
     call: vi.fn(),
+    end: vi.fn(async () => {}),
   };
   (cpc as any).caller = mockCaller;
 
   beforeEach(() => {
     mockCaller.call.mockReset();
   });
-  test("setSub", function () {
-    cpc.setObject({ abc: { def() {} } });
-    const expectSet = new Set(["abc.def"]);
-    setEq(cpc.getAllFn(), expectSet);
-  });
+
   test("空调用", async function () {
     const caller = cpc.genCaller<TopCall>();
     expect(caller).toThrowError();
   });
-  test("顶级调用", async function () {
+
+  test("调用", async function () {
     const caller = cpc.genCaller<TopCall>();
     caller.cd("a", true);
     expect(mockCaller.call).toBeCalledWith("cd", "a", true);
-  });
-  test("子集调用", async function () {
-    const caller = cpc.genCaller<TopCall>();
+
     caller.sub.ef();
     expect(mockCaller.call).toBeCalledWith("sub.ef");
+
+    await caller.sub[Symbol.asyncDispose]();
+    expect(mockCaller.end).toBeCalledWith();
   });
   describe("修改属性", function () {
     test("修改属性", function () {
@@ -51,7 +50,9 @@ describe("genCaller", function () {
       delete caller.att1;
     });
     test("异步函数中传递", async function () {
-      expect(cpc.genCaller().then).toBeNull();
+      // 注意： 在异步函数中 await 和 return 会获取 then 属性，如果 then 是 function 类型会被自动并执行
+      expect(cpc.genCaller().then).toBeUndefined();
+      expect(cpc.genCaller().sub.then).toBeUndefined();
     });
   });
 }, 500);
@@ -74,6 +75,11 @@ describe("setObject", function () {
   }
   beforeEach(() => {
     cpc.clearFn();
+  });
+  test("setSub", function () {
+    cpc.setObject({ abc: { def() {} } });
+    const expectSet = new Set(["abc.def"]);
+    setEq(cpc.getAllFn(), expectSet);
   });
   test("getter", function () {
     cpc.setObject(new Child());

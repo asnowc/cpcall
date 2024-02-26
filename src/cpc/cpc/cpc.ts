@@ -118,11 +118,13 @@ export class CpCall extends CpCallBase {
     }
   }
   genCaller(prefix?: string, opts?: GenCallerOpts): AnyCaller;
-  genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ToAsync<R>;
+  genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ToAsync<R, CallerProxyPrototype>;
   genCaller(prefix = "", opts: GenCallerOpts = {}): object {
     const { keepThen } = opts;
-    const obj = createCallerGen(this.caller, prefix, this.#sp);
-    if (!keepThen) (obj as any).then = null;
+    let excludeKeys: Set<string> | undefined;
+    if (!keepThen) excludeKeys = new Set(["then"]);
+    const obj = createCallerGen(createCallerFn, { caller: this.caller, excludeKeys }, prefix, this.#sp);
+
     return obj;
   }
 }
@@ -145,3 +147,30 @@ export class CpcUnregisteredCommandError extends Error {
 interface FnOpts {
   this?: object;
 }
+
+const callerSymbol = Symbol("cpcall symbol");
+interface CpCallerProxyOrigin {
+  (...args: any[]): any;
+  [Symbol.asyncDispose](): Promise<void>;
+  [callerSymbol]: CpCaller;
+  [key: string]: any;
+}
+function createCallerFn(config: { caller: CpCaller; excludeKeys?: Set<string> }): {
+  fn: CpCallerProxyOrigin;
+  excludeKeys?: Set<string>;
+} {
+  function callerProxyOrigin(this: CpCallerProxyOrigin, ...args: any[]) {
+    return this[callerSymbol].call(...args);
+  }
+  Reflect.setPrototypeOf(callerProxyOrigin, callerProxyPrototype);
+  callerProxyOrigin[callerSymbol] = config.caller;
+  return { fn: callerProxyOrigin as CpCallerProxyOrigin, excludeKeys: config.excludeKeys };
+}
+const callerProxyPrototype = {
+  [Symbol.asyncDispose](): Promise<void> {
+    return (this as any)[callerSymbol].end();
+  },
+};
+
+type CallerProxyPrototype = typeof callerProxyPrototype;
+Reflect.setPrototypeOf(callerProxyPrototype, Function.prototype);
