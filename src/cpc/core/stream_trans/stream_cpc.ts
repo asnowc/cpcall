@@ -27,11 +27,12 @@ export async function* createFrameIterator(iter: AsyncIterable<Uint8Array>) {
 
 /** @internal */
 export function packageCpcFrame(frame: RpcFrame) {
-  let bufRaw = encodeCpcFrame(frame);
-  const dbnLen = DBN.calcU32DByte(bufRaw.byteLength);
-  const u8Arr = new Uint8Array(dbnLen + bufRaw.byteLength);
-  const offset = DBN.encodeU32DInto(bufRaw.byteLength, u8Arr);
-  u8Arr.set(bufRaw, offset);
+  const cpcEncoder = new CpcFrameEncoder(frame);
+  const dbnLen = DBN.calcU32DByte(cpcEncoder.byteLength);
+  const u8Arr = new Uint8Array(dbnLen + cpcEncoder.byteLength);
+
+  let offset = DBN.encodeU32DInto(cpcEncoder.byteLength, u8Arr);
+  offset = cpcEncoder.encodeInto(u8Arr, offset);
   return u8Arr;
 }
 
@@ -72,32 +73,53 @@ export function decodeCpcFrame(frame: Uint8Array): RpcFrame {
 }
 
 /** @internal */
-export function encodeCpcFrame(frame: RpcFrame): Uint8Array {
-  const type = frame[0];
-  let buf: Uint8Array;
-  if (type === FrameType.call || type === FrameType.exec) {
-    buf = JBOD.encode(frame[1]);
-  } else if (type === FrameType.reject || type === FrameType.resolve) {
-    const len2 = DBN.calcU32DByte(frame[1]);
-    const pre = JBOD.byteLength(frame[2]);
-    const frameLen = 1 + pre.byteLength + len2;
-    buf = new Uint8Array(frameLen);
-    let offset = DBN.encodeU32DInto(frame[1], buf, 1);
-    JBOD.encodeInto(pre, buf, offset);
-  } else {
-    if (type === FrameType.return || type === FrameType.throw) {
-      const res = JBOD.byteLength(frame[1]);
-      buf = new Uint8Array(res.byteLength + 1);
-      JBOD.encodeInto(res, buf, 1);
-    } else if (type === FrameType.promise) {
-      buf = new Uint8Array(DBN.calcU32DByte(frame[1]) + 1);
-      DBN.encodeU32DInto(frame[1], buf, 1);
+export class CpcFrameEncoder {
+  readonly type: FrameType;
+  constructor(frame: RpcFrame) {
+    this.type = frame[0];
+    const type = this.type;
+    if (type === FrameType.call || type === FrameType.exec) {
+      this.pre = JBOD.byteLength(frame[1]);
+      this.byteLength = this.pre.byteLength;
+    } else if (type === FrameType.reject || type === FrameType.resolve) {
+      const len2 = DBN.calcU32DByte(frame[1]);
+      const pre = JBOD.byteLength(frame[2]);
+      this.byteLength = 1 + pre.byteLength + len2;
+      this.pre = { id: frame[1], body: pre };
     } else {
-      const t = new Uint8Array(1);
-      t[0] = type;
-      return t;
+      if (type === FrameType.return || type === FrameType.throw) {
+        this.pre = JBOD.byteLength(frame[1]);
+        this.byteLength = this.pre.byteLength + 1;
+      } else if (type === FrameType.promise) {
+        this.pre = frame[1];
+        this.byteLength = DBN.calcU32DByte(frame[1]) + 1;
+      } else {
+        this.byteLength = 1;
+      }
     }
   }
-  buf[0] = type;
-  return buf;
+  readonly byteLength: number;
+  private pre: any;
+  encodeInto(buf: Uint8Array, offset = 0): number {
+    const type = this.type;
+    buf[offset++] = type;
+    if (type === FrameType.call || type === FrameType.exec) {
+      offset = JBOD.encodeContentInto(this.pre, buf, offset);
+    } else if (type === FrameType.reject || type === FrameType.resolve) {
+      offset = DBN.encodeU32DInto(this.pre.id, buf, offset);
+      offset = JBOD.encodeInto(this.pre.body, buf, offset);
+    } else {
+      if (type === FrameType.return || type === FrameType.throw) {
+        offset = JBOD.encodeInto(this.pre, buf, offset);
+      } else if (type === FrameType.promise) {
+        offset = DBN.encodeU32DInto(this.pre, buf, offset);
+      }
+    }
+    return offset;
+  }
+  encode() {
+    let buf = new Uint8Array(this.byteLength);
+    this.encodeInto(buf, 0);
+    return buf;
+  }
 }

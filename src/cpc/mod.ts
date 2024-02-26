@@ -5,7 +5,7 @@ export {
   CpcFailAsyncRespondError,
   CpcFailRespondError,
   FrameType,
-  encodeCpcFrame,
+  CpcFrameEncoder,
   decodeCpcFrame,
   packageCpcFrame,
   type RpcFrame,

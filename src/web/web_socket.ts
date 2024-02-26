@@ -1,6 +1,6 @@
 /// <reference lib="dom"/>
 
-import { CpCall, encodeCpcFrame, decodeCpcFrame, RpcFrame } from "cpcall";
+import { CpCall, CpcFrameEncoder, decodeCpcFrame, RpcFrame } from "cpcall";
 import { PassiveDataCollector } from "evlib/async";
 
 function webSocketToIter(webSocket: WebSocket) {
@@ -24,7 +24,7 @@ export function createWebSocketCpc(websocket: WebSocket) {
   return new CpCall(
     iter,
     (frame) => {
-      websocket.send(encodeCpcFrame(frame));
+      websocket.send(new CpcFrameEncoder(frame).encode());
     },
     () => websocket.close(undefined)
   );
