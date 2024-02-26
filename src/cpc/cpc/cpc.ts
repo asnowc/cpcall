@@ -63,16 +63,19 @@ class CpCallBase {
     }
   }
   protected licensers = new Map<string, RpcFn>();
+  /** @remarks 设置调用服务 */
   setFn(cmd: any, fn: CmdFn, opts: FnOpts = {}): void {
     this.licensers.set(cmd, { fn, this: opts.this });
   }
+  /** @remarks 删除调用服务 */
   removeFn(cmd: any) {
     this.licensers.delete(cmd);
   }
-  /** 获取已注册的所有命令和回调函数的映射 */
+  /** @remarks 获取已注册的所有命令和回调函数的映射 */
   getAllFn() {
     return this.licensers.keys();
   }
+  /** @remarks 清空所有以设置的调用服务 */
   clearFn() {
     this.licensers.clear();
   }
@@ -80,15 +83,20 @@ class CpCallBase {
   readonly #caller: CpCaller;
   caller: CpCaller;
   #errored: any;
+  /** @remarks 关闭事件 */
   $close = createEvent<void, any>();
   #emitClose() {
     if (this.#errored === undefined) this.$close.emit();
     else this.$close.emit(this.#errored, true);
     this.$close.close();
   }
+  /** @remarks  */
   disable(force?: boolean) {
     return this.callee.disable(force);
   }
+  /**
+   * @remarks 强制关闭
+   */
   dispose(): Promise<void> {
     const close = this.$close();
     this.disable(true);
@@ -110,6 +118,7 @@ export class CpCall extends CpCallBase {
     return new this(createFrameIterator(iter), (frame) => write(packageCpcFrame(frame)), onDispose);
   }
   #sp = ".";
+  /** @remarks 根据对象设置调用服务 */
   setObject(obj: object, cmd: string = "") {
     const map = new Map<string, any>();
     genRpcCmdMap(obj, cmd, { map: map, sp: this.#sp });
@@ -117,6 +126,9 @@ export class CpCall extends CpCallBase {
       this.licensers.set(k, v);
     }
   }
+  /**
+   * @remarks 生成自动调用
+   */
   genCaller(prefix?: string, opts?: GenCallerOpts): AnyCaller;
   genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ToAsync<R, CallerProxyPrototype>;
   genCaller(prefix = "", opts: GenCallerOpts = {}): object {

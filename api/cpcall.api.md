@@ -47,9 +47,10 @@ class CpCall extends CpCallBase {
     // (undocumented)
     genCaller(prefix?: string, opts?: GenCallerOpts): AnyCaller;
     // Warning: (ae-forgotten-export) The symbol "ToAsync" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "CallerProxyPrototype" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
-    genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ToAsync<R>;
+    genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ToAsync<R, CallerProxyPrototype>;
     // (undocumented)
     setObject(obj: object, cmd?: string): void;
 }
@@ -133,7 +134,7 @@ enum FrameType {
 // Warning: (ae-forgotten-export) The symbol "MakeAsync" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-type MakeCallers<T> = T extends Fn_2 ? MakeAsync<T> & ToAsync<T> : T extends object ? ToAsync<T> : never;
+type MakeCallers<T, E = {}> = T extends Fn_2 ? MakeAsync<T> & ToAsync<T, E> : T extends object ? ToAsync<T, E> : never;
 
 declare namespace node {
     export {
