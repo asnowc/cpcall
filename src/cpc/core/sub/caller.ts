@@ -1,19 +1,13 @@
 import { createEvent, WithPromise } from "evlib";
 import { ReturnQueue } from "./promise_queue.js";
-import {
-  FrameType,
-  CpcError,
-  CpcFailAsyncRespondError,
-  CpcFailRespondError,
-  CalleeError,
-  CallerError,
-} from "../const.js";
-import type { CalleeFrame, CallerFrame, RpcFrame } from "../type.js";
+import { FrameType, CpcError, CpcFailAsyncRespondError, CpcFailRespondError, CalleeError } from "../const.js";
+import type { CalleeFrame, RpcFrame } from "../type.js";
 import type { CpCaller } from "../../type.js";
+import type { SendCtrl } from "./type.js";
 
 /** @internal */
 export class CallerCore implements CpCaller {
-  constructor(private sendFrame: (chunk: CallerFrame) => void) {}
+  constructor(private sendCtrl: SendCtrl) {}
   #end: 0 | 1 | 2 | 3 = 0;
   get ended() {
     return this.#end;
@@ -23,7 +17,7 @@ export class CallerCore implements CpCaller {
   end(abort?: boolean): Promise<void> {
     if (this.#end === 3) return Promise.resolve();
     if (this.#end === 0) {
-      this.sendFrame([FrameType.end]);
+      this.sendCtrl.sendFrame([FrameType.end]);
       this.#end = 1;
     }
     if (abort) {
@@ -39,20 +33,12 @@ export class CallerCore implements CpCaller {
 
   call(...args: any[]) {
     if (this.#end) return Promise.reject(new Error("Cpc is ended"));
-    try {
-      this.sendFrame([FrameType.call, args]);
-    } catch (error) {
-      return Promise.reject(new CallerError("Send frame failed", { cause: error }));
-    }
+    this.sendCtrl.sendFrame([FrameType.call, args]);
     return this.#returnQueue.add({});
   }
   exec(...args: any[]) {
     if (this.#end) return Promise.reject(new Error("Cpc is ended"));
-    try {
-      this.sendFrame([FrameType.exec, args]);
-    } catch (error) {
-      return Promise.reject(new CallerError("Send frame failed", { cause: error }));
-    }
+    this.sendCtrl.sendFrame([FrameType.exec, args]);
   }
   get closed() {
     return this.#end === 3;

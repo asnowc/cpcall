@@ -1,8 +1,8 @@
 import { UniqueKeyMap } from "evlib/data_struct";
-import { createEvent, withPromise, WithPromise } from "evlib";
-import { PassiveDataCollector } from "evlib/async";
+import { createEvent } from "evlib";
 import { FrameType } from "../const.js";
-import type { Frame, CalleeFrame, CallerFrame, RpcFrame } from "../type.js";
+import type { Frame, CallerFrame, RpcFrame } from "../type.js";
+import type { SendCtrl } from "./type.js";
 
 /** @internal */
 export abstract class CalleeCommon {
@@ -43,15 +43,15 @@ export abstract class CalleeCommon {
     }
     return true;
   }
+  protected abstract sendCtrl: SendCtrl;
   protected abstract testClose(): void;
-  protected abstract sendFrame(chunk: CalleeFrame): void;
   protected abstract onCpcCall(args: any[]): void;
   protected abstract onCpcExec(args: any[]): void;
   protected abstract onCpcEnd(): void;
 
   protected handelReturnPromise(pms: Promise<any>) {
     const id = this.#sendingUniqueKey.allowKeySet(pms);
-    this.sendFrame([FrameType.promise, id]);
+    this.sendCtrl.sendFrame([FrameType.promise, id]);
     return pms
       .then(
         (value) => [FrameType.resolve, id, value] as Frame.Resolve,
@@ -60,9 +60,7 @@ export abstract class CalleeCommon {
       .then((frame) => {
         this.#sendingUniqueKey.delete.bind(this, id);
         if (this.status === 2) return;
-        try {
-          this.sendFrame(frame);
-        } catch (error) {}
+        this.sendCtrl.sendFrame(frame);
         if (this.status === 1) this.testClose();
       });
   }
@@ -70,11 +68,7 @@ export abstract class CalleeCommon {
 
 /** @internal */
 export class CalleePassive extends CalleeCommon {
-  constructor(
-    protected sendFrame: (chunk: CalleeFrame) => void,
-    public onCall: (...args: any[]) => any = voidFin,
-    maxAsyncId?: number
-  ) {
+  constructor(protected sendCtrl: SendCtrl, public onCall: (...args: any[]) => any = voidFin, maxAsyncId?: number) {
     super(maxAsyncId);
   }
 
@@ -111,15 +105,15 @@ export class CalleePassive extends CalleeCommon {
     try {
       res = this.onCall.apply(undefined, args);
     } catch (error) {
-      this.sendFrame([FrameType.throw, error] as Frame.Throw);
+      this.sendCtrl.sendFrame([FrameType.throw, error] as Frame.Throw);
       return;
     }
     if (res instanceof Promise) this.handelReturnPromise(res);
-    else this.sendFrame([FrameType.return, res] as Frame.Return);
+    else this.sendCtrl.sendFrame([FrameType.return, res] as Frame.Return);
   }
   protected onCpcEnd() {
     if (this.#fin !== 0) return;
-    this.sendFrame([FrameType.disable] as Frame.Finish);
+    this.sendCtrl.sendFrame([FrameType.disable] as Frame.Finish);
     this.emitDisable();
     return this.testClose();
   }
@@ -135,57 +129,4 @@ export class CalleePassive extends CalleeCommon {
   }
 }
 
-/** @internal */
-export class CalleeActive extends CalleeCommon implements CpCallee {
-  constructor(protected sendFrame: (chunk: CalleeFrame) => void, maxAsyncId?: number) {
-    super(maxAsyncId);
-  }
-
-  #finished?: WithPromise<void, void> & { closed: boolean };
-  get status() {
-    if (!this.#finished) return 0;
-    return this.#finished.closed ? 2 : 1;
-  }
-  protected testClose() {
-    if (this.promiseNum === 0) {
-      this.#finished!.closed = true;
-      this.#finished!.resolve();
-    }
-  }
-
-  private callAsyncLink = new PassiveDataCollector<any[], () => Promise<void>, any>();
-  [Symbol.asyncIterator] = this.callAsyncLink.getAsyncGen;
-
-  protected onCpcExec(args: any[]) {
-    if (this.#finished) return true; // 丢弃
-    this.callAsyncLink.yield(args).catch(() => {});
-  }
-  protected async onCpcCall(args: any[]) {
-    if (this.#finished) return true; // 丢弃
-    let res;
-    try {
-      res = await this.callAsyncLink.yield(args);
-    } catch (error) {
-      this.sendFrame([FrameType.throw, error] as Frame.Throw);
-      return;
-    }
-    if (res instanceof Promise) this.handelReturnPromise(res);
-    else this.sendFrame([FrameType.return, res] as Frame.Return);
-  }
-  protected onCpcEnd() {
-    if (this.#finished) return;
-    this.#finished = withPromise({ closed: false });
-
-    this.sendFrame([FrameType.disable] as Frame.Finish);
-    this.testClose();
-    this.callAsyncLink.close(() => this.#finished!.promise);
-  }
-}
-
 function voidFin() {}
-
-interface CpCallee {
-  /** 当前异步返回队列的数量 */
-  readonly promiseNum: number;
-  [Symbol.asyncIterator](): AsyncGenerator<any[], () => Promise<void>, any>;
-}

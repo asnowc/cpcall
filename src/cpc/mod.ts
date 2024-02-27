@@ -5,9 +5,7 @@ export {
   CpcFailAsyncRespondError,
   CpcFailRespondError,
   FrameType,
-  CpcFrameEncoder,
-  decodeCpcFrame,
-  packageCpcFrame,
+  trans,
   type RpcFrame,
 } from "./core/mod.js";
 export * from "./cpc/mod.js";

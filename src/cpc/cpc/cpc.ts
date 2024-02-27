@@ -1,28 +1,21 @@
-import {
-  CalleeCommon,
-  CalleePassive,
-  CallerCore,
-  RpcFrame,
-  createFrameIterator,
-  packageCpcFrame,
-} from "../core/mod.js";
+import { CalleeCommon, CalleePassive, CallerCore, RpcFrame, trans } from "../core/mod.js";
 import type { CpCaller } from "../type.js";
 import { createEvent } from "evlib";
 import { RpcFn, genRpcCmdMap } from "./class_gen.js";
 import { createCallerGen, MakeCallers, ToAsync } from "./callers_gen.js";
+import type { SendCtrl, CpCallParser } from "../core/sub/type.js";
 
 /** 提供最基础的命令调用 */
-class CpCallBase {
+abstract class CpCallBase {
   /**
    * @param onDispose 调用 dispose() 时调用。它这应该中断 frameIter。
    */
-  constructor(
-    frameIter: AsyncIterable<RpcFrame>,
-    sendFrame: (frame: RpcFrame) => void,
-    private onDispose?: () => void
-  ) {
-    const caller = new CallerCore(sendFrame);
-    const callee = new CalleePassive(sendFrame);
+  constructor(frameIter: AsyncIterable<RpcFrame>) {
+    const sendCtrl: SendCtrl = {
+      sendFrame: this.sendFrame.bind(this),
+    };
+    const caller = new CallerCore(sendCtrl);
+    const callee = new CalleePassive(sendCtrl);
     this.#caller = caller;
     this.caller = caller;
     this.callee = callee;
@@ -58,8 +51,7 @@ class CpCallBase {
       if (!caller.closed || callee.status !== 2) throw new Error("There won't be any more frames");
     } catch (err) {
       this.#errored = err;
-      caller.end(true);
-      this.disable(true);
+      this.dispose();
     }
   }
   protected licensers = new Map<string, RpcFn>();
@@ -80,11 +72,11 @@ class CpCallBase {
     this.licensers.clear();
   }
   protected readonly callee: CalleePassive;
-  readonly #caller: CpCaller;
+  readonly #caller: CallerCore;
   caller: CpCaller;
   #errored: any;
   /** @remarks 关闭事件 */
-  $close = createEvent<void, any>();
+  $close = createEvent<void, Error>();
   #emitClose() {
     if (this.#errored === undefined) this.$close.emit();
     else this.$close.emit(this.#errored, true);
@@ -97,13 +89,10 @@ class CpCallBase {
   /**
    * @remarks 强制关闭
    */
-  dispose(): Promise<void> {
-    const close = this.$close();
-    this.disable(true);
-    this.caller.end(true);
-    this.onDispose?.();
-    return close;
+  async dispose(): Promise<void> {
+    Promise.all([this.callee.disable(true), this.caller.end(true)]);
   }
+  protected abstract sendFrame(frame: RpcFrame): void;
 }
 export { type MakeCallers };
 /**
@@ -115,8 +104,32 @@ export class CpCall extends CpCallBase {
     write: (binaryFrame: Uint8Array) => void,
     onDispose?: () => void
   ) {
-    return new this(createFrameIterator(iter), (frame) => write(packageCpcFrame(frame)), onDispose);
+    return new this(trans.createFrameIterator(iter), (frame) => write(trans.packageCpcFrame(frame)), onDispose);
   }
+
+  constructor(callerCtrl: CpCallParser<RpcFrame>);
+  /**
+   * @deprecated 已废弃，改用另一个重载签名
+   */
+  constructor(frameIter: AsyncIterable<RpcFrame>, sendFrame: (frame: RpcFrame) => void, onDispose?: () => void);
+  constructor(
+    frameIter: AsyncIterable<RpcFrame> | CpCallParser<RpcFrame>,
+    sendFrame?: (frame: RpcFrame) => void,
+    onDispose?: () => void
+  ) {
+    if (sendFrame !== undefined) {
+      super(frameIter as AsyncIterable<RpcFrame>);
+      this.ctrl = {
+        frameIter: frameIter as AsyncIterable<RpcFrame>,
+        sendFrame,
+        dispose: onDispose,
+      };
+    } else {
+      super((frameIter as CpCallParser<RpcFrame>).frameIter);
+      this.ctrl = frameIter as CpCallParser<RpcFrame>;
+    }
+  }
+  private ctrl: CpCallParser<RpcFrame>;
   #sp = ".";
   /** @remarks 根据对象设置调用服务 */
   setObject(obj: object, cmd: string = "") {
@@ -139,7 +152,15 @@ export class CpCall extends CpCallBase {
 
     return obj;
   }
+  protected sendFrame(frame: RpcFrame): void {
+    this.ctrl.sendFrame(frame);
+  }
+  dispose(): Promise<void> {
+    this.ctrl.dispose?.();
+    return super.dispose();
+  }
 }
+
 type GenCallerOpts = {
   /** @remarks 默认会添加 then 属性为 null，避免在异步函数中错误执行，如果为 true，则不添加  */
   keepThen?: boolean;

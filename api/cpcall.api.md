@@ -26,11 +26,9 @@ declare namespace core {
         CpcFailRespondError,
         CpcUnregisteredCommandError,
         MakeCallers,
-        CpcFrameEncoder,
         FrameType,
         RpcFrame,
-        decodeCpcFrame,
-        packageCpcFrame
+        _default as trans
     }
 }
 export { core }
@@ -39,6 +37,12 @@ export { core }
 //
 // @public (undocumented)
 class CpCall extends CpCallBase {
+    // Warning: (ae-forgotten-export) The symbol "CpCallParser" needs to be exported by the entry point index.d.ts
+    constructor(callerCtrl: CpCallParser<RpcFrame>);
+    // @deprecated
+    constructor(frameIter: AsyncIterable<RpcFrame>, sendFrame: (frame: RpcFrame) => void, onDispose?: () => void);
+    // (undocumented)
+    dispose(): Promise<void>;
     // (undocumented)
     static fromByteIterable(iter: AsyncIterable<Uint8Array>, write: (binaryFrame: Uint8Array) => void, onDispose?: () => void): CpCall;
     // Warning: (ae-forgotten-export) The symbol "GenCallerOpts" needs to be exported by the entry point index.d.ts
@@ -51,6 +55,8 @@ class CpCall extends CpCallBase {
     //
     // (undocumented)
     genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ToAsync<R, CallerProxyPrototype>;
+    // (undocumented)
+    protected sendFrame(frame: RpcFrame): void;
     // (undocumented)
     setObject(obj: object, cmd?: string): void;
 }
@@ -66,19 +72,6 @@ class CpcFailAsyncRespondError extends CpcFailRespondError {
 // @public (undocumented)
 class CpcFailRespondError extends Error {
     constructor();
-}
-
-// @internal (undocumented)
-class CpcFrameEncoder {
-    constructor(frame: RpcFrame);
-    // (undocumented)
-    readonly byteLength: number;
-    // (undocumented)
-    encode(): Uint8Array;
-    // (undocumented)
-    encodeInto(buf: Uint8Array, offset?: number): number;
-    // (undocumented)
-    readonly type: FrameType;
 }
 
 // @public
@@ -99,9 +92,11 @@ function createWebStreamCpc(stream: {
 }): CpCall;
 
 // @internal (undocumented)
-function decodeCpcFrame(buf: Uint8Array, offset?: number): {
-    frame: RpcFrame;
-    offset: number;
+const _default: {
+    createFrameIterator: typeof createFrameIterator;
+    packageCpcFrame: typeof packageCpcFrame;
+    decodeCpcFrame: typeof decodeCpcFrame;
+    CpcFrameEncoder: typeof CpcFrameEncoder;
 };
 
 // @public (undocumented)
@@ -138,13 +133,15 @@ type MakeCallers<T, E = {}> = T extends Fn_2 ? MakeAsync<T> & ToAsync<T, E> : T 
 
 declare namespace node {
     export {
+        CpcFailAsyncRespondError,
+        CpcFailRespondError,
+        CpcUnregisteredCommandError,
+        MakeCallers,
+        CpCall,
         createSocketCpc
     }
 }
 export { node }
-
-// @internal (undocumented)
-function packageCpcFrame(frame: RpcFrame): Uint8Array;
 
 // Warning: (ae-forgotten-export) The symbol "CalleeFrame" needs to be exported by the entry point index.d.ts
 // Warning: (ae-forgotten-export) The symbol "CallerFrame" needs to be exported by the entry point index.d.ts
@@ -155,11 +152,23 @@ type RpcFrame = CalleeFrame | CallerFrame | Frame.ResponseError;
 
 declare namespace web {
     export {
+        CpcFailAsyncRespondError,
+        CpcFailRespondError,
+        CpcUnregisteredCommandError,
+        MakeCallers,
+        CpCall,
         createWebSocketCpc,
         createWebStreamCpc
     }
 }
 export { web }
+
+// Warnings were encountered during analysis:
+//
+// dist/cpc.d.ts:25:5 - (ae-forgotten-export) The symbol "createFrameIterator" needs to be exported by the entry point index.d.ts
+// dist/cpc.d.ts:26:5 - (ae-forgotten-export) The symbol "packageCpcFrame" needs to be exported by the entry point index.d.ts
+// dist/cpc.d.ts:27:5 - (ae-forgotten-export) The symbol "decodeCpcFrame" needs to be exported by the entry point index.d.ts
+// dist/cpc.d.ts:28:5 - (ae-forgotten-export) The symbol "CpcFrameEncoder" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

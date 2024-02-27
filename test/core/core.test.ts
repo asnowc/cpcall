@@ -5,7 +5,7 @@ import { afterTime } from "evlib";
 describe("caller", function () {
   describe("call-response", function () {
     const onSendFrame = vi.fn();
-    const caller = new CallerCore(onSendFrame);
+    const caller = new CallerCore({ sendFrame: onSendFrame });
     afterEach(() => {
       onSendFrame.mockReset();
     });
@@ -46,7 +46,7 @@ describe("caller", function () {
       onSendFrame.mockReset();
       onDisable.mockReset();
       onFinish.mockReset();
-      caller = new CallerCore(onSendFrame);
+      caller = new CallerCore({ sendFrame: onSendFrame });
 
       caller.$disable.on(onDisable);
       caller.$finish.on(onFinish);
@@ -126,7 +126,7 @@ describe("callee", function () {
   let callee: CalleePassive;
 
   beforeEach(() => {
-    callee = new CalleePassive(onSendFrame, onCall);
+    callee = new CalleePassive({ sendFrame: onSendFrame }, onCall);
     onSendFrame.mockReset();
     onCall.mockReset();
 

@@ -7,6 +7,8 @@ import { U32DByteParser } from "../../lib/mod.js";
 function createCpcFrameParser() {
   return new StepsByteParser<Uint8Array>({ first: new U32DByteParser() }, (len: number) => new LengthByteParser(len));
 }
+
+/** @internal */
 export async function* createFrameIterator(iter: AsyncIterable<Uint8Array>) {
   const parser = createCpcFrameParser();
   let chunk: Uint8Array | undefined;
@@ -133,3 +135,6 @@ export class CpcFrameEncoder {
     return buf;
   }
 }
+
+/** @internal */
+export default { createFrameIterator, packageCpcFrame, decodeCpcFrame, CpcFrameEncoder };

@@ -1,13 +1,13 @@
 /// <reference lib="dom"/>
 
-import { CpCall, CpcFrameEncoder, decodeCpcFrame, RpcFrame } from "cpcall";
+import { CpCall, trans, RpcFrame } from "cpcall";
 import { PassiveDataCollector } from "evlib/async";
 
 function webSocketToIter(webSocket: WebSocket) {
   const collector = new PassiveDataCollector<RpcFrame, Error | void>();
   webSocket.addEventListener("message", (e) => {
     if (e.data instanceof ArrayBuffer) {
-      collector.yield(decodeCpcFrame(new Uint8Array(e.data)).frame);
+      collector.yield(trans.decodeCpcFrame(new Uint8Array(e.data)).frame);
     }
   });
   webSocket.addEventListener("close", () => {
@@ -24,7 +24,7 @@ export function createWebSocketCpc(websocket: WebSocket) {
   return new CpCall(
     iter,
     (frame) => {
-      websocket.send(new CpcFrameEncoder(frame).encode());
+      websocket.send(new trans.CpcFrameEncoder(frame).encode());
     },
     () => websocket.close(undefined)
   );
