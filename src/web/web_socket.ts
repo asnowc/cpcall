@@ -20,6 +20,7 @@ function webSocketToIter(webSocket: WebSocket) {
 }
 /** @public */
 export function createWebSocketCpc(url: string): CpCall;
+/** @public */
 export function createWebSocketCpc(websocket: WebSocket): CpCall;
 export function createWebSocketCpc(websocket: WebSocket | string) {
   if (typeof websocket === "string") websocket = new WebSocket(websocket);
@@ -34,6 +35,9 @@ class WsRpcFrameCtrl implements RpcFrameCtrl {
   sendFrame(frame: RpcFrame): void {
     //todo: 需要改进，当源关闭后直接将 callee 和 caller 只为
     if (this.ws.readyState == this.ws.OPEN) this.ws.send(new trans.CpcFrameEncoder(frame).encode());
+    else {
+      this.dispose();
+    }
   }
   dispose(): void | Promise<void> {
     this.ws.close();
