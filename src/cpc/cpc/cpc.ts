@@ -3,7 +3,14 @@ import type { CpCaller } from "../type.js";
 import { createEvent } from "evlib";
 import { RpcFn, genRpcCmdMap } from "./class_gen.js";
 import { createCallerGen, MakeCallers, ToAsync } from "./callers_gen.js";
-import type { SendCtrl, CpCallParser } from "../core/sub/type.js";
+import type { SendCtrl } from "../core/sub/type.js";
+
+/** @public */
+export type RpcFrameCtrl<T = RpcFrame> = {
+  frameIter: AsyncIterable<T>;
+  sendFrame(frame: T): void;
+  dispose?(): Promise<void> | void;
+};
 
 /** 提供最基础的命令调用 */
 abstract class CpCallBase {
@@ -107,13 +114,13 @@ export class CpCall extends CpCallBase {
     return new this(trans.createFrameIterator(iter), (frame) => write(trans.packageCpcFrame(frame)), onDispose);
   }
 
-  constructor(callerCtrl: CpCallParser<RpcFrame>);
+  constructor(callerCtrl: RpcFrameCtrl<RpcFrame>);
   /**
    * @deprecated 已废弃，改用另一个重载签名
    */
   constructor(frameIter: AsyncIterable<RpcFrame>, sendFrame: (frame: RpcFrame) => void, onDispose?: () => void);
   constructor(
-    frameIter: AsyncIterable<RpcFrame> | CpCallParser<RpcFrame>,
+    frameIter: AsyncIterable<RpcFrame> | RpcFrameCtrl<RpcFrame>,
     sendFrame?: (frame: RpcFrame) => void,
     onDispose?: () => void
   ) {
@@ -125,11 +132,11 @@ export class CpCall extends CpCallBase {
         dispose: onDispose,
       };
     } else {
-      super((frameIter as CpCallParser<RpcFrame>).frameIter);
-      this.ctrl = frameIter as CpCallParser<RpcFrame>;
+      super((frameIter as RpcFrameCtrl<RpcFrame>).frameIter);
+      this.ctrl = frameIter as RpcFrameCtrl<RpcFrame>;
     }
   }
-  private ctrl: CpCallParser<RpcFrame>;
+  private ctrl: RpcFrameCtrl<RpcFrame>;
   #sp = ".";
   /** @remarks 根据对象设置调用服务 */
   setObject(obj: object, cmd: string = "") {

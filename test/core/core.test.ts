@@ -51,52 +51,58 @@ describe("caller", function () {
       caller.$disable.on(onDisable);
       caller.$finish.on(onFinish);
     });
-    test("end()", async function () {
-      expect(caller.ended).toBe(0);
+    describe("end", function () {
+      test("end()", async function () {
+        expect(caller.ended).toBe(0);
 
-      const r1 = caller.call(0); //发起一个调用
+        const r1 = caller.call(0); //发起一个调用
 
-      caller.end();
-      expect(caller.ended).toBe(1);
-      expect(caller.waitingNum).toBe(1);
+        caller.end();
+        expect(caller.ended).toBe(1);
+        expect(caller.waitingNum).toBe(1);
 
-      expect(sendFrameMock.calls[1][0], "发送 end 帧").toEqual([FrameType.end] as Frame.End);
+        expect(sendFrameMock.calls[1][0], "发送 end 帧").toEqual([FrameType.end] as Frame.End);
 
-      expect(onDisable).not.toBeCalled();
-      expect(onFinish).not.toBeCalled();
-      caller.onFrame([FrameType.promise, 2]); //相应返回 promise
-      caller.onFrame([FrameType.disable]); // finish 帧
+        expect(onDisable).not.toBeCalled();
+        expect(onFinish).not.toBeCalled();
+        caller.onFrame([FrameType.promise, 2]); //相应返回 promise
+        caller.onFrame([FrameType.disable]); // finish 帧
 
-      expect(caller.ended).toBe(2);
-      expect(onDisable, "收到 finish 帧后触发 onEnd 事件").toBeCalled();
-      expect(onFinish).not.toBeCalled();
-      expect(caller.$disable.done).toBeTruthy();
+        expect(caller.ended).toBe(2);
+        expect(onDisable, "收到 finish 帧后触发 onEnd 事件").toBeCalled();
+        expect(onFinish).not.toBeCalled();
+        expect(caller.$disable.done).toBeTruthy();
 
-      caller.onFrame([FrameType.resolve, 2, "r1"]); // r1 resolve
-      expect(onFinish, "队列清空后触发 close").toBeCalled();
-      expect(caller.$finish.done).toBeTruthy();
-      await expect(r1).resolves.toBe("r1");
+        caller.onFrame([FrameType.resolve, 2, "r1"]); // r1 resolve
+        expect(onFinish, "队列清空后触发 close").toBeCalled();
+        expect(caller.$finish.done).toBeTruthy();
+        await expect(r1).resolves.toBe("r1");
+      });
+      test("end(true)", async function () {
+        expect(caller.ended).toBe(0);
+
+        const r1 = caller.call(0); //发起一个调用
+        caller.onFrame([FrameType.promise, 0]); //返回Promise id
+        const r2 = caller.call(1); //发起另一个调用
+
+        caller.end(true);
+        expect(caller.waitingNum, "等待队列被清空").toBe(0);
+        expect(caller.ended).toBe(3);
+
+        expect(onDisable).toBeCalledTimes(1);
+        expect(onFinish).toBeCalledTimes(1);
+        await expect(r1).rejects.toThrowError();
+        await expect(r2).rejects.toThrowError();
+
+        caller.onFrame([FrameType.return, 2]); //r2 的返回帧，应被丢弃
+        caller.onFrame([FrameType.disable]); //应被丢弃
+        caller.onFrame([FrameType.resolve, 2, "r1"]); //r1的resolve 帧应被丢弃
+
+        expect(onDisable).toBeCalledTimes(1);
+        expect(onFinish).toBeCalledTimes(1);
+      });
     });
-    test("end(true)", async function () {
-      expect(caller.ended).toBe(0);
 
-      const r1 = caller.call(0); //发起一个调用
-
-      caller.end(true);
-      expect(caller.waitingNum, "等待队列被清空").toBe(0);
-      expect(caller.ended).toBe(3);
-
-      expect(onDisable).toBeCalledTimes(1);
-      expect(onFinish).toBeCalledTimes(1);
-      await expect(r1).rejects.toThrowError();
-
-      caller.onFrame([FrameType.promise, 2]); //应被丢弃
-      caller.onFrame([FrameType.disable]); //应被丢弃
-      caller.onFrame([FrameType.resolve, 2, "r1"]); //应被丢弃
-
-      expect(onDisable).toBeCalledTimes(1);
-      expect(onFinish).toBeCalledTimes(1);
-    });
     test("错误的响应", async function () {
       caller.onFrame([FrameType.return, "value"]); //不存在的返回值"
       caller.onFrame([FrameType.throw, "value"]);
@@ -120,7 +126,7 @@ describe("callee", function () {
   const onSendFrame = vi.fn();
   const onCall = vi.fn();
   const onFinish = vi.fn();
-  const onDisable = vi.fn();
+  // const onDisable = vi.fn();
   const sendMock = onSendFrame.mock;
 
   let callee: CalleePassive;
@@ -131,9 +137,9 @@ describe("callee", function () {
     onCall.mockReset();
 
     onFinish.mockReset();
-    onDisable.mockReset();
+    // onDisable.mockReset();
     callee.$finish.on(onFinish);
-    callee.$disable.on(onDisable);
+    // callee.$disable.on(onDisable);
   });
   describe("call-response", function () {
     test("call-return", async function () {
@@ -183,9 +189,9 @@ describe("callee", function () {
   describe("disable", function () {
     test("disable()", function () {
       callee.disable();
-      expect(onDisable).toBeCalled();
+      // expect(onDisable).toBeCalled();
       expect(callee.disable).toBeTruthy();
-      expect(callee.$disable.done).toBeTruthy();
+      // expect(callee.$disable.done).toBeTruthy();
 
       //不存在返回队列自动结束
       expect(onFinish).toBeCalled();
@@ -196,9 +202,9 @@ describe("callee", function () {
       callee.onFrame([FrameType.call, []]);
       expect(callee.promiseNum).toBe(1);
       callee.disable(true);
-      expect(onDisable).toBeCalled();
+      // expect(onDisable).toBeCalled();
       expect(callee.disable).toBeTruthy();
-      expect(callee.$disable.done).toBeTruthy();
+      // expect(callee.$disable.done).toBeTruthy();
       expect(onFinish).toBeCalled();
       expect(callee.$finish.done).toBeTruthy();
     });

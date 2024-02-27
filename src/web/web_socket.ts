@@ -1,6 +1,6 @@
 /// <reference lib="dom"/>
 
-import { CpCall, trans, RpcFrame } from "cpcall";
+import { CpCall, trans, RpcFrame, RpcFrameCtrl } from "cpcall";
 import { PassiveDataCollector } from "evlib/async";
 
 function webSocketToIter(webSocket: WebSocket) {
@@ -19,13 +19,23 @@ function webSocketToIter(webSocket: WebSocket) {
   return collector.getAsyncGen();
 }
 /** @public */
-export function createWebSocketCpc(websocket: WebSocket) {
-  const iter = webSocketToIter(websocket);
-  return new CpCall(
-    iter,
-    (frame) => {
-      websocket.send(new trans.CpcFrameEncoder(frame).encode());
-    },
-    () => websocket.close(undefined)
-  );
+export function createWebSocketCpc(url: string): CpCall;
+export function createWebSocketCpc(websocket: WebSocket): CpCall;
+export function createWebSocketCpc(websocket: WebSocket | string) {
+  if (typeof websocket === "string") websocket = new WebSocket(websocket);
+  return new CpCall(new WsRpcFrameCtrl(websocket));
+}
+class WsRpcFrameCtrl implements RpcFrameCtrl {
+  constructor(private ws: WebSocket) {
+    ws.binaryType = "arraybuffer";
+    this.frameIter = webSocketToIter(ws);
+  }
+  frameIter: AsyncIterable<RpcFrame>;
+  sendFrame(frame: RpcFrame): void {
+    //todo: 需要改进，当源关闭后直接将 callee 和 caller 只为
+    if (this.ws.readyState == this.ws.OPEN) this.ws.send(new trans.CpcFrameEncoder(frame).encode());
+  }
+  dispose(): void | Promise<void> {
+    this.ws.close();
+  }
 }

@@ -13,7 +13,12 @@ export class CallerCore implements CpCaller {
     return this.#end;
   }
   $disable = createEvent<void>();
-
+  forceAbort() {
+    if (!this.checkFinish()) {
+      this.#returnQueue.rejectAsyncAll(new CpcFailAsyncRespondError());
+      this.emitFinish();
+    }
+  }
   end(abort?: boolean): Promise<void> {
     if (this.#end === 3) return Promise.resolve();
     if (this.#end === 0) {
@@ -21,13 +26,9 @@ export class CallerCore implements CpCaller {
       this.#end = 1;
     }
     if (abort) {
-      if (!this.checkFinish()) {
-        this.#returnQueue.rejectAsyncAll(new CpcFailAsyncRespondError());
-        this.emitFinish();
-      }
+      this.forceAbort();
       return Promise.resolve();
     }
-
     return this.$finish();
   }
 

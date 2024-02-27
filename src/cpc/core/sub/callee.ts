@@ -76,21 +76,24 @@ export class CalleePassive extends CalleeCommon {
   get status() {
     return this.#fin;
   }
-  /** status 变为 1 时触发 */
-  $disable = createEvent<void>();
   /** status 变为 2 时触发 */
   $finish = createEvent<void>();
-  /** 结束调用服务，发送 disable 帧 */
+  /** 结束调用服务，如果当前状态为0， 则发送 disable 帧 */
   disable(abort?: boolean): Promise<void> {
-    if (this.#fin === 2) return Promise.resolve();
+    if (this.status === 2) return Promise.resolve();
     let finishing = this.$finish();
     const emitClose = this.onCpcEnd();
-    if (abort && !emitClose) this.emitFinish();
+    if (abort && !emitClose) this.forceAbort();
     return finishing;
+  }
+  forceAbort() {
+    this.#fin = 2;
+    this.$finish.emit();
+    this.$finish.close();
   }
   protected testClose() {
     if (this.promiseNum === 0) {
-      this.emitFinish();
+      this.forceAbort();
       return true;
     }
   }
@@ -112,20 +115,10 @@ export class CalleePassive extends CalleeCommon {
     else this.sendCtrl.sendFrame([FrameType.return, res] as Frame.Return);
   }
   protected onCpcEnd() {
-    if (this.#fin !== 0) return;
+    if (this.status !== 0) return;
     this.sendCtrl.sendFrame([FrameType.disable] as Frame.Finish);
-    this.emitDisable();
-    return this.testClose();
-  }
-  private emitDisable() {
     this.#fin = 1;
-    this.$disable.emit();
-    this.$disable.close();
-  }
-  private emitFinish() {
-    this.#fin = 2;
-    this.$finish.emit();
-    this.$finish.close();
+    return this.testClose();
   }
 }
 
