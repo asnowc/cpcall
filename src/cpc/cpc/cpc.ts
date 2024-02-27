@@ -96,7 +96,7 @@ abstract class CpCallBase {
   /**
    * @remarks 强制关闭
    */
-  async dispose(): Promise<void> {
+  dispose(): void {
     this.callee.forceAbort();
     this.#caller.forceAbort();
   }
@@ -163,8 +163,8 @@ export class CpCall extends CpCallBase {
   protected sendFrame(frame: RpcFrame): void {
     this.ctrl.sendFrame(frame);
   }
-  dispose(): Promise<void> {
-    this.ctrl.dispose?.();
+  async dispose(): Promise<void> {
+    await this.ctrl.dispose?.();
     return super.dispose();
   }
 }

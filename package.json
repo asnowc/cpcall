@@ -1,6 +1,6 @@
 {
   "name": "cpcall",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "",
   "type": "module",
   "scripts": {
@@ -40,7 +40,8 @@
   },
   "files": [
     "dist/**/*.js",
-    "dist/**/*d.ts"
+    "dist/**/*.d.ts",
+    "*.d.ts"
   ],
   "repository": {
     "type": "git",
