@@ -9,7 +9,7 @@ const dist = path.resolve("dist");
 console.log("build type...");
 await buildType();
 console.log("clear...");
-await clearDts();
+await clearDts(process.argv[2] === "true");
 
 async function buildType() {
   const typeConfig = defineConfig({
@@ -46,6 +46,21 @@ async function buildType() {
     },
   });
 }
-async function clearDts() {
+/** @param {boolean} genRooType */
+async function clearDts(genRooType) {
   await fs.rm("dist/types", { recursive: true });
+  if (genRooType) {
+    for (const item of ["node", "web"]) {
+      await createType(item + ".d.ts", "./dist/" + item + ".d.ts");
+    }
+  }
+}
+/**
+ * @param {string} path 描述
+ * @param {string} dtsPath 描述
+ *
+ */
+function createType(path, dtsPath) {
+  const data = `export type * from "${dtsPath}"`;
+  return fs.writeFile(path, data, { flag: "w+" });
 }
