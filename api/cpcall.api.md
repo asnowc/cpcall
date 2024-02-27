@@ -26,6 +26,7 @@ declare namespace core {
         CpcFailRespondError,
         CpcUnregisteredCommandError,
         MakeCallers,
+        RpcFrameCtrl,
         FrameType,
         RpcFrame,
         _default as trans
@@ -37,8 +38,7 @@ export { core }
 //
 // @public (undocumented)
 class CpCall extends CpCallBase {
-    // Warning: (ae-forgotten-export) The symbol "CpCallParser" needs to be exported by the entry point index.d.ts
-    constructor(callerCtrl: CpCallParser<RpcFrame>);
+    constructor(callerCtrl: RpcFrameCtrl<RpcFrame>);
     // @deprecated
     constructor(frameIter: AsyncIterable<RpcFrame>, sendFrame: (frame: RpcFrame) => void, onDispose?: () => void);
     // (undocumented)
@@ -81,6 +81,9 @@ class CpcUnregisteredCommandError extends Error {
 
 // @public (undocumented)
 function createSocketCpc(duplex: Duplex): CpCall;
+
+// @public (undocumented)
+function createWebSocketCpc(url: string): CpCall;
 
 // @public (undocumented)
 function createWebSocketCpc(websocket: WebSocket): CpCall;
@@ -149,6 +152,13 @@ export { node }
 //
 // @public (undocumented)
 type RpcFrame = CalleeFrame | CallerFrame | Frame.ResponseError;
+
+// @public (undocumented)
+type RpcFrameCtrl<T = RpcFrame> = {
+    frameIter: AsyncIterable<T>;
+    sendFrame(frame: T): void;
+    dispose?(): Promise<void> | void;
+};
 
 declare namespace web {
     export {
