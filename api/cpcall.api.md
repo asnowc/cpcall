@@ -83,9 +83,6 @@ class CpcUnregisteredCommandError extends Error {
 function createSocketCpc(duplex: Duplex): CpCall;
 
 // @public (undocumented)
-function createWebSocketCpc(url: string): CpCall;
-
-// @public (undocumented)
 function createWebSocketCpc(websocket: WebSocket): CpCall;
 
 // @public (undocumented)

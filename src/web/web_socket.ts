@@ -14,16 +14,14 @@ function webSocketToIter(webSocket: WebSocket) {
     collector.close();
   });
   webSocket.addEventListener("error", (e) => {
-    collector.close(new Error("unknown error"));
+    collector.close(new Error("Websocket encountered an error", { cause: (e as any).data }));
   });
   return collector.getAsyncGen();
 }
+
 /** @public */
-export function createWebSocketCpc(url: string): CpCall;
-/** @public */
-export function createWebSocketCpc(websocket: WebSocket): CpCall;
-export function createWebSocketCpc(websocket: WebSocket | string) {
-  if (typeof websocket === "string") websocket = new WebSocket(websocket);
+export function createWebSocketCpc(websocket: WebSocket) {
+  if (websocket.readyState !== websocket.OPEN) throw new Error("Wrong websocket status");
   return new CpCall(new WsRpcFrameCtrl(websocket));
 }
 class WsRpcFrameCtrl implements RpcFrameCtrl {
