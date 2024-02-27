@@ -97,7 +97,8 @@ abstract class CpCallBase {
    * @remarks 强制关闭
    */
   async dispose(): Promise<void> {
-    Promise.all([this.callee.disable(true), this.caller.end(true)]);
+    this.callee.forceAbort();
+    this.#caller.forceAbort();
   }
   protected abstract sendFrame(frame: RpcFrame): void;
 }

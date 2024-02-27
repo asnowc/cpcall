@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { FrameType, RpcFrame, CpCall } from "cpcall";
+import { FrameType, RpcFrame, CpCall, RpcFrameCtrl } from "cpcall";
 import { PassiveDataCollector } from "evlib/async";
 import { afterTime } from "evlib";
 import { CpcFailRespondError, CpcFailAsyncRespondError } from "cpcall";
@@ -180,5 +180,20 @@ describe("状态更改", function () {
     expect(clientCpc.caller.$finish).toBeTruthy();
 
     await expect(pms).rejects.toThrowError(CpcFailAsyncRespondError);
+  });
+  test("数据源实例发生异常后不能调用 sendFrame", async function () {
+    class Ctrl implements RpcFrameCtrl {
+      frameIter = this.getAsyncGen();
+      dispose(): void | Promise<void> {}
+      sendFrame = vi.fn();
+      private async *getAsyncGen(): AsyncGenerator<RpcFrame> {
+        throw new Error("源发生异常");
+      }
+    }
+    const ctrl = new Ctrl();
+    const cpcall = new CpCall(ctrl);
+
+    await expect(cpcall.$close).resolves.toBeUndefined();
+    expect(ctrl.sendFrame).not.toBeCalled();
   });
 }, 500);
