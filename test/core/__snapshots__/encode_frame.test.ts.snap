@@ -4,7 +4,7 @@ exports[`array 1`] = `"010a02666e0a017200"`;
 
 exports[`bigint 1`] = `"010a02666e0a016900"`;
 
-exports[`call 1`] = `"010a046162636414000000010a046e756c6c00"`;
+exports[`call 1`] = `"010a046162636407020a046e756c6c00"`;
 
 exports[`disable 1`] = `"ff"`;
 
@@ -12,7 +12,7 @@ exports[`double 1`] = `"010a02666e0a016f00"`;
 
 exports[`error 1`] = `"010a02666e0a017200"`;
 
-exports[`exec 1`] = `"020a046162636414000000010a046e756c6c00"`;
+exports[`exec 1`] = `"020a046162636407020a046e756c6c00"`;
 
 exports[`fin 1`] = `"fe"`;
 
@@ -30,7 +30,7 @@ exports[`reject 1`] = `"0a030a026162"`;
 
 exports[`resolve 1`] = `"09030a026162"`;
 
-exports[`return 1`] = `"0b1400000003"`;
+exports[`return 1`] = `"0b0706"`;
 
 exports[`string 1`] = `"010a02666e0a017400"`;
 

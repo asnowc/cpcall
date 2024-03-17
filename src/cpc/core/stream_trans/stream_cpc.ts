@@ -1,6 +1,6 @@
 import { FrameType } from "../const.js";
 import { RpcFrame } from "../type.js";
-import JBOD, { DataType, DBN, UnsupportedDataTypeError } from "jbod";
+import JBOD, { DataType, varints, UnsupportedDataTypeError, DataWriter } from "jbod";
 import { StepsByteParser, LengthByteParser } from "evlib/async";
 import { U32DByteParser } from "../../lib/mod.js";
 
@@ -31,10 +31,10 @@ export async function* createFrameIterator(iter: AsyncIterable<Uint8Array>) {
 /** @internal */
 export function packageCpcFrame(frame: RpcFrame) {
   const cpcEncoder = new CpcFrameEncoder(frame);
-  const dbnLen = DBN.calcU32DByte(cpcEncoder.byteLength);
+  const dbnLen = varints.calcU32DByte(cpcEncoder.byteLength);
   const u8Arr = new Uint8Array(dbnLen + cpcEncoder.byteLength);
 
-  let offset = DBN.encodeU32DInto(cpcEncoder.byteLength, u8Arr);
+  let offset = varints.encodeU32DInto(cpcEncoder.byteLength, u8Arr);
   offset = cpcEncoder.encodeInto(u8Arr, offset);
   return u8Arr;
 }
@@ -45,11 +45,11 @@ export function decodeCpcFrame(buf: Uint8Array, offset = 0): { frame: RpcFrame; 
   let frame: RpcFrame;
 
   if (type === FrameType.call || type === FrameType.exec) {
-    const res = JBOD.decode(buf, offset, DataType.dyArray);
+    const res = JBOD.decode(buf, offset, DataType.anyArray);
     frame = [type, res.data];
     offset = res.offset;
   } else if (type === FrameType.reject || type === FrameType.resolve) {
-    const res = DBN.decodeU32D(buf, offset);
+    const res = varints.decodeU32D(buf, offset);
     offset += res.byte;
     const value = JBOD.decode(buf, offset);
     frame = [type, res.value, value.data];
@@ -69,7 +69,7 @@ export function decodeCpcFrame(buf: Uint8Array, offset = 0): { frame: RpcFrame; 
         return { frame, offset };
       }
       case FrameType.promise: {
-        const res = DBN.decodeU32D(buf, offset);
+        const res = varints.decodeU32D(buf, offset);
         offset += res.byte;
         return { frame: [type, res.value], offset };
       }
@@ -91,20 +91,20 @@ export class CpcFrameEncoder {
     this.type = frame[0];
     const type = this.type;
     if (type === FrameType.call || type === FrameType.exec) {
-      this.pre = JBOD.byteLength(frame[1]);
-      this.byteLength = this.pre.byteLength;
+      this.pre = JBOD.createContentWriter(frame[1]);
+      this.byteLength = this.pre.byteLength + 1;
     } else if (type === FrameType.reject || type === FrameType.resolve) {
-      const len2 = DBN.calcU32DByte(frame[1]);
-      const pre = JBOD.byteLength(frame[2]);
+      const len2 = varints.calcU32DByte(frame[1]);
+      const pre = JBOD.createWriter(frame[2]);
       this.byteLength = 1 + pre.byteLength + len2;
       this.pre = { id: frame[1], body: pre };
     } else {
       if (type === FrameType.return || type === FrameType.throw) {
-        this.pre = JBOD.byteLength(frame[1]);
+        this.pre = JBOD.createWriter(frame[1]);
         this.byteLength = this.pre.byteLength + 1;
       } else if (type === FrameType.promise) {
         this.pre = frame[1];
-        this.byteLength = DBN.calcU32DByte(frame[1]) + 1;
+        this.byteLength = varints.calcU32DByte(frame[1]) + 1;
       } else {
         this.byteLength = 1;
       }
@@ -116,15 +116,15 @@ export class CpcFrameEncoder {
     const type = this.type;
     buf[offset++] = type;
     if (type === FrameType.call || type === FrameType.exec) {
-      offset = JBOD.encodeContentInto(this.pre, buf, offset);
+      offset = (this.pre as DataWriter).encodeTo(buf, offset);
     } else if (type === FrameType.reject || type === FrameType.resolve) {
-      offset = DBN.encodeU32DInto(this.pre.id, buf, offset);
-      offset = JBOD.encodeInto(this.pre.body, buf, offset);
+      offset = varints.encodeU32DInto(this.pre.id, buf, offset);
+      offset = (this.pre.body as DataWriter).encodeTo(buf, offset);
     } else {
       if (type === FrameType.return || type === FrameType.throw) {
-        offset = JBOD.encodeInto(this.pre, buf, offset);
+        offset = (this.pre as DataWriter).encodeTo(buf, offset);
       } else if (type === FrameType.promise) {
-        offset = DBN.encodeU32DInto(this.pre, buf, offset);
+        offset = varints.encodeU32DInto(this.pre, buf, offset);
       }
     }
     return offset;
