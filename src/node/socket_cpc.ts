@@ -8,8 +8,8 @@ export function createSocketCpc(duplex: Duplex): CpCall {
     sendFrame(frame: Uint8Array) {
       this.duplex.write(frame);
     },
-    dispose() {
-      this.duplex.destroy(new Error("Cpc disposed"));
+    dispose(reason: Error) {
+      this.duplex.destroy(reason);
     },
   };
   const cpcall = CpCall.fromByteIterable(config);

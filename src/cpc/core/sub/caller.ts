@@ -47,6 +47,7 @@ export class CallerCore implements CpCaller {
 
   onFrame(frame: RpcFrame): boolean | Error;
   onFrame(frame: CalleeFrame) {
+    if (this.closed) return false;
     let err: Error | void;
     switch (frame[0]) {
       case FrameType.promise:

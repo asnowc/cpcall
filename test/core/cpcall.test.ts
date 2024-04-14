@@ -182,18 +182,19 @@ describe("状态更改", function () {
     await expect(pms).rejects.toThrowError(CpcFailAsyncRespondError);
   });
   test("数据源实例发生异常后不能调用 sendFrame", async function () {
+    const err = new Error("源发生异常");
     class Ctrl implements RpcFrameCtrl {
       frameIter = this.getAsyncGen();
       dispose(): void | Promise<void> {}
       sendFrame = vi.fn();
       private async *getAsyncGen(): AsyncGenerator<RpcFrame> {
-        throw new Error("源发生异常");
+        throw err;
       }
     }
     const ctrl = new Ctrl();
     const cpcall = new CpCall(ctrl);
 
-    await expect(cpcall.closeEvent).resolves.toBeUndefined();
+    await expect(cpcall.closeEvent.getPromise()).rejects.toBe(err);
     expect(ctrl.sendFrame).not.toBeCalled();
   });
 }, 500);

@@ -49,7 +49,7 @@ export abstract class CpCallBase {
   ): Promise<void | any> {
     try {
       for await (const chunk of frameIter) {
-        if (callee.status === 2 && caller.closed) throw new Error("Received frame after CpCall closed");
+        // if (callee.status === 2 && caller.closed) throw new Error("Received frame after CpCall closed");
         callee.onFrame(chunk) || caller.onFrame(chunk);
 
         // 发送完某一帧后，需要检测是否满足结束状态，如果满足，需要发出close 事件以终止外部的迭代器
@@ -113,8 +113,8 @@ export class CpCall extends CpCallBase {
       sendFrame(frame: RpcFrame) {
         this.ctrl.sendFrame(trans.packageCpcFrame(frame));
       },
-      dispose() {
-        this.ctrl.dispose?.();
+      dispose(reason: Error) {
+        this.ctrl.dispose?.(reason);
       },
     };
     return new this(config);
