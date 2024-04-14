@@ -1,12 +1,13 @@
 {
   "name": "cpcall",
-  "version": "0.2.9",
+  "version": "0.3.0",
   "description": "",
   "type": "module",
   "scripts": {
     "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage --ui",
+    "build": "pnpm rollup -c && pnpm gen-dts && pnpm api:check",
     "api:check": "pnpm run ci:check-api -l",
     "ci:build": "pnpm rollup -c && pnpm gen-dts true",
     "ci:test": "vitest run",
