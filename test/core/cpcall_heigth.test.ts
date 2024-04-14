@@ -98,7 +98,7 @@ describe("setObject", function () {
 function createCpc() {
   const onSendFrame = vi.fn();
   let hd = new PassiveDataCollector<RpcFrame>();
-  let cpc = new CpCall(hd.getAsyncGen(), onSendFrame);
+  let cpc = new CpCall({ frameIter: hd.getAsyncGen(), sendFrame: onSendFrame });
   return { onSendFrame, hd, cpc };
 }
 function setEq(s1: Iterable<any>, s2: Set<any>) {

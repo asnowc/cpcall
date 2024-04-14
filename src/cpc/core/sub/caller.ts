@@ -1,8 +1,7 @@
-import { createEvent, WithPromise } from "evlib";
+import { OnceEventTrigger, WithPromise } from "evlib";
 import { ReturnQueue } from "./promise_queue.js";
 import { FrameType, CpcError, CpcFailAsyncRespondError, CpcFailRespondError, CalleeError } from "../const.js";
-import type { CalleeFrame, RpcFrame } from "../type.js";
-import type { CpCaller } from "../../type.js";
+import type { CalleeFrame, RpcFrame, CpCaller } from "../type.js";
 import type { SendCtrl } from "./type.js";
 
 /** @internal */
@@ -12,7 +11,7 @@ export class CallerCore implements CpCaller {
   get ended() {
     return this.#end;
   }
-  $disable = createEvent<void>();
+  readonly disableEvent = new OnceEventTrigger<void>();
   forceAbort() {
     if (!this.checkFinish()) {
       this.#returnQueue.rejectAsyncAll(new CpcFailAsyncRespondError());
@@ -29,7 +28,7 @@ export class CallerCore implements CpCaller {
       this.forceAbort();
       return Promise.resolve();
     }
-    return this.$finish();
+    return this.finishEvent.getPromise();
   }
 
   call(...args: any[]) {
@@ -44,7 +43,7 @@ export class CallerCore implements CpCaller {
   get closed() {
     return this.#end === 3;
   }
-  $finish = createEvent<void>();
+  readonly finishEvent = new OnceEventTrigger<void>();
 
   onFrame(frame: RpcFrame): boolean | Error;
   onFrame(frame: CalleeFrame) {
@@ -122,13 +121,11 @@ export class CallerCore implements CpCaller {
   }
   private emitFinish() {
     this.#end = 3;
-    this.$finish.emit();
-    this.$finish.close();
+    this.finishEvent.emit();
   }
   private emitDisable() {
     this.#end = 2;
-    this.$disable.emit();
-    this.$disable.close();
+    this.disableEvent.emit();
   }
 }
 

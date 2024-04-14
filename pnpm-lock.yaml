@@ -26,8 +26,8 @@ devDependencies:
     specifier: ^1.4.0
     version: 1.4.0(vitest@1.4.0)
   evlib:
-    specifier: ^1.7.2
-    version: 1.7.2
+    specifier: ^2.0.0
+    version: 2.0.0
   rollup-plugin-dts:
     specifier: ^6.1.0
     version: 6.1.0(rollup@4.13.0)(typescript@5.4.2)
@@ -1037,8 +1037,8 @@ packages:
       '@types/estree': 1.0.5
     dev: true
 
-  /evlib@1.7.2:
-    resolution: {integrity: sha512-6CjWtLcFkRatU/Jq12yfYqtkUJDBrDWxqUYQzgESYmzxAm/LOoZbkaCzOIh2B9hoYg5bnGbbV42eiKDmXINWAA==}
+  /evlib@2.0.0:
+    resolution: {integrity: sha512-z0hD6J6VHrAevySofKk53ZuB7i6KBUIrhIlTKYcyguzQWQ3nVHdFwXaw/WgKH00NNGNgkb4llX3JEPK1UuFslw==}
     dev: true
 
   /execa@8.0.1:

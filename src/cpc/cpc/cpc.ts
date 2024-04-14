@@ -1,6 +1,5 @@
-import { CalleeCommon, CalleePassive, CallerCore, RpcFrame, trans } from "../core/mod.js";
-import type { CpCaller } from "../type.js";
-import { createEvent } from "evlib";
+import { CalleeCommon, CalleePassive, CallerCore, RpcFrame, trans, CpCaller } from "../core/mod.js";
+import { OnceEventTrigger } from "evlib";
 import { RpcFn, genRpcCmdMap } from "./class_gen.js";
 import { createCallerGen, MakeCallers, ToAsync } from "./callers_gen.js";
 import type { SendCtrl } from "../core/sub/type.js";
@@ -9,13 +8,13 @@ import type { SendCtrl } from "../core/sub/type.js";
 export type RpcFrameCtrl<T = RpcFrame> = {
   frameIter: AsyncIterable<T>;
   sendFrame(frame: T): void;
-  dispose?(): Promise<void> | void;
+  dispose?(reason?: any): Promise<void> | void;
 };
 
-/** 提供最基础的命令调用 */
-abstract class CpCallBase {
+/** @internal 提供最基础的命令调用 */
+export abstract class CpCallBase {
   /**
-   * @param onDispose 调用 dispose() 时调用。它这应该中断 frameIter。
+   * @param onDispose - 调用 dispose() 时调用。它这应该中断 frameIter。
    */
   constructor(frameIter: AsyncIterable<RpcFrame>) {
     const sendCtrl: SendCtrl = {
@@ -32,11 +31,11 @@ abstract class CpCallBase {
       if (!context) throw new CpcUnregisteredCommandError();
       return context.fn.apply(context.this, args);
     };
-    this.#caller.$finish.on(() => {
-      if (this.callee.$finish.done) this.#emitClose();
+    this.#caller.finishEvent.then(() => {
+      if (this.callee.status === 2) this.#emitClose();
     });
-    this.callee.$finish.on(() => {
-      if (this.#caller.$finish.done) this.#emitClose();
+    this.callee.finishEvent.then(() => {
+      if (this.#caller.finishEvent.done) this.#emitClose();
     });
   }
   /**
@@ -58,7 +57,7 @@ abstract class CpCallBase {
       if (!caller.closed || callee.status !== 2) throw new Error("There won't be any more frames");
     } catch (err) {
       this.#errored = err;
-      this.dispose();
+      this.dispose(err);
     }
   }
   protected licensers = new Map<string, RpcFn>();
@@ -83,11 +82,10 @@ abstract class CpCallBase {
   caller: CpCaller;
   #errored: any;
   /** @remarks 关闭事件 */
-  $close = createEvent<void, Error>();
+  readonly closeEvent = new OnceEventTrigger<void>();
   #emitClose() {
-    if (this.#errored === undefined) this.$close.emit();
-    else this.$close.emit(this.#errored, true);
-    this.$close.close();
+    if (this.#errored === undefined) this.closeEvent.emit();
+    else this.closeEvent.emitError(this.#errored);
   }
   /** @remarks  */
   disable(force?: boolean) {
@@ -96,46 +94,35 @@ abstract class CpCallBase {
   /**
    * @remarks 强制关闭
    */
-  dispose(): void {
+  dispose(reason?: any): void {
+    if (this.#errored === undefined) this.#errored = reason;
     this.callee.forceAbort();
     this.#caller.forceAbort();
   }
   protected abstract sendFrame(frame: RpcFrame): void;
 }
-export { type MakeCallers };
+export type { MakeCallers };
 /**
  * @public
  */
 export class CpCall extends CpCallBase {
-  static fromByteIterable(
-    iter: AsyncIterable<Uint8Array>,
-    write: (binaryFrame: Uint8Array) => void,
-    onDispose?: () => void
-  ) {
-    return new this(trans.createFrameIterator(iter), (frame) => write(trans.packageCpcFrame(frame)), onDispose);
+  static fromByteIterable(ctrl: RpcFrameCtrl<Uint8Array>) {
+    const config = {
+      ctrl,
+      frameIter: trans.createFrameIterator(ctrl.frameIter),
+      sendFrame(frame: RpcFrame) {
+        this.ctrl.sendFrame(trans.packageCpcFrame(frame));
+      },
+      dispose() {
+        this.ctrl.dispose?.();
+      },
+    };
+    return new this(config);
   }
 
-  constructor(callerCtrl: RpcFrameCtrl<RpcFrame>);
-  /**
-   * @deprecated 已废弃，改用另一个重载签名
-   */
-  constructor(frameIter: AsyncIterable<RpcFrame>, sendFrame: (frame: RpcFrame) => void, onDispose?: () => void);
-  constructor(
-    frameIter: AsyncIterable<RpcFrame> | RpcFrameCtrl<RpcFrame>,
-    sendFrame?: (frame: RpcFrame) => void,
-    onDispose?: () => void
-  ) {
-    if (sendFrame !== undefined) {
-      super(frameIter as AsyncIterable<RpcFrame>);
-      this.ctrl = {
-        frameIter: frameIter as AsyncIterable<RpcFrame>,
-        sendFrame,
-        dispose: onDispose,
-      };
-    } else {
-      super((frameIter as RpcFrameCtrl<RpcFrame>).frameIter);
-      this.ctrl = frameIter as RpcFrameCtrl<RpcFrame>;
-    }
+  constructor(callerCtrl: RpcFrameCtrl<RpcFrame>) {
+    super(callerCtrl.frameIter);
+    this.ctrl = callerCtrl as RpcFrameCtrl<RpcFrame>;
   }
   private ctrl: RpcFrameCtrl<RpcFrame>;
   #sp = ".";
@@ -163,9 +150,9 @@ export class CpCall extends CpCallBase {
   protected sendFrame(frame: RpcFrame): void {
     this.ctrl.sendFrame(frame);
   }
-  async dispose(): Promise<void> {
-    await this.ctrl.dispose?.();
-    return super.dispose();
+  async dispose(reason?: any): Promise<void> {
+    await this.ctrl.dispose?.(reason);
+    return super.dispose(reason);
   }
 }
 

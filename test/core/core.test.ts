@@ -48,8 +48,8 @@ describe("caller", function () {
       onFinish.mockReset();
       caller = new CallerCore({ sendFrame: onSendFrame });
 
-      caller.$disable.on(onDisable);
-      caller.$finish.on(onFinish);
+      caller.disableEvent.then(onDisable);
+      caller.finishEvent.then(onFinish);
     });
     describe("end", function () {
       test("end()", async function () {
@@ -71,11 +71,11 @@ describe("caller", function () {
         expect(caller.ended).toBe(2);
         expect(onDisable, "收到 finish 帧后触发 onEnd 事件").toBeCalled();
         expect(onFinish).not.toBeCalled();
-        expect(caller.$disable.done).toBeTruthy();
+        expect(caller.disableEvent.done).toBeTruthy();
 
         caller.onFrame([FrameType.resolve, 2, "r1"]); // r1 resolve
         expect(onFinish, "队列清空后触发 close").toBeCalled();
-        expect(caller.$finish.done).toBeTruthy();
+        expect(caller.finishEvent.done).toBeTruthy();
         await expect(r1).resolves.toBe("r1");
       });
       test("end(true)", async function () {
@@ -138,7 +138,7 @@ describe("callee", function () {
 
     onFinish.mockReset();
     // onDisable.mockReset();
-    callee.$finish.on(onFinish);
+    callee.finishEvent.then(onFinish);
     // callee.$disable.on(onDisable);
   });
   describe("call-response", function () {
@@ -195,7 +195,7 @@ describe("callee", function () {
 
       //不存在返回队列自动结束
       expect(onFinish).toBeCalled();
-      expect(callee.$finish.done).toBeTruthy();
+      expect(callee.finishEvent.done).toBeTruthy();
     });
     test("disable(true)", function () {
       onCall.mockImplementation(() => new Promise(() => {}));
@@ -206,7 +206,7 @@ describe("callee", function () {
       expect(callee.disable).toBeTruthy();
       // expect(callee.$disable.done).toBeTruthy();
       expect(onFinish).toBeCalled();
-      expect(callee.$finish.done).toBeTruthy();
+      expect(callee.finishEvent.done).toBeTruthy();
     });
   });
 });

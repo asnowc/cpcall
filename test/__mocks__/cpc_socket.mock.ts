@@ -13,7 +13,7 @@ export function getNoResponseCpc() {
       return this;
     },
   };
-  return new CpCall(iter, () => {});
+  return new CpCall({ frameIter: iter, sendFrame: () => {} });
 }
 /** 模拟两个已连接的 CpcSocket */
 export function createConnectedCpc(clientFn?: object, serverFn?: object) {

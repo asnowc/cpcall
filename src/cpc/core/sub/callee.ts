@@ -1,5 +1,5 @@
 import { UniqueKeyMap } from "evlib/data_struct";
-import { createEvent } from "evlib";
+import { OnceEventTrigger } from "evlib";
 import { FrameType } from "../const.js";
 import type { Frame, CallerFrame, RpcFrame } from "../type.js";
 import type { SendCtrl } from "./type.js";
@@ -76,20 +76,21 @@ export class CalleePassive extends CalleeCommon {
   get status() {
     return this.#fin;
   }
-  /** status 变为 2 时触发 */
-  $finish = createEvent<void>();
+
+  /** @remarks status 变为 2 时触发 */
+  readonly finishEvent = new OnceEventTrigger<void>();
+
   /** 结束调用服务，如果当前状态为0， 则发送 disable 帧 */
   disable(abort?: boolean): Promise<void> {
     if (this.status === 2) return Promise.resolve();
-    let finishing = this.$finish();
+    let finishing = this.finishEvent.getPromise();
     const emitClose = this.onCpcEnd();
     if (abort && !emitClose) this.forceAbort();
     return finishing;
   }
   forceAbort() {
     this.#fin = 2;
-    this.$finish.emit();
-    this.$finish.close();
+    this.finishEvent.emit();
   }
   protected testClose() {
     if (this.promiseNum === 0) {

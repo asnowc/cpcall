@@ -15,12 +15,16 @@ export function createWebStreamCpc(stream: {
   writable: WritableStream<Uint8Array>;
 }) {
   const reader = stream.readable.getReader();
-  const writer = stream.writable.getWriter();
-  return CpCall.fromByteIterable(
-    iterReadable(reader),
-    (frame) => {
-      writer.write(frame).catch(voidFn);
+  const config = {
+    reader,
+    writer: stream.writable.getWriter(),
+    frameIter: iterReadable(reader),
+    sendFrame(frame: Uint8Array) {
+      this.writer.write(frame).catch(voidFn);
     },
-    () => reader.cancel()
-  );
+    dispose() {
+      this.reader.cancel();
+    },
+  } as const;
+  return CpCall.fromByteIterable(config);
 }

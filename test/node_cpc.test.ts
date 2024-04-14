@@ -17,7 +17,7 @@ describe("状态更改/cpc_socket", function () {
     serverCpc.caller.end();
     clientCpc.caller.end();
 
-    await Promise.all([serverCpc.$close(), clientCpc.$close()]);
+    await Promise.all([serverCpc.closeEvent.getPromise(), clientCpc.closeEvent.getPromise()]);
 
     await afterTime();
     expect(clientSocket.errored).toBeFalsy();
@@ -35,17 +35,18 @@ describe("状态更改/cpc_socket", function () {
     clientSocket.end();
     await afterTime();
     expect(serverSocket.closed).toBeTruthy();
-    expect(serverCpc.$close.done).toBeTruthy();
+    expect(serverCpc.closeEvent.done).toBeTruthy();
 
     expect(clientSocket.closed).toBeTruthy();
-    expect(clientCpc.$close.done).toBeTruthy();
+    expect(clientCpc.closeEvent.done).toBeTruthy();
   });
   test("外部Duplex 销毁", async function () {
     const { serverCpc, clientCpc, clientSocket, serverSocket } = mock;
+    const onSafeClose = vi.fn();
     const clientClose = vi.fn();
     const serverClose = vi.fn();
-    serverCpc.$close.on(clientClose);
-    clientCpc.$close.on(serverClose);
+    serverCpc.closeEvent.then(onSafeClose, clientClose);
+    clientCpc.closeEvent.then(onSafeClose, serverClose);
     // const err = new Error("外部Duplex 销毁");
     clientSocket.destroy();
     await afterTime();
@@ -55,8 +56,8 @@ describe("状态更改/cpc_socket", function () {
 
     expect(serverClose.mock.calls[0][0]).instanceof(Error);
     expect(clientClose.mock.calls[0][0]).instanceof(Error);
-    expect(clientCpc.$close.done).toBeTruthy();
-    expect(serverCpc.$close.done).toBeTruthy();
+    expect(clientCpc.closeEvent.done).toBeTruthy();
+    expect(serverCpc.closeEvent.done).toBeTruthy();
   });
   test("有等待响应,但对方已销毁流", async function () {
     const { serverCpc, clientCpc, clientSocket, serverSocket } = mock;
@@ -69,8 +70,8 @@ describe("状态更改/cpc_socket", function () {
     expect(clientSocket.destroyed).toBeTruthy();
     expect(serverSocket.destroyed).toBeTruthy();
 
-    expect(serverCpc.$close.done).toBeTruthy();
-    expect(clientCpc.$close.done).toBeTruthy();
+    expect(serverCpc.closeEvent.done).toBeTruthy();
+    expect(clientCpc.closeEvent.done).toBeTruthy();
 
     await expect(res).resolves.toBe(true);
   });

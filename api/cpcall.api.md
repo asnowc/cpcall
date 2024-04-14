@@ -21,6 +21,8 @@ declare namespace core {
         CalleeError,
         CallerError,
         CpCall,
+        CpCallBase,
+        CpCaller,
         CpcError,
         CpcFailAsyncRespondError,
         CpcFailRespondError,
@@ -34,17 +36,18 @@ declare namespace core {
 }
 export { core }
 
-// Warning: (ae-forgotten-export) The symbol "CpCallBase" needs to be exported by the entry point index.d.ts
+// Warning: (ae-incompatible-release-tags) The symbol "CpCall" is marked as @public, but its signature references "CpCallBase" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "CpCall" is marked as @public, but its signature references "CpCallBase" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "CpCall" is marked as @public, but its signature references "CpCallBase" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "CpCall" is marked as @public, but its signature references "CpCallBase" which is marked as @internal
 //
 // @public (undocumented)
 class CpCall extends CpCallBase {
     constructor(callerCtrl: RpcFrameCtrl<RpcFrame>);
-    // @deprecated
-    constructor(frameIter: AsyncIterable<RpcFrame>, sendFrame: (frame: RpcFrame) => void, onDispose?: () => void);
     // (undocumented)
-    dispose(): Promise<void>;
+    dispose(reason?: any): Promise<void>;
     // (undocumented)
-    static fromByteIterable(iter: AsyncIterable<Uint8Array>, write: (binaryFrame: Uint8Array) => void, onDispose?: () => void): CpCall;
+    static fromByteIterable(ctrl: RpcFrameCtrl<Uint8Array>): CpCall;
     // Warning: (ae-forgotten-export) The symbol "GenCallerOpts" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "AnyCaller" needs to be exported by the entry point index.d.ts
     //
@@ -59,6 +62,58 @@ class CpCall extends CpCallBase {
     protected sendFrame(frame: RpcFrame): void;
     // (undocumented)
     setObject(obj: object, cmd?: string): void;
+}
+
+// @internal
+abstract class CpCallBase {
+    constructor(frameIter: AsyncIterable<RpcFrame>);
+    // Warning: (ae-forgotten-export) The symbol "CalleePassive" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    protected readonly callee: CalleePassive;
+    // (undocumented)
+    caller: CpCaller;
+    // (undocumented)
+    clearFn(): void;
+    // Warning: (ae-forgotten-export) The symbol "OnceEventTrigger" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly closeEvent: OnceEventTrigger<void>;
+    // (undocumented)
+    disable(force?: boolean): Promise<void>;
+    // (undocumented)
+    dispose(reason?: any): void;
+    // (undocumented)
+    getAllFn(): IterableIterator<string>;
+    // Warning: (ae-forgotten-export) The symbol "RpcFn" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    protected licensers: Map<string, RpcFn>;
+    // (undocumented)
+    removeFn(cmd: any): void;
+    // (undocumented)
+    protected abstract sendFrame(frame: RpcFrame): void;
+    // Warning: (ae-forgotten-export) The symbol "CmdFn" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "FnOpts" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    setFn(cmd: any, fn: CmdFn, opts?: FnOpts): void;
+}
+
+// @public (undocumented)
+interface CpCaller {
+    // (undocumented)
+    call(...args: any[]): Promise<any>;
+    // (undocumented)
+    disableEvent: OnceEventTrigger<void>;
+    // (undocumented)
+    end(abort?: boolean): Promise<void>;
+    // (undocumented)
+    ended: 0 | 1 | 2 | 3;
+    // (undocumented)
+    exec(...args: any[]): void;
+    // (undocumented)
+    finishEvent: OnceEventTrigger<void>;
 }
 
 // @public
@@ -109,8 +164,6 @@ enum FrameType {
     error = 7,
     // (undocumented)
     exec = 2,
-    // @deprecated (undocumented)
-    fin = 254,
     // (undocumented)
     promise = 8,
     // (undocumented)
@@ -119,17 +172,15 @@ enum FrameType {
     resolve = 9,
     // (undocumented)
     return = 11,
-    // @deprecated (undocumented)
-    returnAsync = 8,
     // (undocumented)
     throw = 12
 }
 
-// Warning: (ae-forgotten-export) The symbol "Fn_2" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Fn" needs to be exported by the entry point index.d.ts
 // Warning: (ae-forgotten-export) The symbol "MakeAsync" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-type MakeCallers<T, E = {}> = T extends Fn_2 ? MakeAsync<T> & ToAsync<T, E> : T extends object ? ToAsync<T, E> : never;
+type MakeCallers<T, E = {}> = T extends Fn ? MakeAsync<T> & ToAsync<T, E> : T extends object ? ToAsync<T, E> : never;
 
 declare namespace node {
     export {
@@ -154,7 +205,7 @@ type RpcFrame = CalleeFrame | CallerFrame | Frame.ResponseError;
 type RpcFrameCtrl<T = RpcFrame> = {
     frameIter: AsyncIterable<T>;
     sendFrame(frame: T): void;
-    dispose?(): Promise<void> | void;
+    dispose?(reason?: any): Promise<void> | void;
 };
 
 declare namespace web {
