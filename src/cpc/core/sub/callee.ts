@@ -58,7 +58,7 @@ export abstract class CalleeCommon {
         (err) => [FrameType.reject, id, err] as Frame.Reject
       )
       .then((frame) => {
-        this.#sendingUniqueKey.delete.bind(this, id);
+        this.#sendingUniqueKey.delete(id);
         if (this.status === 2) return;
         this.sendCtrl.sendFrame(frame);
         if (this.status === 1) this.testClose();

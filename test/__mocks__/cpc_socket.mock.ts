@@ -3,6 +3,7 @@ import { createSocketCpc } from "cpcall/node";
 import { vi } from "vitest";
 import { CpCall, RpcFrame } from "cpcall";
 import EventEmitter from "node:events";
+import { CalleePassive } from "../../src/cpc/core/mod.js";
 /** 模拟两个已建立连接的 Socket, 并初始化监听他们的  close 事件 */
 export function getNoResponseCpc() {
   const iter: AsyncIterableIterator<RpcFrame> = {
@@ -15,16 +16,20 @@ export function getNoResponseCpc() {
   };
   return new CpCall({ frameIter: iter, sendFrame: () => {} });
 }
+export type InternalCpcall = CpCall & {
+  name: string;
+  callee: CalleePassive;
+};
 /** 模拟两个已连接的 CpcSocket */
 export function createConnectedCpc(clientFn?: object, serverFn?: object) {
   const { clientSocket, serverSocket } = createConnectedSocket();
-  const serverCpc = createSocketCpc(serverSocket);
-  const clientCpc = createSocketCpc(clientSocket);
+  const serverCpc = createSocketCpc(serverSocket) as InternalCpcall;
+  const clientCpc = createSocketCpc(clientSocket) as InternalCpcall;
 
   if (clientFn) clientCpc.setObject(clientFn);
   if (serverFn) serverCpc.setObject(serverFn);
-  (clientCpc as any).name = "client";
-  (serverCpc as any).name = "server";
+  clientCpc.name = "client";
+  serverCpc.name = "server";
 
   return { serverCpc, clientCpc, serverSocket, clientSocket };
 }

@@ -119,14 +119,31 @@ describe("返回值", function () {
     fn.mockRestore();
   });
 
-  test("异步返回", async function () {
-    const { clientCpc, serverCpc } = mock;
-    const arg = [true, undefined, 4];
-    fn.mockImplementation(async () => {
-      return new Promise((resolve) => setTimeout(() => resolve(8)));
+  describe("异步返回", function () {
+    test("异步返回", async function () {
+      const { clientCpc, serverCpc } = mock;
+      const arg = [true, undefined, 4];
+      fn.mockImplementation(async () => {
+        return new Promise((resolve) => setTimeout(() => resolve(8)));
+      });
+      await expect(clientCpc.caller.call("fn", arg)).resolves.toBe(8);
+      expect(serverCpc.callee.promiseNum).toBe(0);
     });
-    await expect(clientCpc.caller.call("fn", arg)).resolves.toBe(8);
+
+    test("多个异步返回", async function () {
+      const { clientCpc, serverCpc } = mock;
+      let count = 0;
+      fn.mockImplementation(() => Promise.resolve(count++));
+      const caller = clientCpc.caller;
+      await expect(caller.call("fn")).resolves.toBe(0);
+      expect(serverCpc.callee.promiseNum).toBe(0);
+      await expect(caller.call("fn")).resolves.toBe(1);
+      expect(serverCpc.callee.promiseNum).toBe(0);
+      await expect(caller.call("fn")).resolves.toBe(2);
+      expect(serverCpc.callee.promiseNum).toBe(0);
+    });
   });
+
   test("函数抛出Error对象", async function () {
     const { clientCpc, serverCpc } = mock;
     fn.mockImplementation(() => {
