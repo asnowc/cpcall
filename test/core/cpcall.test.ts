@@ -173,7 +173,16 @@ describe("返回值", function () {
     await expect(clientCpc.caller.call("fn")).rejects.toBe("abc");
   });
 }, 500);
-
+test("dispose", async function () {
+  const { clientCpc, serverCpc } = mocks.createConnectedCpc();
+  const onClose = vi.fn();
+  clientCpc.closeEvent.catch(onClose);
+  const error = new Error("主动dispose");
+  await clientCpc.dispose(error);
+  await afterTime();
+  expect(clientCpc.closeEvent.done).toBeTruthy();
+  expect(onClose).toBeCalled();
+});
 describe("状态更改", function () {
   test("在返回前断开连接", async function () {
     const cpc = mocks.getNoResponseCpc();

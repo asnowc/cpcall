@@ -45,8 +45,6 @@ export { core }
 class CpCall extends CpCallBase {
     constructor(callerCtrl: RpcFrameCtrl<RpcFrame>);
     // (undocumented)
-    dispose(reason?: any): Promise<void>;
-    // (undocumented)
     static fromByteIterable(ctrl: RpcFrameCtrl<Uint8Array>): CpCall;
     // Warning: (ae-forgotten-export) The symbol "GenCallerOpts" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "AnyCaller" needs to be exported by the entry point index.d.ts
@@ -59,14 +57,12 @@ class CpCall extends CpCallBase {
     // (undocumented)
     genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ToAsync<R, CallerProxyPrototype>;
     // (undocumented)
-    protected sendFrame(frame: RpcFrame): void;
-    // (undocumented)
     setObject(obj: object, cmd?: string): void;
 }
 
 // @internal
-abstract class CpCallBase {
-    constructor(frameIter: AsyncIterable<RpcFrame>);
+class CpCallBase {
+    constructor(ctrl: RpcFrameCtrl<RpcFrame>);
     // Warning: (ae-forgotten-export) The symbol "CalleePassive" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -82,7 +78,7 @@ abstract class CpCallBase {
     // (undocumented)
     disable(force?: boolean): Promise<void>;
     // (undocumented)
-    dispose(reason?: any): void;
+    dispose(reason?: any): Promise<void>;
     // (undocumented)
     getAllFn(): IterableIterator<string>;
     // Warning: (ae-forgotten-export) The symbol "RpcFn" needs to be exported by the entry point index.d.ts
@@ -91,8 +87,6 @@ abstract class CpCallBase {
     protected licensers: Map<string, RpcFn>;
     // (undocumented)
     removeFn(cmd: any): void;
-    // (undocumented)
-    protected abstract sendFrame(frame: RpcFrame): void;
     // Warning: (ae-forgotten-export) The symbol "CmdFn" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "FnOpts" needs to be exported by the entry point index.d.ts
     //
@@ -205,6 +199,7 @@ type RpcFrame = CalleeFrame | CallerFrame | Frame.ResponseError;
 type RpcFrameCtrl<T = RpcFrame> = {
     frameIter: AsyncIterable<T>;
     sendFrame(frame: T): void;
+    close?(): Promise<void> | void;
     dispose?(reason?: any): Promise<void> | void;
 };
 

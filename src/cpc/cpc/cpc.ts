@@ -2,12 +2,18 @@ import { CalleeCommon, CalleePassive, CallerCore, RpcFrame, trans, CpCaller } fr
 import { OnceEventTrigger } from "evlib";
 import { RpcFn, genRpcCmdMap } from "./class_gen.js";
 import { createCallerGen, MakeCallers, ToAsync } from "./callers_gen.js";
-import type { SendCtrl } from "../core/sub/type.js";
 
 /** @public */
 export type RpcFrameCtrl<T = RpcFrame> = {
   frameIter: AsyncIterable<T>;
   sendFrame(frame: T): void;
+  /**
+   * @remarks 在 closeEvent 发出前调用
+   */
+  close?(): Promise<void> | void;
+  /**
+   *  @remarks  当用户手动调用 dispose() 时或迭代器抛出异常时调用
+   */
   dispose?(reason?: any): Promise<void> | void;
 };
 
@@ -16,27 +22,18 @@ export abstract class CpCallBase {
   /**
    * @param onDispose - 调用 dispose() 时调用。它这应该中断 frameIter。
    */
-  constructor(frameIter: AsyncIterable<RpcFrame>) {
-    const sendCtrl: SendCtrl = {
-      sendFrame: this.sendFrame.bind(this),
-    };
-    const caller = new CallerCore(sendCtrl);
-    const callee = new CalleePassive(sendCtrl);
+  constructor(private readonly ctrl: RpcFrameCtrl<RpcFrame>) {
+    const caller = new CallerCore(ctrl);
+    const callee = new CalleePassive(ctrl);
     this.#caller = caller;
     this.caller = caller;
     this.callee = callee;
-    this.bridgeRpcFrame(callee, caller, frameIter);
+    this.bridgeRpcFrame(callee, caller, ctrl.frameIter);
     callee.onCall = (cmd, ...args) => {
       const context = this.licensers.get(cmd);
       if (!context) throw new CpcUnregisteredCommandError();
       return context.fn.apply(context.this, args);
     };
-    this.#caller.finishEvent.then(() => {
-      if (this.callee.status === 2) this.#emitClose();
-    });
-    this.callee.finishEvent.then(() => {
-      if (this.#caller.finishEvent.done) this.#emitClose();
-    });
   }
   /**
    * @internal
@@ -49,15 +46,15 @@ export abstract class CpCallBase {
   ): Promise<void | any> {
     try {
       for await (const chunk of frameIter) {
-        // if (callee.status === 2 && caller.closed) throw new Error("Received frame after CpCall closed");
         callee.onFrame(chunk) || caller.onFrame(chunk);
-
-        // 发送完某一帧后，需要检测是否满足结束状态，如果满足，需要发出close 事件以终止外部的迭代器
+        if (callee.status === 2 && caller.closed) break; // 检测是否满足结束状态，如果满足，终止外部的迭代器
       }
-      if (!caller.closed || callee.status !== 2) throw new Error("There won't be any more frames");
+      if (callee.status !== 2) this.callee.forceAbort();
+      if (!caller.closed) this.#caller.forceAbort();
+      await this.ctrl.close?.();
+      this.closeEvent.emit();
     } catch (err) {
-      this.#errored = err;
-      this.dispose(err);
+      await this.dispose(err);
     }
   }
   protected licensers = new Map<string, RpcFn>();
@@ -83,10 +80,7 @@ export abstract class CpCallBase {
   #errored: any;
   /** @remarks 关闭事件 */
   readonly closeEvent = new OnceEventTrigger<void>();
-  #emitClose() {
-    if (this.#errored === undefined) this.closeEvent.emit();
-    else this.closeEvent.emitError(this.#errored);
-  }
+
   /** @remarks  */
   disable(force?: boolean) {
     return this.callee.disable(force);
@@ -94,12 +88,14 @@ export abstract class CpCallBase {
   /**
    * @remarks 强制关闭
    */
-  dispose(reason?: any): void {
-    if (this.#errored === undefined) this.#errored = reason;
+  async dispose(reason: any = null): Promise<void> {
+    if (this.#errored !== undefined) return; //已经销毁过
+    this.#errored = reason;
     this.callee.forceAbort();
     this.#caller.forceAbort();
+    await this.ctrl.dispose?.(reason);
+    this.closeEvent.emitError(this.#errored);
   }
-  protected abstract sendFrame(frame: RpcFrame): void;
 }
 export type { MakeCallers };
 /**
@@ -113,18 +109,23 @@ export class CpCall extends CpCallBase {
       sendFrame(frame: RpcFrame) {
         this.ctrl.sendFrame(trans.packageCpcFrame(frame));
       },
-      dispose(reason: Error) {
-        this.ctrl.dispose?.(reason);
-      },
+      dispose: ctrl.dispose
+        ? function (this: any, reason: Error) {
+            this.ctrl.dispose(reason);
+          }
+        : undefined,
+      close: ctrl.close
+        ? function (this: any) {
+            this.ctrl.close();
+          }
+        : undefined,
     };
     return new this(config);
   }
 
   constructor(callerCtrl: RpcFrameCtrl<RpcFrame>) {
-    super(callerCtrl.frameIter);
-    this.ctrl = callerCtrl as RpcFrameCtrl<RpcFrame>;
+    super(callerCtrl);
   }
-  private ctrl: RpcFrameCtrl<RpcFrame>;
   #sp = ".";
   /** @remarks 根据对象设置调用服务 */
   setObject(obj: object, cmd: string = "") {
@@ -146,13 +147,6 @@ export class CpCall extends CpCallBase {
     const obj = createCallerGen(createCallerFn, { caller: this.caller, excludeKeys }, prefix, this.#sp);
 
     return obj;
-  }
-  protected sendFrame(frame: RpcFrame): void {
-    this.ctrl.sendFrame(frame);
-  }
-  async dispose(reason?: any): Promise<void> {
-    await this.ctrl.dispose?.(reason);
-    return super.dispose(reason);
   }
 }
 

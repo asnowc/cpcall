@@ -1,20 +1,24 @@
 import type { Duplex, Readable } from "node:stream";
-import { CpCall } from "cpcall";
+import { CpCall, RpcFrameCtrl } from "cpcall";
+class DuplexRpcFrameCtrl implements RpcFrameCtrl<Uint8Array> {
+  constructor(private duplex: Duplex) {
+    this.frameIter = readableToAsyncIterator(this.duplex);
+  }
+  sendFrame(frame: Uint8Array): void {
+    this.duplex.write(frame);
+  }
+  dispose(reason?: any): void {
+    this.duplex.destroy(reason);
+  }
+  close(): void | Promise<void> {
+    this.duplex.end();
+  }
+  readonly frameIter: AsyncIterable<Uint8Array>;
+}
+
 /** @public */
 export function createSocketCpc(duplex: Duplex): CpCall {
-  const config = {
-    duplex,
-    frameIter: readableToAsyncIterator(duplex),
-    sendFrame(frame: Uint8Array) {
-      this.duplex.write(frame);
-    },
-    dispose(reason: Error) {
-      this.duplex.destroy(reason);
-    },
-  };
-  const cpcall = CpCall.fromByteIterable(config);
-  cpcall.closeEvent.then(() => duplex.end());
-  return cpcall;
+  return CpCall.fromByteIterable(new DuplexRpcFrameCtrl(duplex));
 }
 /**
  * @remarks 将 Readable 转为 异步迭代器。它与 Readable[Symbol.asyncIterable] 行为不同。

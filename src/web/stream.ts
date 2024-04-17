@@ -1,7 +1,8 @@
 /// <reference lib="dom"/>
 
 import { CpCall } from "cpcall";
-async function* iterReadable(reader: ReadableStreamDefaultReader<Uint8Array>) {
+async function* iterReadable(readable: ReadableStream<Uint8Array>) {
+  const reader = readable.getReader();
   let chunk = await reader.read();
   while (!chunk.done) {
     yield chunk.value;
@@ -14,16 +15,18 @@ export function createWebStreamCpc(stream: {
   readable: ReadableStream<Uint8Array>;
   writable: WritableStream<Uint8Array>;
 }) {
-  const reader = stream.readable.getReader();
   const config = {
-    reader,
+    readable: stream.readable,
     writer: stream.writable.getWriter(),
-    frameIter: iterReadable(reader),
+    frameIter: iterReadable(stream.readable),
     sendFrame(frame: Uint8Array) {
       this.writer.write(frame).catch(voidFn);
     },
-    dispose() {
-      this.reader.cancel();
+    close() {
+      return this.writer.close();
+    },
+    dispose(reason: any) {
+      return this.readable.cancel(reason);
     },
   } as const;
   return CpCall.fromByteIterable(config);
