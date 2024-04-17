@@ -61,7 +61,7 @@ class CpCall extends CpCallBase {
 }
 
 // @internal
-class CpCallBase {
+abstract class CpCallBase {
     constructor(ctrl: RpcFrameCtrl<RpcFrame>);
     // Warning: (ae-forgotten-export) The symbol "CalleePassive" needs to be exported by the entry point index.d.ts
     //
