@@ -58,19 +58,22 @@ export abstract class CpCallBase {
     }
   }
   protected licensers = new Map<string, RpcFn>();
-  /** @remarks 设置调用服务 */
+  /**
+   * @remarks 设置函数服务，设置后，可由对方调用
+   * @param cmd - 方法名称
+   */
   setFn(cmd: any, fn: CmdFn, opts: FnOpts = {}): void {
     this.licensers.set(cmd, { fn, this: opts.this });
   }
-  /** @remarks 删除调用服务 */
+  /** @remarks 删除函数服务 */
   removeFn(cmd: any) {
     this.licensers.delete(cmd);
   }
-  /** @remarks 获取已注册的所有命令和回调函数的映射 */
+  /** @remarks 获取所有已设置的函数 */
   getAllFn() {
     return this.licensers.keys();
   }
-  /** @remarks 清空所有以设置的调用服务 */
+  /** @remarks 清空所有已设置的函数 */
   clearFn() {
     this.licensers.clear();
   }
@@ -80,13 +83,15 @@ export abstract class CpCallBase {
   #errored: any;
   /** @remarks 关闭事件 */
   readonly closeEvent = new OnceEventTrigger<void>();
-
-  /** @remarks  */
+  /**
+   * @remarks 向对方发送 disable 帧。调用后，对方如果继续发起远程调用，将会响应给对方异常
+   **/
   disable(force?: boolean) {
     return this.callee.disable(force);
   }
   /**
-   * @remarks 强制关闭
+   * @remarks 销毁连接
+   * @returns 返回完全关闭后解决的 Promise
    */
   async dispose(reason: any = null): Promise<void> {
     if (this.#errored !== undefined) return; //已经销毁过
