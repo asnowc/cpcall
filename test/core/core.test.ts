@@ -197,16 +197,5 @@ describe("callee", function () {
       expect(onFinish).toBeCalled();
       expect(callee.finishEvent.done).toBeTruthy();
     });
-    test("disable(true)", function () {
-      onCall.mockImplementation(() => new Promise(() => {}));
-      callee.onFrame([FrameType.call, []]);
-      expect(callee.promiseNum).toBe(1);
-      callee.disable(true);
-      // expect(onDisable).toBeCalled();
-      expect(callee.disable).toBeTruthy();
-      // expect(callee.$disable.done).toBeTruthy();
-      expect(onFinish).toBeCalled();
-      expect(callee.finishEvent.done).toBeTruthy();
-    });
   });
 });

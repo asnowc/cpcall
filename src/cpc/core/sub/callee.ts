@@ -81,11 +81,10 @@ export class CalleePassive extends CalleeCommon {
   readonly finishEvent = new OnceEventTrigger<void>();
 
   /** 结束调用服务，如果当前状态为0， 则发送 disable 帧 */
-  disable(abort?: boolean): Promise<void> {
+  disable(): Promise<void> {
     if (this.status === 2) return Promise.resolve();
     let finishing = this.finishEvent.getPromise();
-    const emitClose = this.onCpcEnd();
-    if (abort && !emitClose) this.forceAbort();
+    this.onCpcEnd();
     return finishing;
   }
   forceAbort() {

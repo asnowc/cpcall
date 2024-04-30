@@ -76,7 +76,7 @@ abstract class CpCallBase {
     // (undocumented)
     readonly closeEvent: OnceEventTrigger<void>;
     // (undocumented)
-    disable(force?: boolean): Promise<void>;
+    disable(): Promise<void>;
     // (undocumented)
     dispose(reason?: any): Promise<void>;
     // (undocumented)

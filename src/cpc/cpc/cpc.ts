@@ -86,8 +86,8 @@ export abstract class CpCallBase {
   /**
    * @remarks 向对方发送 disable 帧。调用后，对方如果继续发起远程调用，将会响应给对方异常
    **/
-  disable(force?: boolean) {
-    return this.callee.disable(force);
+  disable() {
+    return this.callee.disable();
   }
   /**
    * @remarks 销毁连接
