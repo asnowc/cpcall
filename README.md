@@ -1,14 +1,15 @@
 ## CPCALL
 
-**与协议无关的为 JavaScript 设计的远程过程调用库**
+**与协议无关的为 JavaScript 设计的远程过程调用的库**
 
-**目前尚不稳定，可能会有较大的破坏性变更**
+**目前版本不稳定，不遵循 semver 语义，可能会有较大的破坏性变更**
 
 ### 特性
 
-- 与协议无关的为，可用于 TCP、IPC、WebSocket 等
+- 与协议无关，可用于基于 TCP、IPC、WebSocket 等
 - 类型安全
-- 数据交换采用 [JBOD](https://github.com/asnowc/jbod) 编码，相比与 JSON 拥有更多的数据类型，更小的数据帧大小
+- 数据传输采用 [JBOD](https://github.com/asnowc/jbod) 编码，相比与 JSON 拥有更多的数据类型，更小的数据帧大小
+- 无需定义数据结构，非常适合动态类型语言
 
 ### 使用
 
@@ -144,7 +145,7 @@ clientSocket.on("connect", async () => {
   const data2 = await caller.sub.mul(3, 5); //15
   console.log("client", data2);
 
-  await clientCpc.caller.end(); //结束调用 
+  await clientCpc.caller.end(); //结束调用
 });
 clientSocket.on("close", () => console.log("client close"));
 ```
@@ -172,3 +173,7 @@ const conn = await Deno.connect({ port: 8888 });
 const cpc = createWebStreamCpc(conn);
 // ...
 ```
+
+### 其他
+
+[数据帧格式](./docs/frame_type.md)
