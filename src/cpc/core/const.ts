@@ -10,9 +10,7 @@ export enum FrameType {
 
   return = 11,
   throw = 12,
-  /** 收到fin后表示对方不会再发起调用 */
   end = 0b1111_1110,
-  /** 收到fin后表示对方不会再发起调用 */
   disable = 0xff,
 }
 /** @public */

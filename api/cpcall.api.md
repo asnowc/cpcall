@@ -152,7 +152,9 @@ const _default: {
 enum FrameType {
     // (undocumented)
     call = 1,
+    // (undocumented)
     disable = 255,
+    // (undocumented)
     end = 254,
     // (undocumented)
     error = 7,
