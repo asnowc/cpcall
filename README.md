@@ -19,7 +19,9 @@ service_server.ts (运行在服务端，提供给客户端调用)
 
 ```ts
 class SubService {
-  mul(a: number, b: number) {
+  //可以返回 Promise
+  async mul(a: number, b: number) {
+    await new Promise((resolve) => setTimeout(resolve, 1000)); /
     return a * b;
   }
 }
@@ -28,6 +30,7 @@ export class ServerService {
   calc(a: number, b: number) {
     return a + b;
   }
+  // 返回更复杂的数据类型
   getData() {
     return {
       regExp: /abc/,
@@ -65,10 +68,10 @@ import type { ClientService } from "./service_client.js"; //仅导入类型
 
 const server = createServer(async (socket) => {
   const serverCpc = createSocketCpc(socket);
-  serverCpc.setObject(new ServerService());
+  serverCpc.setObject(new ServerService()); //设置服务，供客户端调用
   const caller = serverCpc.genCaller<ClientService>(); //配置类型，获取客户端完整的类型提示
 
-  const msg = await caller.getData(8);
+  const msg = await caller.getData(8); //调用客户端函数
   console.log("server", msg);
 
   await serverCpc.caller.end(); //结束调用
@@ -91,7 +94,7 @@ clientSocket.on("connect", async () => {
   clientCpc.setObject(new ClientService()); //客户端设置服务，可由服务端主动调用
 
   const caller = clientCpc.genCaller<ServerService>(); //配置类型，获取服务端完整的类型提示
-  const data1 = await caller.getData();
+  const data1 = await caller.getData(); //调用服务端函数
   console.log("client", data1);
   const data2 = await caller.sub.mul(3, 5); //15
   console.log("client", data2);
@@ -190,7 +193,7 @@ interface CpCall {
    * @remarks 销毁连接
    * @returns 返回完全关闭后解决的 Promise
    */
-  dispose(reason?: any): Promise<void>;
+  dispose(reason?: any): void;
 
   /**
    * @remarks 根据对象设置调用服务。遍历对象自身和原型上值为function 类型的键，将其添加为函数服务*
@@ -252,7 +255,7 @@ type RpcFrameCtrl<T = RpcFrame> = {
   /**
    *  @remarks  当用户手动调用 dispose() 时或迭代器抛出异常时调用
    */
-  dispose?(reason?: any): Promise<void> | void;
+  dispose?(reason?: any): void;
 };
 ```
 
