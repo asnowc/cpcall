@@ -28,7 +28,7 @@ describe("正常关闭", function () {
 describe("异常关闭", function () {
   test("主动调用 dispose()", async function () {
     const err = new Error("主动调用dispose");
-    await cpc.dispose(err);
+    cpc.dispose(err);
     hd.yield([FrameType.call, ["abc"]]); //传一些错误的帧
     expect(ctrl.close).toBeCalledTimes(0);
     expect(ctrl.dispose).toBeCalledTimes(1);

@@ -78,7 +78,7 @@ abstract class CpCallBase {
     // (undocumented)
     disable(): Promise<void>;
     // (undocumented)
-    dispose(reason?: any): Promise<void>;
+    dispose(reason?: any): void;
     // (undocumented)
     getAllFn(): IterableIterator<string>;
     // Warning: (ae-forgotten-export) The symbol "RpcFn" needs to be exported by the entry point index.d.ts
@@ -202,7 +202,7 @@ type RpcFrameCtrl<T = RpcFrame> = {
     frameIter: AsyncIterable<T>;
     sendFrame(frame: T): void;
     close?(): Promise<void> | void;
-    dispose?(reason?: any): Promise<void> | void;
+    dispose?(reason?: any): void;
 };
 
 declare namespace web {

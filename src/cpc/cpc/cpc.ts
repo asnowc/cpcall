@@ -14,7 +14,7 @@ export type RpcFrameCtrl<T = RpcFrame> = {
   /**
    *  @remarks  当用户手动调用 dispose() 时或迭代器抛出异常时调用
    */
-  dispose?(reason?: any): Promise<void> | void;
+  dispose?(reason?: any): void;
 };
 
 /** @internal 提供最基础的命令调用 */
@@ -54,7 +54,7 @@ export abstract class CpCallBase {
       await this.ctrl.close?.();
       this.closeEvent.emit();
     } catch (err) {
-      await this.dispose(err);
+      this.dispose(err);
     }
   }
   protected licensers = new Map<string, RpcFn>();
@@ -91,14 +91,13 @@ export abstract class CpCallBase {
   }
   /**
    * @remarks 销毁连接
-   * @returns 返回完全关闭后解决的 Promise
    */
-  async dispose(reason: any = null): Promise<void> {
+  dispose(reason: any = null): void {
     if (this.#errored !== undefined) return; //已经销毁过
     this.#errored = reason;
     this.callee.forceAbort();
     this.#caller.forceAbort();
-    await this.ctrl.dispose?.(reason);
+    this.ctrl.dispose?.(reason);
     this.closeEvent.emitError(this.#errored);
   }
 }

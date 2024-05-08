@@ -15,7 +15,7 @@ describe("CpCall", function () {
   });
   test("close caller 和 callee 主动触发", async function () {
     cpc.caller.end(true);
-    cpc.disable(true);
+    cpc.disable();
     hd.yield([FrameType.call, []]);
     await afterTime();
     expect(cpc.closeEvent.done).toBeTruthy();
@@ -56,7 +56,7 @@ describe("创建连接与关闭连接", function () {
     const { clientCpc, serverCpc } = mock;
     const c1 = clientCpc.closeEvent.getPromise();
     const s1 = serverCpc.closeEvent.getPromise();
-    clientCpc.disable(true);
+    clientCpc.disable();
     clientCpc.caller.end(true);
     await expect(c1).resolves.toBeUndefined();
     await expect(s1).resolves.toBeUndefined();
@@ -178,7 +178,7 @@ test("dispose", async function () {
   const onClose = vi.fn();
   clientCpc.closeEvent.catch(onClose);
   const error = new Error("主动dispose");
-  await clientCpc.dispose(error);
+  clientCpc.dispose(error);
   await afterTime();
   expect(clientCpc.closeEvent.done).toBeTruthy();
   expect(onClose).toBeCalled();
