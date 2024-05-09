@@ -1,17 +1,51 @@
 ## CPCALL
 
-**与协议无关的为 JavaScript 设计的远程过程调用的库**
+与协议无关的，为 JavaScript 设计的远程过程调用（RPC）的库
 
 **目前版本不稳定，不遵循 semver 语义，可能会有较大的破坏性变更**
+
+## 概览
+
+[api](#api)
+[示例](#Usage)
 
 ### 特性
 
 - 与协议无关，可用于基于 TCP、IPC、WebSocket 等
+- 双向远程调用
 - 类型安全
-- 数据传输采用 [JBOD](https://github.com/asnowc/jbod) 编码，相比与 JSON 拥有更多的数据类型，更小的数据帧大小
+- 数据传输默认采用 [JBOD](https://github.com/asnowc/jbod) 编码。相比 JSON，有如下优势：
+  - 更多的数据类型。如 bigint、Set、Map、RegExp、Error、UInt8Array 等，这意味着在调用远程方法时，你可以直接传递这些参数，而无需进行转换
+  - 更小的数据大小。对于常见场景，编码后大小比 JSON 小得多，
 - 无需定义数据结构，非常适合动态类型语言
 
-### 使用
+## Why
+
+#### 什么是远程过程调用（RPC）
+
+RPC（Remote Procedure Call Protocol）远程过程调用协议。
+一个通俗的描述是：客户端可以直接调用远程计算机上的对象方法，并得到返回值，就像调用本地应用程序中的对象一样。
+
+##### RPC 流程
+
+下图为从 ProtX 调用远程端 PortY 的 PortYService.methodD() 方法的流程
+
+<img src="./docs/img/rpc_flowsheet.png">
+
+#### 与 [tRpc](https://trpc.io/)、[gRpc](https://grpc.io/)、[socket.io](https://socket.io/) 有什么区别
+
+与 tRpc、gRpc 最直接的一个区别是，tRpc、gRpc 都是通过客户端主动发起请求(调用)，服务端进行响应，的模式，他们只能单向发起调用。而 cpcall，可以进行双向相互调用
+
+| 名称   | 基于协议             | 调用方向 |
+| ------ | -------------------- | -------- |
+| tRpc   | http                 | 单向调用 |
+| gRpc   | http2                | 单向调用 |
+| cpcall | 双向流（与协议无关） | 双向调用 |
+
+socket.io 是一个基于 WebSocket 的库，可实现双端之间的双向实时通信，它提供了单播、多播等行为。使用它主要用到发布订阅模式。
+而 cpcall，是一个端到端双向调用的 RPC 库。cpcall 与 socket.io 本质上不属于同一类型的库，但在 WebSocket 协议下，他们都能达到相似的行为。
+
+## Usage
 
 首先定义服务
 
@@ -147,7 +181,7 @@ const clientCpc = createWebSocketCpc(ws);
 // ...
 ```
 
-### API
+## API
 
 #### cpcall/node
 
@@ -169,7 +203,6 @@ export function createWebStreamCpc(stream: {
 #### 类型
 
 ````ts
-/** @internal 提供最基础的命令调用 */
 interface CpCall {
   /**
    * @remarks 设置函数服务，设置后，可由对方调用
@@ -193,7 +226,7 @@ interface CpCall {
    * @remarks 销毁连接
    * @returns 返回完全关闭后解决的 Promise
    */
-  dispose(reason?: any): void;
+  dispose(reason?: Error): void;
 
   /**
    * @remarks 根据对象设置调用服务。遍历对象自身和原型上值为function 类型的键，将其添加为函数服务*
@@ -244,7 +277,6 @@ interface CpCaller {
 ````
 
 ```ts
-/** @public */
 type RpcFrameCtrl<T = RpcFrame> = {
   frameIter: AsyncIterable<T>;
   sendFrame(frame: T): void;
@@ -259,6 +291,11 @@ type RpcFrameCtrl<T = RpcFrame> = {
 };
 ```
 
-### 其他
+## 其他
 
-[数据帧格式](./docs/frame_type.md)
+[CPCALL 数据帧协议](./docs/frame_type.md)
+
+### 更多示例
+
+自定义数据帧编解码器（文档待补充）
+实现一个基于 http 的 CPCALL（文档待补充）
