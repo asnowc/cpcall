@@ -28,6 +28,7 @@ declare namespace core {
         CpcFailRespondError,
         CpcUnregisteredCommandError,
         MakeCallers,
+        RemoteCallError,
         RpcFrameCtrl,
         FrameType,
         RpcFrame,
@@ -189,6 +190,12 @@ declare namespace node {
     }
 }
 export { node }
+
+// @public (undocumented)
+class RemoteCallError extends Error {
+    // (undocumented)
+    code?: any;
+}
 
 // Warning: (ae-forgotten-export) The symbol "CalleeFrame" needs to be exported by the entry point index.d.ts
 // Warning: (ae-forgotten-export) The symbol "CallerFrame" needs to be exported by the entry point index.d.ts

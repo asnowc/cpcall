@@ -1,6 +1,13 @@
 import { OnceEventTrigger, WithPromise } from "evlib";
 import { ReturnQueue } from "./promise_queue.js";
-import { FrameType, CpcError, CpcFailAsyncRespondError, CpcFailRespondError, CalleeError } from "../const.js";
+import {
+  FrameType,
+  CpcError,
+  CpcFailAsyncRespondError,
+  CpcFailRespondError,
+  CalleeError,
+  RemoteCallError,
+} from "../const.js";
 import type { CalleeFrame, RpcFrame, CpCaller } from "../type.js";
 import type { SendCtrl } from "./type.js";
 
@@ -117,8 +124,15 @@ export class CallerCore implements CpCaller {
     return this.#returnQueue.size;
   }
   private handleAwait(handle: WithPromise<any>, value: any, error?: boolean) {
-    if (error) handle.reject(value);
-    else handle.resolve(value);
+    if (error) {
+      if (value instanceof Error) {
+        let remoteError = new RemoteCallError(value.message, { cause: value.cause });
+        const code = Reflect.get(value, "code");
+        if (code !== undefined) remoteError.code = code;
+        value = remoteError;
+      }
+      handle.reject(value);
+    } else handle.resolve(value);
   }
   private emitFinish() {
     this.#end = 3;

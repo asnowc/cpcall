@@ -18,6 +18,14 @@ export class CalleeError extends Error {}
 /** @public */
 export class CallerError extends Error {}
 
+/**
+ * @public
+ * @remarks 远程调用抛出异常
+ */
+export class RemoteCallError extends Error {
+  code?: any;
+}
+
 /**  @public 内部帧错误 */
 export class CpcError extends Error {}
 /**

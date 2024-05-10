@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { FrameType, RpcFrame, CpCall, RpcFrameCtrl } from "cpcall";
+import { FrameType, RpcFrame, CpCall, RpcFrameCtrl, RemoteCallError } from "cpcall";
 import { PassiveDataCollector } from "evlib/async";
 import { afterTime } from "evlib";
 import { CpcFailRespondError, CpcFailAsyncRespondError } from "cpcall";
@@ -150,6 +150,7 @@ describe("返回值", function () {
       throw new Error("yy");
     });
     await expect(clientCpc.caller.call("fn")).rejects.toThrowError("yy");
+    await expect(clientCpc.caller.call("fn")).rejects.toBeInstanceOf(RemoteCallError);
   });
   test("函数抛出非Error对象", async function () {
     const { clientCpc, serverCpc } = mock;
@@ -164,6 +165,7 @@ describe("返回值", function () {
       throw new Error("yy");
     });
     await expect(clientCpc.caller.call("fn")).rejects.toThrowError("yy");
+    await expect(clientCpc.caller.call("fn")).rejects.toBeInstanceOf(RemoteCallError);
   });
   test("异步抛出非Error对象", async function () {
     const { clientCpc, serverCpc } = mock;

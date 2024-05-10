@@ -1,6 +1,5 @@
-import { Assertion, AsymmetricMatchersContaining } from "vitest";
 import { expect } from "vitest";
-import { JbodError } from "jbod";
+import { RemoteCallError } from "cpcall";
 
 interface CustomMatchers<R = unknown> {
   isJbodSymbol(num: number): R;
@@ -8,7 +7,7 @@ interface CustomMatchers<R = unknown> {
   isJbodArray(val: any[]): R;
   isJbodRegExp(val: RegExp): R;
   isJbodArrayBuffer(val: ArrayBuffer): R;
-  isJbodError(val: Error): R;
+  isRemoteCallError(val: Error): R;
   /** 断言是由原始值转换而来 */
   jbodEqual(val: any): R;
 }
@@ -64,8 +63,8 @@ expect.extend({
     }
     return res;
   },
-  isJbodError(received: Error, expected: Error) {
-    expect(received).instanceof(JbodError);
+  isRemoteCallError(received: Error, expected: Error) {
+    expect(received).instanceof(RemoteCallError);
     expect(received).toMatchObject({
       message: expected.message,
       name: expected.name,
@@ -150,7 +149,7 @@ function jbodEqual(received: any, expected: any) {
   try {
     if (expType === "object") {
       if (expected instanceof Error) {
-        expect(received).isJbodError(expected);
+        expect(received).isRemoteCallError(expected);
       } else if (expected instanceof ArrayBuffer) {
         expect(received).isJbodArrayBuffer(expected);
       } else if (expected instanceof Array) {
