@@ -51,7 +51,7 @@ async function clearDts(genRooType) {
   await fs.rm("dist/types", { recursive: true });
   if (genRooType) {
     for (const item of ["node", "web"]) {
-      await createType(item + ".d.ts", "./dist/" + item + ".d.ts");
+      await createType(item + ".d.ts", "./dist/" + item + ".js");
     }
   }
 }
@@ -61,6 +61,6 @@ async function clearDts(genRooType) {
  *
  */
 function createType(path, dtsPath) {
-  const data = `export type * from "${dtsPath}"`;
+  const data = `export * from "${dtsPath}"`;
   return fs.writeFile(path, data, { flag: "w+" });
 }
