@@ -1,6 +1,6 @@
 {
   "name": "cpcall",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "",
   "type": "module",
   "scripts": {
@@ -15,7 +15,7 @@
     "ci:check-api": "api-extractor run -c api-extractor.jsonc -v"
   },
   "dependencies": {
-    "jbod": "^0.4.4"
+    "jbod": "^0.4.5"
   },
   "devDependencies": {
     "@eavid/lib-dev": "^0.0.3",

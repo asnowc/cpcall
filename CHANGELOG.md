@@ -1,3 +1,7 @@
+### 0.4.1
+
+feat: 远程调用如果抛出 Error 对象，将自动转为 RemoteCallError
+
 ## 0.4.0
 
 ### BREAKING CHANGE
