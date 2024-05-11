@@ -1,5 +1,3 @@
-/// <reference lib="dom"/>
-
 import { CpCall, trans, RpcFrame, RpcFrameCtrl } from "cpcall";
 import { PassiveDataCollector } from "evlib/async";
 
@@ -10,7 +8,7 @@ function webSocketToIter(webSocket: WebSocket) {
       collector.yield(trans.decodeCpcFrame(new Uint8Array(e.data)).frame);
     }
   });
-  webSocket.addEventListener("close", () => {
+  webSocket.addEventListener("close", (e) => {
     collector.close();
   });
   webSocket.addEventListener("error", (e) => {
@@ -40,4 +38,18 @@ class WsRpcFrameCtrl implements RpcFrameCtrl {
   dispose(): void {
     this.ws.close();
   }
+}
+// WebSocket 最小依赖。
+interface WebSocket {
+  readonly OPEN: number;
+  readonly readyState: number;
+  binaryType: string;
+  close(): void;
+  send(data: Uint8Array): void;
+  addEventListener(name: "message", fn: (e: { readonly data: any }) => void): void;
+  addEventListener(name: "close", fn: (e: SameEvent) => void): void;
+  addEventListener(name: "error", fn: (e: SameEvent) => void): void;
+}
+interface SameEvent {
+  [key: string]: any;
 }

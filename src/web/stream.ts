@@ -1,7 +1,5 @@
-/// <reference lib="dom"/>
-
 import { CpCall } from "cpcall";
-async function* iterReadable(readable: ReadableStream<Uint8Array>) {
+async function* iterReadable(readable: SameReadableStream) {
   const reader = readable.getReader();
   let chunk = await reader.read();
   while (!chunk.done) {
@@ -10,7 +8,9 @@ async function* iterReadable(readable: ReadableStream<Uint8Array>) {
   }
 }
 const voidFn = () => {};
-/** @public */
+/**
+ * @public
+ */
 export function createWebStreamCpc(stream: {
   readable: ReadableStream<Uint8Array>;
   writable: WritableStream<Uint8Array>;
@@ -31,3 +31,21 @@ export function createWebStreamCpc(stream: {
   } as const;
   return CpCall.fromByteIterable(config);
 }
+
+// ReadableStream 最小依赖
+interface ReadableStream<T> {
+  getReader(): {
+    read(): Promise<SameReadableStreamReadResult<T>>;
+  };
+  cancel(reason?: any): void;
+}
+type SameReadableStreamReadResult<T> = { done: true } | { done?: false; value: T };
+
+// WritableStream 最小依赖
+interface WritableStream<T> {
+  getWriter(): {
+    close(): Promise<void>;
+    write(data: T): Promise<void>;
+  };
+}
+type SameReadableStream = ReadableStream<Uint8Array>;

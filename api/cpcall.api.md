@@ -132,13 +132,15 @@ class CpcUnregisteredCommandError extends Error {
 // @public (undocumented)
 function createSocketCpc(duplex: Duplex): CpCall;
 
+// Warning: (ae-forgotten-export) The symbol "WebSocket_2" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
-function createWebSocketCpc(websocket: WebSocket): CpCall;
+function createWebSocketCpc(websocket: WebSocket_2): CpCall;
 
 // @public (undocumented)
 function createWebStreamCpc(stream: {
-    readable: ReadableStream<Uint8Array>;
-    writable: WritableStream<Uint8Array>;
+    readable: ReadableStream_2<Uint8Array>;
+    writable: WritableStream_2<Uint8Array>;
 }): CpCall;
 
 // @internal (undocumented)
@@ -231,6 +233,8 @@ export { web }
 // dist/cpc.d.ts:26:5 - (ae-forgotten-export) The symbol "packageCpcFrame" needs to be exported by the entry point index.d.ts
 // dist/cpc.d.ts:27:5 - (ae-forgotten-export) The symbol "decodeCpcFrame" needs to be exported by the entry point index.d.ts
 // dist/cpc.d.ts:28:5 - (ae-forgotten-export) The symbol "CpcFrameEncoder" needs to be exported by the entry point index.d.ts
+// dist/web.d.ts:27:5 - (ae-forgotten-export) The symbol "ReadableStream_2" needs to be exported by the entry point index.d.ts
+// dist/web.d.ts:28:5 - (ae-forgotten-export) The symbol "WritableStream_2" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
