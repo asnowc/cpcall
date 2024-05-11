@@ -233,8 +233,8 @@ export { web }
 // dist/cpc.d.ts:26:5 - (ae-forgotten-export) The symbol "packageCpcFrame" needs to be exported by the entry point index.d.ts
 // dist/cpc.d.ts:27:5 - (ae-forgotten-export) The symbol "decodeCpcFrame" needs to be exported by the entry point index.d.ts
 // dist/cpc.d.ts:28:5 - (ae-forgotten-export) The symbol "CpcFrameEncoder" needs to be exported by the entry point index.d.ts
-// dist/web.d.ts:27:5 - (ae-forgotten-export) The symbol "ReadableStream_2" needs to be exported by the entry point index.d.ts
-// dist/web.d.ts:28:5 - (ae-forgotten-export) The symbol "WritableStream_2" needs to be exported by the entry point index.d.ts
+// dist/web.d.ts:31:5 - (ae-forgotten-export) The symbol "ReadableStream_2" needs to be exported by the entry point index.d.ts
+// dist/web.d.ts:32:5 - (ae-forgotten-export) The symbol "WritableStream_2" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

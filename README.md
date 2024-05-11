@@ -1,32 +1,58 @@
 ## CPCALL
 
+A protocol independent library designed for remote procedure call (RPC) in JavaScript
 与协议无关的，为 JavaScript 设计的远程过程调用（RPC）的库
 
 **目前版本不稳定，不遵循 semver 语义，可能会有较大的破坏性变更**
+**The current version is unstable and does not follow Semver semantics, which may result in significant destructive changes**
 
-## 概览
+## Overview
 
-[api](#api)
-[示例](#Usage)
+[API](#api)
+[Examples](#examples)
 
-### 特性
+### Features
 
+- 远程调用可操作代理对象，与原生 JavaScript 调用语法非常相近
 - 与协议无关，可用于基于 TCP、IPC、WebSocket 等
 - 双向远程调用
 - 类型安全
 - 数据传输默认采用 [JBOD](https://github.com/asnowc/jbod) 编码。相比 JSON，有如下优势：
-  - 更多的数据类型。如 bigint、Set、Map、RegExp、Error、UInt8Array 等，这意味着在调用远程方法时，你可以直接传递这些参数，而无需进行转换
+  - 更多的数据类型。如 bigint、Set、Map、RegExp、Error、UInt8Array 等（查看[支持的数据类型](https://github.com/asnowc/jbod)），这意味着在调用远程方法时，你可以直接传递这些参数，而无需进行转换
   - 更小的数据大小。对于常见场景，编码后大小比 JSON 小得多，
 - 无需定义数据结构，非常适合动态类型语言
 
-## Why
+### Usage
 
-#### 什么是远程过程调用（RPC）
+Node
+
+`npm install cpcall`
+
+```ts
+import { createSocketCpc } from "cpcall/node";
+import { createWebStreamCpc, createWebSocketCpc } from "npm:cpcall/web";
+```
+
+Deno
+
+```ts
+import { createWebStreamCpc, createWebSocketCpc } from "npm:cpcall/web";
+```
+
+Browser
+
+```ts
+import { createWebStreamCpc, createWebSocketCpc } from "https://esm.sh/cpcall@latest/web";
+```
+
+### Why
+
+**什么是远程过程调用（RPC）？**
 
 RPC（Remote Procedure Call Protocol）远程过程调用协议。
 一个通俗的描述是：客户端可以直接调用远程计算机上的对象方法，并得到返回值，就像调用本地应用程序中的对象一样。
 
-##### RPC 流程
+#### RPC 流程
 
 下图为从 ProtX 调用远程端 PortY 的 PortYService.methodD() 方法的流程
 
@@ -45,182 +71,52 @@ RPC（Remote Procedure Call Protocol）远程过程调用协议。
 socket.io 是一个基于 WebSocket 的库，可实现双端之间的双向实时通信，它提供了单播、多播等行为。使用它主要用到发布订阅模式。
 而 cpcall，是一个端到端双向调用的 RPC 库。cpcall 与 socket.io 本质上不属于同一类型的库，但在 WebSocket 协议下，他们都能达到相似的行为。
 
-## Usage
-
-首先定义服务
-
-service_server.ts (运行在服务端，提供给客户端调用)
-
-```ts
-class SubService {
-  //可以返回 Promise
-  async mul(a: number, b: number) {
-    await new Promise((resolve) => setTimeout(resolve, 1000)); /
-    return a * b;
-  }
-}
-export class ServerService {
-  sub = new SubService();
-  calc(a: number, b: number) {
-    return a + b;
-  }
-  // 返回更复杂的数据类型
-  getData() {
-    return {
-      regExp: /abc/,
-      map: new Map([
-        [1, 2],
-        [3, 4],
-      ]),
-      set: new Set([1, 2, 3, 4]),
-    };
-  }
-}
-```
-
-service_client.ts (运行在客户端，提供给服务端调用)
-
-```ts
-export class ClientService {
-  getData(id: number) {
-    return "ok" + id;
-  }
-}
-```
-
-#### 基于 TCP 的示例
-
-##### Node
-
-server.ts
-
-```ts
-import { createServer } from "node:net";
-import { createSocketCpc } from "cpcall/node";
-import { ServerService } from "./service_server.js";
-import type { ClientService } from "./service_client.js"; //仅导入类型
-
-const server = createServer(async (socket) => {
-  const serverCpc = createSocketCpc(socket);
-  serverCpc.setObject(new ServerService()); //设置服务，供客户端调用
-  const caller = serverCpc.genCaller<ClientService>(); //配置类型，获取客户端完整的类型提示
-
-  const msg = await caller.getData(8); //调用客户端函数
-  console.log("server", msg);
-
-  await serverCpc.caller.end(); //结束调用
-});
-server.listen(8888);
-```
-
-client.ts
-
-```ts
-import { connect } from "node:net";
-import { createSocketCpc } from "cpcall/node";
-import type { ServerService } from "./service_server.js"; //仅导入类型
-import { ClientService } from "./service_client.js";
-
-const clientSocket = connect({ port: 8888, host: "127.0.0.1" });
-
-clientSocket.on("connect", async () => {
-  const clientCpc = createSocketCpc(clientSocket);
-  clientCpc.setObject(new ClientService()); //客户端设置服务，可由服务端主动调用
-
-  const caller = clientCpc.genCaller<ServerService>(); //配置类型，获取服务端完整的类型提示
-  const data1 = await caller.getData(); //调用服务端函数
-  console.log("client", data1);
-  const data2 = await caller.sub.mul(3, 5); //15
-  console.log("client", data2);
-
-  await clientCpc.caller.end(); //结束调用
-});
-clientSocket.on("close", () => console.log("client close"));
-```
-
-##### Deno
-
-server
-
-```ts
-import { createWebStreamCpc } from "npm:cpcall/web";
-
-const server = Deno.listen({ port: 8888 });
-for await (const conn of server) {
-  const serverCpc = createWebStreamCpc(conn);
-  // ...
-}
-```
-
-client
-
-```ts
-import { createWebStreamCpc } from "npm:cpcall/web";
-
-const conn = await Deno.connect({ port: 8888 });
-const clientCpc = createWebStreamCpc(conn);
-// ...
-```
-
-#### 基于 WebSocket 的实例
-
-浏览器客户端：
-
-```ts
-import { createWebSocketCpc } from "https://esm.sh/cpcall@latest/web";
-
-function connectWs() {
-  return new Promise<WebSocket>(function (resolve, reject) {
-    const ws = new WebSocket("ws://localhost:7770");
-    ws.onopen = () => resolve(ws);
-  });
-}
-const ws = await connectWs();
-const clientCpc = createWebSocketCpc(ws);
-
-// ...
-```
-
 ## API
 
-#### cpcall/node
+### cpcall/node
 
 ```ts
+/* 创建一个基于 duplex 的 CpCall 实例。  */
 export function createSocketCpc(duplex: Duplex): CpCall;
 ```
 
-#### cpcall/web
+### cpcall/web
 
 ```ts
+/* 创建一个基于 WebSocket 的 CpCall 实例。WebSocket 的状态必须是 open。 否则抛出异常  */
 export function createWebSocketCpc(ws: WebSocket): CpCall;
 
+/* 创建一个基于 WebStream 的 CpCall 实例。这可以是 Deno.Conn 对象 */
 export function createWebStreamCpc(stream: {
   readable: ReadableStream<Uint8Array>;
   writable: WritableStream<Uint8Array>;
 }): CpCall;
 ```
 
-#### 类型
+### cpcall 类型
+
+#### CpCall
 
 ````ts
 interface CpCall {
   /**
-   * @remarks 设置函数服务，设置后，可由对方调用
+   * @remarks 设置可调用函数
    * @param cmd 方法名称
    * @param opts.this 函数执行时的 this 指向
    */
   setFn(cmd: any, fn: CmdFn, opts?: FnOpts): void;
-  /** @remarks 删除函数服务 */
+  /** @remarks 删除可调用函数 */
   removeFn(cmd: any): void;
-  /** @remarks 获取所有已设置的函数 */
+  /** @remarks 获取所有已设置的可调用函数，包括 setObject 设置的对象 */
   getAllFn(): IterableIterator<string>;
-  /** @remarks 清空所有已设置的函数 */
+  /** @remarks 清空所有已设置的可调用函数，包括 setObject 设置的对象 */
   clearFn(): void;
   /** @remarks CpCaller 对象**/
   caller: CpCaller;
   /** @remarks CpCall 关闭事件. */
   readonly closeEvent: OnceEventTrigger<void>;
-  /** @remarks 向对方发送 disable 帧。调用后，对方如果继续发起远程调用，将会响应给对方异常 */
+  /** @remarks 向对方发送 disable 帧。调用后，对方如果继续发起远程调用，将会响应给对方异常\
+   * 为保证连接能正常关闭，当不再提供调用服务时，应手动调用。 */
   disable(): Promise<void>;
   /**
    * @remarks 销毁连接
@@ -245,7 +141,11 @@ interface CpCall {
    */
   genCaller(prefix?: string, opts?: GenCallerOpts): AnyCaller;
 }
+````
 
+#### CpCaller
+
+```ts
 interface CpCaller {
   /** @remarks 调用远程设置的函数 */
   call(...args: any[]): Promise<any>;
@@ -274,28 +174,169 @@ interface CpCaller {
    */
   finishEvent: OnceEventTrigger<void>;
 }
-````
+```
+
+##### RpcFrameCtrl
 
 ```ts
-type RpcFrameCtrl<T = RpcFrame> = {
+/**
+ * @remarks CpCall 构造函数依赖的接口。你可以实现自定义编解码器，或数据帧转发服务
+ */
+export type RpcFrameCtrl<T = RpcFrame> = {
+  /** @remarks 一个异步迭代器，它应迭代 cpcall 数据帧 */
   frameIter: AsyncIterable<T>;
+  /** @remarks 当需要发送数据帧时被调用 */
   sendFrame(frame: T): void;
   /**
-   * @remarks 在 closeEvent 触发前调用
+   * @remarks 在 closeEvent 发出前调用
    */
   close?(): Promise<void> | void;
   /**
-   *  @remarks  当用户手动调用 dispose() 时或迭代器抛出异常时调用
+   *  @remarks 当用户手动调用 dispose() 时或迭代器抛出异常时调用
    */
   dispose?(reason?: any): void;
 };
 ```
 
-## 其他
+#### OnceEventTrigger
 
-[CPCALL 数据帧协议](./docs/frame_type.md)
+```ts
+/**
+ * @public
+ * @remarks 一次性可订阅对象, 可通过 await 语法等待触发
+ */
+interface OnceEventTrigger<T> {
+  /**
+   * @remarks 订阅事件。如果事件已触发完成则抛出异常
+   */
+  then(resolve: Listener<T>, reject: (data?: any) => void): void;
+  /** 与 then 类似，它会返回 resolve 函数 */
+  once<R extends Listener<T>>(resolve: R, reject?: (arg: any) => void): R;
+
+  /**
+   * @remarks 这个是订阅 emitError() 触发的事件
+   */
+  catch<R extends (reason: any) => void>(listener: R): void;
+  /**
+   * @remarks 无论最终是 emit 还是 emitError. 都会被触发
+   */
+  finally(listener: () => void): void;
+  /**
+   * @remarks 取消订阅事件
+   * @returns 如果取消成功，则返回 true, 否则返回 false
+   */
+  off(key: object): boolean;
+  /** @remarks 返回一个 promise，在emit() 后 resolve, 在 emit() Error 后 reject */
+  getPromise(signal?: BaseAbortSignal): Promise<T>;
+  /* 触发事件 */
+  emit(arg: T): number;
+  /* 以异常触发事件 */
+  emitError(err: any): number;
+
+  // 事件是否已经被触发
+  done: boolean;
+}
+```
+
+## Examples
+
+### NodeJS TCP 的示例
+
+服务端暴露了一些 API，客户端通过 TCP 连接服务端，然后调用它们
+
+client.ts
+
+```ts
+import { createSocketCpc } from "cpcall/node";
+import { Socket, connect } from "node:net";
+import type { ServerApi } from "./server.js"; //导入服务端暴露 api 的类型
+
+const socket = await connectSocket(7788, "localhost"); //创建 TCP 连接
+
+const cpc = createSocketCpc(socket); //创建 cpc 实例
+const serverApi = cpc.genCaller<ServerApi>(); //生成远程代理对象。传入类型，可获得完整类型提示
+
+// 每秒调用一次远程方法 add, 并输出结果。 调用5次后结束
+for (let i = 0; i < 5; i++) {
+  const res = await serverApi.add(i, 5);
+  console.log(res);
+  await delay(1000);
+}
+await cpc.caller.end(); // 为了保证正常断开连接，需要手动调用 caller.end() 方法
+
+function delay(time: number) {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
+
+async function connectSocket(port: number, host?: string): Promise<Socket> {
+  return new Promise(function (resolve) {
+    const socket = connect({ port, host });
+    socket.once("connect", () => resolve(socket));
+  });
+}
+```
+
+server.ts
+
+```ts
+import { Socket, createServer } from "node:net";
+import { createSocketCpc } from "cpcall/node";
+
+const server = createServer(onConnect);
+server.listen(8888);
+
+// 当客户端连接时的回调函数
+function onConnect(socket: Socket) {
+  const cpc = createSocketCpc(socket);
+  cpc.caller.end(); //不需要调用客户端，为了保证后续正常断开连接，需要手动调用 caller.end() 方法
+  cpc.closeEvent.then(() => console.log("cpc closed")); //连接关闭事件
+  cpc.setObject(new ServerApi()); //暴露接口
+}
+
+// 这是暴露给客户端调用的类
+class ServerApi {
+  add(a: number, b: number) {
+    const res = a + b;
+    console.log(`${a} + ${b} = ${res}`);
+    return res;
+  }
+}
+
+export type { ServerApi }; //导出类型，以便客户端获得完整类型提示
+```
+
+### Deno TCP 示例
+
+参考 NodJS TCP 示例。这里只展示了如何创建 CpCall 实例
+server
+
+```ts
+import { createWebStreamCpc } from "npm:cpcall/web";
+
+const server = Deno.listen({ port: 8888 });
+for await (const conn of server) {
+  const serverCpc = createWebStreamCpc(conn);
+  // ...
+}
+```
+
+client
+
+```ts
+import { createWebStreamCpc } from "npm:cpcall/web";
+
+const conn = await Deno.connect({ port: 8888 });
+const clientCpc = createWebStreamCpc(conn);
+// ...
+```
 
 ### 更多示例
 
-自定义数据帧编解码器（文档待补充）
-实现一个基于 http 的 CPCALL（文档待补充）
+[WebSocket 示例](./example/websocket/README.md): 前端暴露一些 API 给后端调用，同时后端也暴露一些 API 给前端调用
+
+自定义数据帧编解码器（文档待补充）\
+实现一个基于 http 的 CpCall（文档待补充）
+
+## 其他
+
+[CPCALL 数据帧协议](./docs/frame_type.md)

@@ -10,6 +10,7 @@ async function* iterReadable(readable: SameReadableStream) {
 const voidFn = () => {};
 /**
  * @public
+ * @remarks 创建一个基于 WebStream 的 CpCall 实例。这可以是 Deno.Conn 对象
  */
 export function createWebStreamCpc(stream: {
   readable: ReadableStream<Uint8Array>;

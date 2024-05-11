@@ -16,7 +16,10 @@ class DuplexRpcFrameCtrl implements RpcFrameCtrl<Uint8Array> {
   readonly frameIter: AsyncIterable<Uint8Array>;
 }
 
-/** @public */
+/**
+ * @public
+ * @remarks 创建一个基于 duplex 的 CpCall 实例
+ */
 export function createSocketCpc(duplex: Duplex): CpCall {
   return CpCall.fromByteIterable(new DuplexRpcFrameCtrl(duplex));
 }

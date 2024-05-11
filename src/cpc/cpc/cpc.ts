@@ -3,16 +3,21 @@ import { OnceEventTrigger } from "evlib";
 import { RpcFn, genRpcCmdMap } from "./class_gen.js";
 import { createCallerGen, MakeCallers, ToAsync } from "./callers_gen.js";
 
-/** @public */
+/**
+ * @public
+ * @remarks CpCall 构造函数依赖的接口。你可以实现自定义编解码器，或数据帧转发服务
+ */
 export type RpcFrameCtrl<T = RpcFrame> = {
+  /** @remarks 一个异步迭代器，它应迭代 cpcall 数据帧 */
   frameIter: AsyncIterable<T>;
+  /** @remarks 当需要发送数据帧时被调用 */
   sendFrame(frame: T): void;
   /**
    * @remarks 在 closeEvent 发出前调用
    */
   close?(): Promise<void> | void;
   /**
-   *  @remarks  当用户手动调用 dispose() 时或迭代器抛出异常时调用
+   *  @remarks 当用户手动调用 dispose() 时或迭代器抛出异常时调用
    */
   dispose?(reason?: any): void;
 };
@@ -59,38 +64,41 @@ export abstract class CpCallBase {
   }
   protected licensers = new Map<string, RpcFn>();
   /**
-   * @remarks 设置函数服务，设置后，可由对方调用
+   * @remarks 设置可调用函数
    * @param cmd - 方法名称
    */
   setFn(cmd: any, fn: CmdFn, opts: FnOpts = {}): void {
     this.licensers.set(cmd, { fn, this: opts.this });
   }
-  /** @remarks 删除函数服务 */
+  /** @remarks 删除可调用函数 */
   removeFn(cmd: any) {
     this.licensers.delete(cmd);
   }
-  /** @remarks 获取所有已设置的函数 */
+  /** @remarks 获取所有已设置的可调用函数，包括 setObject 设置的对象 */
   getAllFn() {
     return this.licensers.keys();
   }
-  /** @remarks 清空所有已设置的函数 */
+  /** @remarks 清空所有已设置的可调用函数，包括 setObject 设置的对象  */
   clearFn() {
     this.licensers.clear();
   }
   protected readonly callee: CalleePassive;
   readonly #caller: CallerCore;
+  /** @remarks CpCaller 对象**/
   caller: CpCaller;
   #errored: any;
   /** @remarks 关闭事件 */
   readonly closeEvent = new OnceEventTrigger<void>();
   /**
    * @remarks 向对方发送 disable 帧。调用后，对方如果继续发起远程调用，将会响应给对方异常
+   * 为保证连接能正常关闭，当不再提供调用服务时，应手动调用。
    **/
   disable() {
     return this.callee.disable();
   }
   /**
    * @remarks 销毁连接
+   * @returns 返回 CpCall 完全关闭后解决的 Promise
    */
   dispose(reason: any = null): void {
     if (this.#errored !== undefined) return; //已经销毁过
@@ -131,7 +139,7 @@ export class CpCall extends CpCallBase {
     super(callerCtrl);
   }
   #sp = ".";
-  /** @remarks 根据对象设置调用服务 */
+  /** @remarks 设置远程可调用对象。 */
   setObject(obj: object, cmd: string = "") {
     const map = new Map<string, any>();
     genRpcCmdMap(obj, cmd, { map: map, sp: this.#sp });
@@ -140,7 +148,7 @@ export class CpCall extends CpCallBase {
     }
   }
   /**
-   * @remarks 生成自动调用
+   * @remarks 生成远程代理对象
    */
   genCaller(prefix?: string, opts?: GenCallerOpts): AnyCaller;
   genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ToAsync<R, CallerProxyPrototype>;
