@@ -1,3 +1,7 @@
+### 0.4.3
+
+fix(web): WebSocket 无法正常关闭
+
 ### 0.4.2
 
 feat(web): 移除对 dom 类型的引用

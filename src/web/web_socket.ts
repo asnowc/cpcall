@@ -35,6 +35,9 @@ class WsRpcFrameCtrl implements RpcFrameCtrl {
       this.dispose();
     }
   }
+  close() {
+    this.ws.close();
+  }
   dispose(): void {
     this.ws.close();
   }
