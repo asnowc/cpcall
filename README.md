@@ -100,38 +100,38 @@ export function createWebStreamCpc(stream: {
 ````ts
 interface CpCall {
   /**
-   * @remarks 设置可调用函数
+   * 设置可调用函数
    * @param cmd 方法名称
    * @param opts.this 函数执行时的 this 指向
    */
   setFn(cmd: any, fn: CmdFn, opts?: FnOpts): void;
-  /** @remarks 删除可调用函数 */
+  /** 删除可调用函数 */
   removeFn(cmd: any): void;
-  /** @remarks 获取所有已设置的可调用函数，包括 setObject 设置的对象 */
+  /** 获取所有已设置的可调用函数，包括 setObject 设置的对象 */
   getAllFn(): IterableIterator<string>;
-  /** @remarks 清空所有已设置的可调用函数，包括 setObject 设置的对象 */
+  /** 清空所有已设置的可调用函数，包括 setObject 设置的对象 */
   clearFn(): void;
-  /** @remarks CpCaller 对象**/
+  /** CpCaller 对象**/
   caller: CpCaller;
-  /** @remarks CpCall 关闭事件. */
-  readonly closeEvent: OnceEventTrigger<void>;
-  /** @remarks 向对方发送 disable 帧。调用后，对方如果继续发起远程调用，将会响应给对方异常\
+  /** CpCall 关闭事件. */
+  readonly closeEvent: OnceListenable<void>;
+  /** 向对方发送 disable 帧。调用后，对方如果继续发起远程调用，将会响应给对方异常\
    * 为保证连接能正常关闭，当不再提供调用服务时，应手动调用。 */
   disable(): Promise<void>;
   /**
-   * @remarks 销毁连接
+   * 销毁连接
    * @returns 返回完全关闭后解决的 Promise
    */
   dispose(reason?: Error): void;
 
   /**
-   * @remarks 根据对象设置调用服务。遍历对象自身和原型上值为function 类型的键，将其添加为函数服务*
+   * 根据对象设置调用服务。遍历对象自身和原型上值为function 类型的键，将其添加为函数服务*
    * @param obj 需要添加为服务的对象。
    * @param cmd 前缀
    */
   setObject(obj: object, cmd?: string): void;
   /**
-   * @remarks 生成一个代理对象。
+   * 生成一个代理对象。
    * @returns 一个代理对象，其本质仍然是 caller.call()
    * @example
    * ```ts
@@ -147,12 +147,12 @@ interface CpCall {
 
 ```ts
 interface CpCaller {
-  /** @remarks 调用远程设置的函数 */
+  /** 调用远程设置的函数 */
   call(...args: any[]): Promise<any>;
-  /** @remarks 调用远程设置的函数。与call不同的是，它没有返回值 */
+  /** 调用远程设置的函数。与call不同的是，它没有返回值 */
   exec(...args: any[]): void;
   /**
-   * @remarks 结束远程调用。
+   * 结束远程调用。
    * @param abort - 如果为true, 这将直接拒绝所有等待返回队列, 并将 ended 置为 3
    * @returns 当 ended 状态变为 3后解决的 Promise
    * */
@@ -165,34 +165,28 @@ interface CpCaller {
    * 0: 当前可调用  */
   ended: 0 | 1 | 2 | 3;
 
-  /**
-   * @remarks ended 变为 2 时触发
-   */
-  disableEvent: OnceEventTrigger<void>;
-  /**
-   * @remarks ended 变为 3 时触发
-   */
-  finishEvent: OnceEventTrigger<void>;
+  /** ended 变为 2 时触发 */
+  disableEvent: OnceListenable<void>;
+  /** ended 变为 3 时触发 */
+  finishEvent: OnceListenable<void>;
 }
 ```
 
 ##### RpcFrameCtrl
 
 ```ts
-/**
- * @remarks CpCall 构造函数依赖的接口。你可以实现自定义编解码器，或数据帧转发服务
- */
+/** CpCall 构造函数依赖的接口。你可以实现自定义编解码器，或数据帧转发服务 */
 export type RpcFrameCtrl<T = RpcFrame> = {
-  /** @remarks 一个异步迭代器，它应迭代 cpcall 数据帧 */
+  /** 一个异步迭代器，它应迭代 cpcall 数据帧 */
   frameIter: AsyncIterable<T>;
-  /** @remarks 当需要发送数据帧时被调用 */
+  /** 当需要发送数据帧时被调用 */
   sendFrame(frame: T): void;
   /**
-   * @remarks 在 closeEvent 发出前调用
+   * 在 closeEvent 发出前调用
    */
   close?(): Promise<void> | void;
   /**
-   *  @remarks 当用户手动调用 dispose() 时或迭代器抛出异常时调用
+   *  当用户手动调用 dispose() 时或迭代器抛出异常时调用
    */
   dispose?(reason?: any): void;
 };
@@ -201,32 +195,23 @@ export type RpcFrameCtrl<T = RpcFrame> = {
 #### OnceEventTrigger
 
 ```ts
-/**
- * @public
- * @remarks 一次性可订阅对象, 可通过 await 语法等待触发
- */
+/** 一次性可订阅对象, 可通过 await 语法等待触发 */
 interface OnceEventTrigger<T> {
-  /**
-   * @remarks 订阅事件。如果事件已触发完成则抛出异常
-   */
+  /** 订阅事件。如果事件已触发完成则抛出异常 */
   then(resolve: Listener<T>, reject: (data?: any) => void): void;
   /** 与 then 类似，它会返回 resolve 函数 */
   once<R extends Listener<T>>(resolve: R, reject?: (arg: any) => void): R;
 
-  /**
-   * @remarks 这个是订阅 emitError() 触发的事件
-   */
+  /** 这个是订阅 emitError() 触发的事件 */
   catch<R extends (reason: any) => void>(listener: R): void;
-  /**
-   * @remarks 无论最终是 emit 还是 emitError. 都会被触发
-   */
+  /** 无论最终是 emit 还是 emitError. 都会被触发 */
   finally(listener: () => void): void;
   /**
-   * @remarks 取消订阅事件
+   * 取消订阅事件
    * @returns 如果取消成功，则返回 true, 否则返回 false
    */
   off(key: object): boolean;
-  /** @remarks 返回一个 promise，在emit() 后 resolve, 在 emit() Error 后 reject */
+  /** 返回一个 promise，在emit() 后 resolve, 在 emit() Error 后 reject */
   getPromise(signal?: BaseAbortSignal): Promise<T>;
   /* 触发事件 */
   emit(arg: T): number;
