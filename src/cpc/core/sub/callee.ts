@@ -77,7 +77,7 @@ export class CalleePassive extends CalleeCommon {
     return this.#fin;
   }
 
-  /** @remarks status 变为 2 时触发 */
+  /** status 变为 2 时触发 */
   readonly finishEvent = new OnceEventTrigger<void>();
 
   /** 结束调用服务，如果当前状态为0， 则发送 disable 帧 */

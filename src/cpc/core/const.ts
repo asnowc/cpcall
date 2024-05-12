@@ -18,9 +18,8 @@ export class CalleeError extends Error {}
 /** @public */
 export class CallerError extends Error {}
 
-/**
+/** 远程调用抛出异常
  * @public
- * @remarks 远程调用抛出异常
  */
 export class RemoteCallError extends Error {
   code?: any;
@@ -28,9 +27,8 @@ export class RemoteCallError extends Error {
 
 /**  @public 内部帧错误 */
 export class CpcError extends Error {}
-/**
+/** 在返回前断开连接
  * @public
- * @remarks 在返回前断开连接
  */
 export class CpcFailRespondError extends Error {
   constructor() {

@@ -49,15 +49,12 @@ class CpCall extends CpCallBase {
     static fromByteIterable(ctrl: RpcFrameCtrl<Uint8Array>): CpCall;
     // Warning: (ae-forgotten-export) The symbol "GenCallerOpts" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "AnyCaller" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
     genCaller(prefix?: string, opts?: GenCallerOpts): AnyCaller;
     // Warning: (ae-forgotten-export) The symbol "ToAsync" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "CallerProxyPrototype" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
     genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ToAsync<R, CallerProxyPrototype>;
-    // (undocumented)
     setObject(obj: object, cmd?: string): void;
 }
 
@@ -68,46 +65,30 @@ abstract class CpCallBase {
     //
     // (undocumented)
     protected readonly callee: CalleePassive;
-    // (undocumented)
     caller: CpCaller;
-    // (undocumented)
     clearFn(): void;
     // Warning: (ae-forgotten-export) The symbol "OnceEventTrigger" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
     readonly closeEvent: OnceEventTrigger<void>;
-    // (undocumented)
     disable(): Promise<void>;
-    // (undocumented)
     dispose(reason?: any): void;
-    // (undocumented)
     getAllFn(): IterableIterator<string>;
     // Warning: (ae-forgotten-export) The symbol "RpcFn" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
     protected licensers: Map<string, RpcFn>;
-    // (undocumented)
     removeFn(cmd: any): void;
     // Warning: (ae-forgotten-export) The symbol "CmdFn" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "FnOpts" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
     setFn(cmd: any, fn: CmdFn, opts?: FnOpts): void;
 }
 
 // @public (undocumented)
 interface CpCaller {
-    // (undocumented)
     call(...args: any[]): Promise<any>;
-    // (undocumented)
     disableEvent: OnceEventTrigger<void>;
-    // (undocumented)
     end(abort?: boolean): Promise<void>;
-    // (undocumented)
     ended: 0 | 1 | 2 | 3;
-    // (undocumented)
     exec(...args: any[]): void;
-    // (undocumented)
     finishEvent: OnceEventTrigger<void>;
 }
 
@@ -119,7 +100,7 @@ class CpcError extends Error {
 class CpcFailAsyncRespondError extends CpcFailRespondError {
 }
 
-// @public (undocumented)
+// @public
 class CpcFailRespondError extends Error {
     constructor();
 }
@@ -129,15 +110,15 @@ class CpcUnregisteredCommandError extends Error {
     constructor();
 }
 
-// @public (undocumented)
+// @public
 function createSocketCpc(duplex: Duplex): CpCall;
 
 // Warning: (ae-forgotten-export) The symbol "WebSocket_2" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 function createWebSocketCpc(websocket: WebSocket_2): CpCall;
 
-// @public (undocumented)
+// @public
 function createWebStreamCpc(stream: {
     readable: ReadableStream_2<Uint8Array>;
     writable: WritableStream_2<Uint8Array>;
@@ -193,7 +174,7 @@ declare namespace node {
 }
 export { node }
 
-// @public (undocumented)
+// @public
 class RemoteCallError extends Error {
     // (undocumented)
     code?: any;
@@ -206,7 +187,7 @@ class RemoteCallError extends Error {
 // @public (undocumented)
 type RpcFrame = CalleeFrame | CallerFrame | Frame.ResponseError;
 
-// @public (undocumented)
+// @public
 type RpcFrameCtrl<T = RpcFrame> = {
     frameIter: AsyncIterable<T>;
     sendFrame(frame: T): void;
@@ -233,8 +214,8 @@ export { web }
 // dist/cpc.d.ts:26:5 - (ae-forgotten-export) The symbol "packageCpcFrame" needs to be exported by the entry point index.d.ts
 // dist/cpc.d.ts:27:5 - (ae-forgotten-export) The symbol "decodeCpcFrame" needs to be exported by the entry point index.d.ts
 // dist/cpc.d.ts:28:5 - (ae-forgotten-export) The symbol "CpcFrameEncoder" needs to be exported by the entry point index.d.ts
-// dist/web.d.ts:31:5 - (ae-forgotten-export) The symbol "ReadableStream_2" needs to be exported by the entry point index.d.ts
-// dist/web.d.ts:32:5 - (ae-forgotten-export) The symbol "WritableStream_2" needs to be exported by the entry point index.d.ts
+// dist/web.d.ts:29:5 - (ae-forgotten-export) The symbol "ReadableStream_2" needs to be exported by the entry point index.d.ts
+// dist/web.d.ts:30:5 - (ae-forgotten-export) The symbol "WritableStream_2" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

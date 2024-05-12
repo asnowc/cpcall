@@ -16,15 +16,14 @@ class DuplexRpcFrameCtrl implements RpcFrameCtrl<Uint8Array> {
   readonly frameIter: AsyncIterable<Uint8Array>;
 }
 
-/**
+/** 创建一个基于 duplex 的 CpCall 实例
  * @public
- * @remarks 创建一个基于 duplex 的 CpCall 实例
  */
 export function createSocketCpc(duplex: Duplex): CpCall {
   return CpCall.fromByteIterable(new DuplexRpcFrameCtrl(duplex));
 }
-/**
- * @remarks 将 Readable 转为 异步迭代器。它与 Readable[Symbol.asyncIterable] 行为不同。
+/** 将 Readable 转为 异步迭代器
+ * @remarks 它与 Readable[Symbol.asyncIterable] 行为不同。
  * 它会迭代 push 的 chunk.
  * 如果调用 .return()，不会调用 Readable.destroy().
  * 如果调用 .throw() 则会调用 Readable.destroy()
