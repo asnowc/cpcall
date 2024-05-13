@@ -1,9 +1,9 @@
 ## CPCALL
 
-A protocol independent library designed for remote procedure call (RPC) in JavaScript
+A protocol independent library designed for remote procedure call (RPC) in JavaScript\
 与协议无关的，为 JavaScript 设计的远程过程调用（RPC）的库
 
-**目前版本不稳定，不遵循 semver 语义，可能会有较大的破坏性变更**
+**目前版本不稳定，不遵循 semver 语义，可能会有较大的破坏性变更**\
 **The current version is unstable and does not follow Semver semantics, which may result in significant destructive changes**
 
 ## Overview
@@ -317,8 +317,8 @@ const clientCpc = createWebStreamCpc(conn);
 
 ### 更多示例
 
-[WebSocket 示例](./example/websocket/README.md): 前端暴露一些 API 给后端调用，同时后端也暴露一些 API 给前端调用
-
+[WebSocket 示例](./example/websocket/README.md): 前端暴露一些 API 给后端调用，同时后端也暴露一些 API 给前端调用\
+[与 socket.io 的简单比较](./example/cpcall%20vs%20socket.io.md)\
 自定义数据帧编解码器（文档待补充）\
 实现一个基于 http 的 CpCall（文档待补充）
 
