@@ -1,4 +1,4 @@
-import { CalleeCommon, CalleePassive, CallerCore, RpcFrame, trans, CpCaller } from "../core/mod.js";
+import { CalleeCore, CallerCore, RpcFrame, trans, CpCaller } from "../core/mod.js";
 import { OnceEventTrigger } from "evlib";
 import { RpcFn, genRpcCmdMap } from "./class_gen.js";
 import { createCallChain, CallChianProxy, getChainPath, ChianProxy } from "./callers_gen.js";
@@ -25,7 +25,7 @@ export abstract class CpCallBase {
    */
   constructor(private readonly ctrl: RpcFrameCtrl<RpcFrame>) {
     const caller = new CallerCore(ctrl);
-    const callee = new CalleePassive(ctrl);
+    const callee = new CalleeCore(ctrl);
     this.#caller = caller;
     this.caller = caller;
     this.callee = callee;
@@ -47,7 +47,7 @@ export abstract class CpCallBase {
    * @throws 继承自 frameIter
    */
   private async bridgeRpcFrame(
-    callee: CalleeCommon,
+    callee: CalleeCore,
     caller: CallerCore,
     frameIter: AsyncIterable<RpcFrame>
   ): Promise<void | any> {
@@ -83,7 +83,7 @@ export abstract class CpCallBase {
   clearFn() {
     this._licensers.clear();
   }
-  protected readonly callee: CalleePassive;
+  protected readonly callee: CalleeCore;
   readonly #caller: CallerCore;
   /** CpCaller 对象**/
   caller: CpCaller;

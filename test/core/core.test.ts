@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, afterEach, beforeEach } from "vitest";
-import { CalleePassive, CallerCore, FrameType, RpcFrame } from "../../src/cpc/core/mod.js";
+import { CalleeCore, CallerCore, FrameType, RpcFrame } from "../../src/cpc/core/mod.js";
 import { CalleeFrame, CallerFrame, Frame } from "../../src/cpc/core/type.js";
 import { afterTime } from "evlib";
 describe("caller", function () {
@@ -129,10 +129,10 @@ describe("callee", function () {
   // const onDisable = vi.fn();
   const sendMock = onSendFrame.mock;
 
-  let callee: CalleePassive;
+  let callee: CalleeCore;
 
   beforeEach(() => {
-    callee = new CalleePassive({ sendFrame: onSendFrame }, onCall);
+    callee = new CalleeCore({ sendFrame: onSendFrame }, onCall);
     onSendFrame.mockReset();
     onCall.mockReset();
 
