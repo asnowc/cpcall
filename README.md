@@ -140,6 +140,21 @@ interface CpCall {
    * ```
    */
   genCaller(prefix?: string, opts?: GenCallerOpts): AnyCaller;
+
+  /** 创建基于 JBOD 编解码的CpCall实例 */
+  static fromByteIterable(ctrl: RpcFrameCtrl<Uint8Array>): CpCall;
+  /** 通过 exec 调用远程代理对象
+   *
+   * const api= cpc.genCaller()
+   * CpCall.exec(api.a.b,"arg1","arg2") //这等价与 cpc.caller.exec("api.a.b","arg1","arg2")
+   */
+  static exec<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): void;
+  /** 通过 call 调用远程代理对象
+   *
+   * const api= cpc.genCaller()
+   * CpCall.call(api.a.b,"arg1","arg2") //这等价于 cpc.caller.call("api.a.b","arg1","arg2")
+   */
+  static call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T>;
 }
 ````
 

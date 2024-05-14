@@ -19,6 +19,8 @@ const defaultExcludeObj = new Set<object>([
 
 type GenConfig = {
   exclude: Set<object>;
+  /** 避免循环引用 */
+  branchExclude: Set<object>;
   map: Map<string, RpcFn>;
   sp: string;
 };
@@ -32,9 +34,12 @@ export function genRpcCmdMap(rootObj: object, base: string, opts: Partial<GenCon
       exclude.add(item);
     }
   }
-  return privateGenRpcCmdMap(rootObj, base, { exclude, map, sp });
+  return privateGenRpcCmdMap(rootObj, base, { exclude, map, sp, branchExclude: new Set() });
 }
 function privateGenRpcCmdMap(rootObj: object, base: string, opts: GenConfig) {
+  const branchExclude = opts.branchExclude;
+  branchExclude.add(rootObj);
+
   const protoList = getPrototypes(rootObj, opts.exclude);
   let add = 0;
   for (let i = protoList.length - 1; i >= 0; i--) {
@@ -48,6 +53,7 @@ function privateGenRpcCmdMap(rootObj: object, base: string, opts: GenConfig) {
 
       obj = (rootObj as any)[k]; //从 rootObj 取值
       if (opts.exclude.has(obj)) continue;
+      if (branchExclude.has(obj)) continue;
 
       if (typeof obj === "function") {
         opts.map.set(base ? base + opts.sp + k : k, { fn: obj as Fn, this: rootObj });
@@ -56,6 +62,8 @@ function privateGenRpcCmdMap(rootObj: object, base: string, opts: GenConfig) {
 
       add += privateGenRpcCmdMap(obj, base ? base + opts.sp + k : k, opts);
     }
+
+    branchExclude.delete(rootObj);
   }
   return add;
 }

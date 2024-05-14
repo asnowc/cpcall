@@ -45,16 +45,17 @@ export { core }
 // @public (undocumented)
 class CpCall extends CpCallBase {
     constructor(callerCtrl: RpcFrameCtrl<RpcFrame>);
-    // (undocumented)
+    static call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T>;
+    static exec<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): void;
     static fromByteIterable(ctrl: RpcFrameCtrl<Uint8Array>): CpCall;
     // Warning: (ae-forgotten-export) The symbol "GenCallerOpts" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "AnyCaller" needs to be exported by the entry point index.d.ts
     genCaller(prefix?: string, opts?: GenCallerOpts): AnyCaller;
-    // Warning: (ae-forgotten-export) The symbol "ToAsync" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "ChianProxy" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "CallerProxyPrototype" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
-    genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ToAsync<R, CallerProxyPrototype>;
+    genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ChianProxy<R, CallerProxyPrototype>;
     setObject(obj: object, cmd?: string): void;
 }
 
@@ -75,7 +76,9 @@ abstract class CpCallBase {
     // Warning: (ae-forgotten-export) The symbol "RpcFn" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
-    protected licensers: Map<string, RpcFn>;
+    protected _getFn(cmd: string): RpcFn | undefined;
+    // (undocumented)
+    protected _licensers: Map<string, RpcFn>;
     removeFn(cmd: any): void;
     // Warning: (ae-forgotten-export) The symbol "CmdFn" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "FnOpts" needs to be exported by the entry point index.d.ts
@@ -156,11 +159,10 @@ enum FrameType {
     throw = 12
 }
 
-// Warning: (ae-forgotten-export) The symbol "Fn" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "MakeAsync" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "CallChianProxy" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-type MakeCallers<T, E = {}> = T extends Fn ? MakeAsync<T> & ToAsync<T, E> : T extends object ? ToAsync<T, E> : never;
+type MakeCallers<T, E extends object = {}> = CallChianProxy<T, E>;
 
 declare namespace node {
     export {
