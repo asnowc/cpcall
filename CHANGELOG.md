@@ -2,6 +2,11 @@
 
 ### 0.4.x
 
+#### 0.4.6
+
+feat(core): CpCall.exec() 和 CpCall.call()\
+fix(core): CpCall.setObject() 设置的对象存在循环引用时发生异常
+
 #### 0.4.5
 
 docs: 文档更改
