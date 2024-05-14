@@ -1,7 +1,7 @@
 import { CalleeCommon, CalleePassive, CallerCore, RpcFrame, trans, CpCaller } from "../core/mod.js";
 import { OnceEventTrigger } from "evlib";
 import { RpcFn, genRpcCmdMap } from "./class_gen.js";
-import { createCallerGen, MakeCallers, ToAsync } from "./callers_gen.js";
+import { createCallChain, CallChianProxy, getChainPath, ChianProxy } from "./callers_gen.js";
 
 /** CpCall 构造函数依赖的接口。你可以实现自定义编解码器，或数据帧转发服务
  * @public
@@ -31,10 +31,16 @@ export abstract class CpCallBase {
     this.callee = callee;
     this.bridgeRpcFrame(callee, caller, ctrl.frameIter);
     callee.onCall = (cmd, ...args) => {
-      const context = this.licensers.get(cmd);
-      if (!context) throw new CpcUnregisteredCommandError();
-      return context.fn.apply(context.this, args);
+      if (typeof cmd === "string") {
+        const context = this._getFn(cmd);
+        if (!context) throw new CpcUnregisteredCommandError();
+        return context.fn.apply(context.this, args);
+      }
+      throw new CpcUnregisteredCommandError();
     };
+  }
+  protected _getFn(cmd: string): RpcFn | undefined {
+    return this._licensers.get(cmd);
   }
   /**
    * @internal
@@ -58,24 +64,24 @@ export abstract class CpCallBase {
       this.dispose(err);
     }
   }
-  protected licensers = new Map<string, RpcFn>();
+  protected _licensers = new Map<string, RpcFn>();
   /** 设置可调用函数
    * @param cmd - 方法名称
    */
   setFn(cmd: any, fn: CmdFn, opts: FnOpts = {}): void {
-    this.licensers.set(cmd, { fn, this: opts.this });
+    this._licensers.set(cmd, { fn, this: opts.this });
   }
   /** 删除可调用函数 */
   removeFn(cmd: any) {
-    this.licensers.delete(cmd);
+    this._licensers.delete(cmd);
   }
   /** 获取所有已设置的可调用函数，包括 setObject 设置的对象 */
   getAllFn() {
-    return this.licensers.keys();
+    return this._licensers.keys();
   }
   /** 清空所有已设置的可调用函数，包括 setObject 设置的对象  */
   clearFn() {
-    this.licensers.clear();
+    this._licensers.clear();
   }
   protected readonly callee: CalleePassive;
   readonly #caller: CallerCore;
@@ -104,11 +110,15 @@ export abstract class CpCallBase {
     this.closeEvent.emitError(this.#errored);
   }
 }
-export type { MakeCallers };
+
+/** @public */
+export type MakeCallers<T, E extends object = {}> = CallChianProxy<T, E>;
+
 /**
  * @public
  */
 export class CpCall extends CpCallBase {
+  /** 创建基于 JBOD 编解码的CpCall实例 */
   static fromByteIterable(ctrl: RpcFrameCtrl<Uint8Array>) {
     const config = {
       ctrl,
@@ -129,29 +139,77 @@ export class CpCall extends CpCallBase {
     };
     return new this(config);
   }
-
+  static #getProxyInfo(proxyObj: (...args: any[]) => any) {
+    const cpc: CpCall = Reflect.get(proxyObj, cpcallRemoteObject);
+    if (!(cpc instanceof CpCall)) throw new Error("The target is not a remote cpcall proxy object");
+    const path = getChainPath(proxyObj);
+    if (path.length === 0) throw new Error("Top-level calls are not allowed");
+    return { cpc, path: path.join(cpc.#sp) };
+  }
+  /** 通过 exec 调用远程代理对象
+   *
+   * @example
+   *
+   * ```ts
+   * const api= cpc.genCaller()
+   * CpCall.exec(api.a.b,"arg1","arg2") //这等价与 cpc.caller.exec("api.a.b","arg1","arg2")
+   *
+   * ```
+   */
+  static exec<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): void {
+    const { cpc, path } = CpCall.#getProxyInfo(proxyObj);
+    cpc.caller.exec(path, ...args);
+  }
+  /** 通过 call 调用远程代理对象
+   *
+   * @example
+   *
+   * ```ts
+   * const api= cpc.genCaller()
+   * CpCall.call(api.a.b,"arg1","arg2") //这等价于 cpc.caller.call("api.a.b","arg1","arg2")
+   *
+   * ```
+   */
+  static call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T> {
+    const { cpc, path } = CpCall.#getProxyInfo(proxyObj);
+    return cpc.caller.call(path, ...args) as Promise<any> as any;
+  }
   constructor(callerCtrl: RpcFrameCtrl<RpcFrame>) {
     super(callerCtrl);
   }
+  // protected _getFn(cmd: string): RpcFn | undefined {
+  //   const path = cmd.split(this.#sp);
+  //   return getObjByPath(this.#object, path);
+  // }
+  // #object: Record<string | number, any> = {};
   #sp = ".";
   /** 设置远程可调用对象。 */
   setObject(obj: object, cmd: string = "") {
     const map = new Map<string, any>();
     genRpcCmdMap(obj, cmd, { map: map, sp: this.#sp });
     for (const [k, v] of map) {
-      this.licensers.set(k, v);
+      this._licensers.set(k, v);
     }
   }
+
   /** 生成远程代理对象 */
   genCaller(prefix?: string, opts?: GenCallerOpts): AnyCaller;
-  genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ToAsync<R, CallerProxyPrototype>;
+  genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ChianProxy<R, CallerProxyPrototype>;
   genCaller(prefix = "", opts: GenCallerOpts = {}): object {
-    const { keepThen } = opts;
-    let excludeKeys: Set<string> | undefined;
-    if (!keepThen) excludeKeys = new Set(["then"]);
-    const obj = createCallerGen(createCallerFn, { caller: this.caller, excludeKeys }, prefix, this.#sp);
+    const keepThen = opts.keepThen;
+    return createCallChain(
+      () => {
+        function src(target: CmdFn, args: any[], thisArg: any) {
+          CpCall.call(target, ...args);
+        }
+        if (!keepThen) Reflect.set(src, "then", null);
 
-    return obj;
+        Reflect.set(src, cpcallRemoteObject, this);
+        Reflect.setPrototypeOf(src, callerProxyPrototype);
+        return src;
+      },
+      prefix ? { value: prefix } : undefined
+    );
   }
 }
 
@@ -159,9 +217,10 @@ type GenCallerOpts = {
   /** 默认会添加 then 属性为 null，避免在异步函数中错误执行，如果为 true，则不添加 */
   keepThen?: boolean;
 };
-type AnyCaller = {
-  [key: string]: AnyCaller;
-} & ((...args: any[]) => Promise<any>);
+type AnyCaller = CallerProxyPrototype &
+  ((...args: any[]) => Promise<any>) & {
+    [key: string]: AnyCaller;
+  };
 
 type CmdFn = (...args: any[]) => any;
 
@@ -176,29 +235,14 @@ interface FnOpts {
   this?: object;
 }
 
-const callerSymbol = Symbol("cpcall symbol");
-interface CpCallerProxyOrigin {
-  (...args: any[]): any;
-  [Symbol.asyncDispose](): Promise<void>;
-  [callerSymbol]: CpCaller;
-  [key: string]: any;
-}
-function createCallerFn(config: { caller: CpCaller; excludeKeys?: Set<string> }): {
-  fn: CpCallerProxyOrigin;
-  excludeKeys?: Set<string>;
-} {
-  function callerProxyOrigin(this: CpCallerProxyOrigin, ...args: any[]) {
-    return this[callerSymbol].call(...args);
-  }
-  Reflect.setPrototypeOf(callerProxyOrigin, callerProxyPrototype);
-  callerProxyOrigin[callerSymbol] = config.caller;
-  return { fn: callerProxyOrigin as CpCallerProxyOrigin, excludeKeys: config.excludeKeys };
-}
+const cpcallRemoteObject = Symbol("cpcall remote object");
+
 const callerProxyPrototype = {
   [Symbol.asyncDispose](): Promise<void> {
-    return (this as any)[callerSymbol].end();
+    return (this as CallerProxyPrototype)[cpcallRemoteObject].caller.end();
   },
 };
 
-type CallerProxyPrototype = typeof callerProxyPrototype;
-Reflect.setPrototypeOf(callerProxyPrototype, Function.prototype);
+type CallerProxyPrototype = typeof callerProxyPrototype & {
+  [cpcallRemoteObject]: CpCall;
+};
