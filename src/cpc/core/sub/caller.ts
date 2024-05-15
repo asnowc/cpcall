@@ -44,7 +44,7 @@ export class CallerCore implements CpCaller {
     return this.#returnQueue.add({});
   }
   exec(...args: any[]) {
-    if (this.#end) return Promise.reject(new Error("Cpc is ended"));
+    if (this.#end) return;
     this.sendCtrl.sendFrame([FrameType.exec, args]);
   }
   get closed() {

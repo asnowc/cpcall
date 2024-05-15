@@ -27,7 +27,7 @@ export type RpcFrame = CalleeFrame | CallerFrame | Frame.ResponseError;
 
 /** @public */
 export interface CpCaller {
-  /** 调用远程设置的函数 */
+  /** 调用远程设置的函数. 如果 caller ended 不为 0 ，则抛出异常 */
   call(...args: any[]): Promise<any>;
   /** 调用远程设置的函数。与call不同的是，它没有返回值 */
   exec(...args: any[]): void;
