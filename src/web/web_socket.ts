@@ -1,8 +1,8 @@
 import { CpCall, trans, RpcFrame, RpcFrameCtrl } from "cpcall";
-import { PassiveDataCollector } from "evlib/async";
+import { DataCollector } from "evlib/async";
 
 function webSocketToIter(webSocket: WebSocket) {
-  const collector = new PassiveDataCollector<RpcFrame, Error | void>();
+  const collector = new DataCollector<RpcFrame, Error | void>();
   webSocket.addEventListener("message", (e) => {
     if (e.data instanceof ArrayBuffer) {
       const framesIterator = trans.unpackCpcFrames(new Uint8Array(e.data), 0);
@@ -15,7 +15,7 @@ function webSocketToIter(webSocket: WebSocket) {
   webSocket.addEventListener("error", (e) => {
     collector.close(new Error("Websocket encountered an error", { cause: (e as any).data }));
   });
-  return collector.getAsyncGen();
+  return collector;
 }
 
 /** 创建一个基于 WebSocket 的 CpCall 实例。WebSocket 的状态必须是 open。 否则抛出异常

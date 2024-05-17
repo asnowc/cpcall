@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { RpcFrame, CpCall } from "cpcall";
-import { PassiveDataCollector } from "evlib/async";
+import { DataCollector } from "evlib/async";
 
 describe("setObject", function () {
   const { cpc } = createCpc();
@@ -58,8 +58,8 @@ describe("setObject", function () {
 
 function createCpc() {
   const onSendFrame = vi.fn();
-  let hd = new PassiveDataCollector<RpcFrame>();
-  let cpc = new CpCall({ frameIter: hd.getAsyncGen(), sendFrame: onSendFrame });
+  let hd = new DataCollector<RpcFrame>();
+  let cpc = new CpCall({ frameIter: hd, sendFrame: onSendFrame });
   return { onSendFrame, hd, cpc };
 }
 function setEq(s1: Iterable<any>, s2: Set<any>) {
