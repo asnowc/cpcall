@@ -17,9 +17,9 @@ export class ByteFrameCtrl implements RpcFrameCtrl {
     this.ctrl.dispose?.(reason);
   }
   send() {
-    const link = this.link;
-    this.link = [];
-    this.ctrl.sendFrame(trans.packCpcFrames(link));
+    const chunk = trans.packCpcFrames(this.link);
+    this.ctrl.sendFrame(chunk);
+    this.link.length = 0;
   }
   frameIter: AsyncIterable<RpcFrame>;
   sendFrame(frame: RpcFrame): void {

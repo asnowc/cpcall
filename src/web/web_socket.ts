@@ -37,6 +37,7 @@ class WsRpcFrameCtrl implements RpcFrameCtrl {
     if (this.ws.readyState === this.ws.OPEN) {
       const chunk = trans.packCpcFrames(this.link);
       this.ws.send(chunk);
+      this.link.length = 0;
     } else {
       this.dispose();
     }

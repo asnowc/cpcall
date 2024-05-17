@@ -53,9 +53,13 @@ export function packCpcFrames(frames: RpcFrame[]) {
 export function* unpackCpcFrames(buf: Uint8Array, offset: number) {
   let decRes: ReturnType<typeof decodeCpcFrame>;
   do {
-    decRes = decodeCpcFrame(buf, offset);
+    let res = varints.decodeU32D(buf, offset);
+    offset += res.byte;
+    const chunk = buf.subarray(offset, res.value + offset);
+
+    decRes = decodeCpcFrame(chunk, 0);
     yield decRes.frame;
-    offset = decRes.offset;
+    offset += res.value;
   } while (offset < buf.byteLength);
 }
 
