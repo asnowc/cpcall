@@ -9,6 +9,7 @@ export default defineConfig({
     alias: [
       { find: /^cpcall$/, replacement: path.resolve(root, "src/cpc/mod.js") },
       { find: /^cpcall\/node$/, replacement: path.resolve(root, "src/node/mod.js") },
+      { find: /^cpcall\/web$/, replacement: path.resolve(root, "src/web/mod.js") },
     ],
     coverage: {
       exclude: ["**/__mocks__", "**/*errors.ts", "**/*.type.ts", "**/lib/**"],

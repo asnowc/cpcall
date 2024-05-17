@@ -2,6 +2,12 @@
 
 ### 0.4.x
 
+#### 0.4.7
+
+feat(web): createWebSocketCpc() 会合并数据帧再发送
+feat(cpc): CpCall.fromByteIterable() 创建的实例会合并数据帧再
+feat(core): CpCall.caller.exec() 不会则因为 ended 状态而发生异常
+
 #### 0.4.6
 
 feat(core): CpCall.exec() 和 CpCall.call()\

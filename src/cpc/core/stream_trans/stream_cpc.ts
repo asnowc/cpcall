@@ -8,7 +8,8 @@ function createCpcFrameParser() {
   return new StepsByteParser<Uint8Array>({ first: new U32DByteParser() }, (len: number) => new LengthByteParser(len));
 }
 
-/** @internal */
+/** 解码二进制帧。输入应该是通过 packageCpcFrame 生成的二进制块，可以是经过流的碎片
+ *  @internal */
 export async function* createFrameIterator(iter: AsyncIterable<Uint8Array>) {
   const parser = createCpcFrameParser();
   let chunk: Uint8Array | undefined;
@@ -16,10 +17,12 @@ export async function* createFrameIterator(iter: AsyncIterable<Uint8Array>) {
     do {
       if (parser.next(chunk!)) {
         const res = parser.finish();
-        let decRes: ReturnType<typeof decodeCpcFrame> = { offset: 0, frame: [] as any };
+        let offset = 0;
+        let decRes: ReturnType<typeof decodeCpcFrame>;
         do {
-          decRes = decodeCpcFrame(res.value, decRes.offset);
+          decRes = decodeCpcFrame(res.value, offset);
           yield decRes.frame;
+          offset = decRes.offset;
         } while (decRes.offset < res.value.byteLength);
         chunk = res.residue;
       }
@@ -27,16 +30,37 @@ export async function* createFrameIterator(iter: AsyncIterable<Uint8Array>) {
   }
   return chunk;
 }
-
 /** @internal */
-export function packageCpcFrame(frame: RpcFrame) {
-  const cpcEncoder = new CpcFrameEncoder(frame);
-  const dbnLen = varints.calcU32DByte(cpcEncoder.byteLength);
-  const u8Arr = new Uint8Array(dbnLen + cpcEncoder.byteLength);
+export function packCpcFrames(frames: RpcFrame[]) {
+  const encoderList: CpcFrameEncoder[] = new Array(frames.length);
+  let len = 0;
+  for (let i = 0; i < frames.length; i++) {
+    const cpcEncoder = new CpcFrameEncoder(frames[i]);
+    encoderList[i] = cpcEncoder;
+    const dbnLen = varints.calcU32DByte(cpcEncoder.byteLength);
+    len += dbnLen + cpcEncoder.byteLength;
+  }
 
-  let offset = varints.encodeU32DInto(cpcEncoder.byteLength, u8Arr);
-  offset = cpcEncoder.encodeInto(u8Arr, offset);
+  const u8Arr = new Uint8Array(len);
+  let offset = 0;
+  for (let i = 0; i < encoderList.length; i++) {
+    offset = varints.encodeU32DInto(encoderList[i].byteLength, u8Arr, offset);
+    offset = encoderList[i].encodeInto(u8Arr, offset);
+  }
   return u8Arr;
+}
+/** @internal 解码由 packCpcFrames 生成的二进制帧*/
+export function* unpackCpcFrames(buf: Uint8Array, offset: number) {
+  let decRes: ReturnType<typeof decodeCpcFrame>;
+  do {
+    let res = varints.decodeU32D(buf, offset);
+    offset += res.byte;
+    const chunk = buf.subarray(offset, res.value + offset);
+
+    decRes = decodeCpcFrame(chunk, 0);
+    yield decRes.frame;
+    offset += res.value;
+  } while (offset < buf.byteLength);
 }
 
 /** @internal */
@@ -137,4 +161,4 @@ export class CpcFrameEncoder {
 }
 
 /** @internal */
-export default { createFrameIterator, packageCpcFrame, decodeCpcFrame, CpcFrameEncoder };
+export default { createFrameIterator, packCpcFrames, decodeCpcFrame, unpackCpcFrames, CpcFrameEncoder };

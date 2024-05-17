@@ -1,14 +1,14 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { RpcFrame, CpCall, RpcFrameCtrl, FrameType } from "cpcall";
-import { PassiveDataCollector } from "evlib/async";
+import { DataCollector } from "evlib/async";
 import { afterTime } from "evlib";
 
-let hd: PassiveDataCollector<RpcFrame>;
+let hd: DataCollector<RpcFrame>;
 let cpc: CpCall;
 let ctrl: RpcFrameCtrl<RpcFrame>;
 beforeEach(() => {
-  hd = new PassiveDataCollector<RpcFrame>();
-  ctrl = { frameIter: hd.getAsyncGen(), sendFrame: vi.fn(), close: vi.fn(), dispose: vi.fn() };
+  hd = new DataCollector<RpcFrame>();
+  ctrl = { frameIter: hd, sendFrame: vi.fn(), close: vi.fn(), dispose: vi.fn() };
   cpc = new CpCall(ctrl);
 });
 describe("正常关闭", function () {

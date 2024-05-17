@@ -1,6 +1,6 @@
 import { CpcFailAsyncRespondError } from "cpcall";
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import * as mocks from "./__mocks__/cpc_socket.mock.js";
+import * as mocks from "../__mocks__/cpc_socket.mock.js";
 import { afterTime } from "evlib";
 
 describe("状态更改/cpc_socket", function () {

@@ -1,7 +1,8 @@
-import { CalleeCommon, CalleePassive, CallerCore, RpcFrame, trans, CpCaller } from "../core/mod.js";
+import { CalleeCore, CallerCore, RpcFrame, CpCaller } from "../core/mod.js";
 import { OnceEventTrigger } from "evlib";
 import { RpcFn, genRpcCmdMap } from "./class_gen.js";
 import { createCallChain, CallChianProxy, getChainPath, ChianProxy } from "./callers_gen.js";
+import { ByteFrameCtrl } from "./ByteFrameCtrl.js";
 
 /** CpCall 构造函数依赖的接口。你可以实现自定义编解码器，或数据帧转发服务
  * @public
@@ -25,7 +26,7 @@ export abstract class CpCallBase {
    */
   constructor(private readonly ctrl: RpcFrameCtrl<RpcFrame>) {
     const caller = new CallerCore(ctrl);
-    const callee = new CalleePassive(ctrl);
+    const callee = new CalleeCore(ctrl);
     this.#caller = caller;
     this.caller = caller;
     this.callee = callee;
@@ -47,7 +48,7 @@ export abstract class CpCallBase {
    * @throws 继承自 frameIter
    */
   private async bridgeRpcFrame(
-    callee: CalleeCommon,
+    callee: CalleeCore,
     caller: CallerCore,
     frameIter: AsyncIterable<RpcFrame>
   ): Promise<void | any> {
@@ -83,7 +84,7 @@ export abstract class CpCallBase {
   clearFn() {
     this._licensers.clear();
   }
-  protected readonly callee: CalleePassive;
+  protected readonly callee: CalleeCore;
   readonly #caller: CallerCore;
   /** CpCaller 对象**/
   caller: CpCaller;
@@ -120,24 +121,7 @@ export type MakeCallers<T, E extends object = {}> = CallChianProxy<T, E>;
 export class CpCall extends CpCallBase {
   /** 创建基于 JBOD 编解码的CpCall实例 */
   static fromByteIterable(ctrl: RpcFrameCtrl<Uint8Array>) {
-    const config = {
-      ctrl,
-      frameIter: trans.createFrameIterator(ctrl.frameIter),
-      sendFrame(frame: RpcFrame) {
-        this.ctrl.sendFrame(trans.packageCpcFrame(frame));
-      },
-      dispose: ctrl.dispose
-        ? function (this: any, reason: Error) {
-            this.ctrl.dispose(reason);
-          }
-        : undefined,
-      close: ctrl.close
-        ? function (this: any) {
-            this.ctrl.close();
-          }
-        : undefined,
-    };
-    return new this(config);
+    return new this(new ByteFrameCtrl(ctrl));
   }
   static #getProxyInfo(proxyObj: (...args: any[]) => any) {
     const cpc: CpCall = Reflect.get(proxyObj, cpcallRemoteObject);

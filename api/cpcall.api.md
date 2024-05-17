@@ -62,10 +62,10 @@ class CpCall extends CpCallBase {
 // @internal
 abstract class CpCallBase {
     constructor(ctrl: RpcFrameCtrl<RpcFrame>);
-    // Warning: (ae-forgotten-export) The symbol "CalleePassive" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "CalleeCore" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
-    protected readonly callee: CalleePassive;
+    protected readonly callee: CalleeCore;
     caller: CpCaller;
     clearFn(): void;
     // Warning: (ae-forgotten-export) The symbol "OnceEventTrigger" needs to be exported by the entry point index.d.ts
@@ -130,8 +130,9 @@ function createWebStreamCpc(stream: {
 // @internal (undocumented)
 const _default: {
     createFrameIterator: typeof createFrameIterator;
-    packageCpcFrame: typeof packageCpcFrame;
+    packCpcFrames: typeof packCpcFrames;
     decodeCpcFrame: typeof decodeCpcFrame;
+    unpackCpcFrames: typeof unpackCpcFrames;
     CpcFrameEncoder: typeof CpcFrameEncoder;
 };
 
@@ -212,10 +213,11 @@ export { web }
 
 // Warnings were encountered during analysis:
 //
-// dist/cpc.d.ts:25:5 - (ae-forgotten-export) The symbol "createFrameIterator" needs to be exported by the entry point index.d.ts
-// dist/cpc.d.ts:26:5 - (ae-forgotten-export) The symbol "packageCpcFrame" needs to be exported by the entry point index.d.ts
-// dist/cpc.d.ts:27:5 - (ae-forgotten-export) The symbol "decodeCpcFrame" needs to be exported by the entry point index.d.ts
-// dist/cpc.d.ts:28:5 - (ae-forgotten-export) The symbol "CpcFrameEncoder" needs to be exported by the entry point index.d.ts
+// dist/cpc.d.ts:28:5 - (ae-forgotten-export) The symbol "createFrameIterator" needs to be exported by the entry point index.d.ts
+// dist/cpc.d.ts:29:5 - (ae-forgotten-export) The symbol "packCpcFrames" needs to be exported by the entry point index.d.ts
+// dist/cpc.d.ts:30:5 - (ae-forgotten-export) The symbol "decodeCpcFrame" needs to be exported by the entry point index.d.ts
+// dist/cpc.d.ts:31:5 - (ae-forgotten-export) The symbol "unpackCpcFrames" needs to be exported by the entry point index.d.ts
+// dist/cpc.d.ts:32:5 - (ae-forgotten-export) The symbol "CpcFrameEncoder" needs to be exported by the entry point index.d.ts
 // dist/web.d.ts:29:5 - (ae-forgotten-export) The symbol "ReadableStream_2" needs to be exported by the entry point index.d.ts
 // dist/web.d.ts:30:5 - (ae-forgotten-export) The symbol "WritableStream_2" needs to be exported by the entry point index.d.ts
 

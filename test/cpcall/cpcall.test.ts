@@ -1,17 +1,17 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { FrameType, RpcFrame, CpCall, RpcFrameCtrl, RemoteCallError } from "cpcall";
-import { PassiveDataCollector } from "evlib/async";
+import { DataCollector } from "evlib/async";
 import { afterTime } from "evlib";
 import { CpcFailRespondError, CpcFailAsyncRespondError } from "cpcall";
 import * as mocks from "../__mocks__/cpc_socket.mock.js";
 
 describe("CpCall", function () {
   const onSendFrame = vi.fn();
-  let hd: PassiveDataCollector<RpcFrame>;
+  let hd: DataCollector<RpcFrame>;
   let cpc: CpCall;
   beforeEach(() => {
-    hd = new PassiveDataCollector<RpcFrame>();
-    cpc = new CpCall({ frameIter: hd.getAsyncGen(), sendFrame: onSendFrame });
+    hd = new DataCollector<RpcFrame>();
+    cpc = new CpCall({ frameIter: hd, sendFrame: onSendFrame });
   });
   test("close caller 和 callee 主动触发", async function () {
     cpc.caller.end(true);
