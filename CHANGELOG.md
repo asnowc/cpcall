@@ -2,6 +2,8 @@
 
 ### 0.4.x
 
+#### 0.4.8
+
 #### 0.4.7
 
 feat(web): createWebSocketCpc() 会合并数据帧再发送

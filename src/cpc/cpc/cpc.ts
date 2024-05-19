@@ -184,7 +184,7 @@ export class CpCall extends CpCallBase {
     return createCallChain(
       () => {
         function src(target: CmdFn, args: any[], thisArg: any) {
-          CpCall.call(target, ...args);
+          return CpCall.call(target, ...args);
         }
         if (!keepThen) Reflect.set(src, "then", null);
 

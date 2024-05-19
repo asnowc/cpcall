@@ -15,14 +15,14 @@ interface TopCall {
 
 const { cpc } = createCpc();
 const mockCaller = {
-  call: vi.fn(),
+  call: vi.fn((...args: any[]) => args),
   exec: vi.fn(),
   end: vi.fn(async () => {}),
 };
 (cpc as any).caller = mockCaller;
 
 beforeEach(() => {
-  mockCaller.call.mockReset();
+  mockCaller.call.mockRestore();
 });
 
 test("空调用", async function () {
@@ -32,11 +32,11 @@ test("空调用", async function () {
 
 test("链式远程调用", async function () {
   const caller = cpc.genCaller<TopCall>();
-  caller.cd("a", true);
-  expect(mockCaller.call).toBeCalledWith("cd", "a", true);
+  let res: any = caller.cd("a", true);
+  expect(res).toEqual(["cd", "a", true]);
 
-  caller.sub.ef();
-  expect(mockCaller.call).toBeCalledWith("sub.ef");
+  res = caller.sub.ef();
+  expect(res).toEqual(["sub.ef"]);
 });
 test("原型", async function () {
   const caller = cpc.genCaller<TopCall>();
