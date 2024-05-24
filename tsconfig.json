@@ -9,10 +9,11 @@
     "noEmit": true,
     "allowJs": true,
     "isolatedModules": true,
+    "allowImportingTsExtensions": true,
     "paths": {
-      "cpcall/node": ["./src/node/mod.js"],
-      "cpcall/web": ["./src/web/mod.js"],
-      "cpcall": ["./src/cpc/mod.js"]
+      "cpcall/node": ["./src/node/mod.ts"],
+      "cpcall/web": ["./src/web/mod.ts"],
+      "cpcall": ["./src/cpc/mod.ts"]
     }
   },
   "exclude": ["node_modules", "dist"]

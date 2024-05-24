@@ -3,7 +3,6 @@
   "compilerOptions": {
     "lib": ["ESNext"],
     "types": [],
-    "outDir": "../out",
-    "noEmit": false
+    "outDir": "../out"
   }
 }

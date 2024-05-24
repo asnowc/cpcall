@@ -5,5 +5,5 @@ export {
   CpcUnregisteredCommandError,
   type MakeCallers,
 } from "cpcall";
-export * from "./web_socket.js";
-export * from "./stream.js";
+export * from "./web_socket.ts";
+export * from "./stream.ts";

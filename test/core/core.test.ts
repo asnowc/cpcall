@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, afterEach, beforeEach } from "vitest";
-import { CalleeCore, CallerCore, FrameType, RpcFrame } from "../../src/cpc/core/mod.js";
-import { CalleeFrame, CallerFrame, Frame } from "../../src/cpc/core/type.js";
+import { CalleeCore, CallerCore, FrameType, RpcFrame } from "../../src/cpc/core/mod.ts";
+import { CalleeFrame, CallerFrame, Frame } from "../../src/cpc/core/type.ts";
 import { afterTime } from "evlib";
 describe("caller", function () {
   describe("call-response", function () {

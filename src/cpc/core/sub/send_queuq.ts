@@ -1,4 +1,4 @@
-import { RpcFrame } from "../type.js";
+import { RpcFrame } from "../type.ts";
 
 class SendingQueue {
   queue: RpcFrame[] = [];

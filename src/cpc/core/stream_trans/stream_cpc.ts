@@ -1,8 +1,8 @@
-import { FrameType } from "../const.js";
-import { RpcFrame } from "../type.js";
+import { FrameType } from "../const.ts";
+import { RpcFrame } from "../type.ts";
 import JBOD, { DataType, varints, UnsupportedDataTypeError, DataWriter } from "jbod";
 import { StepsByteParser, LengthByteParser } from "evlib/async";
-import { U32DByteParser } from "../../lib/mod.js";
+import { U32DByteParser } from "../../lib/mod.ts";
 
 function createCpcFrameParser() {
   return new StepsByteParser<Uint8Array>({ first: new U32DByteParser() }, (len: number) => new LengthByteParser(len));

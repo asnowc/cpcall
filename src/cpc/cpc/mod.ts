@@ -1,1 +1,1 @@
-export * from "./cpc.js";
+export * from "./cpc.ts";

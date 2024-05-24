@@ -1,6 +1,6 @@
-import { trans } from "../core/mod.js";
-import { RpcFrame } from "../core/type.js";
-import { RpcFrameCtrl } from "./cpc.js";
+import { trans } from "../core/mod.ts";
+import { RpcFrame } from "../core/type.ts";
+import { RpcFrameCtrl } from "./cpc.ts";
 
 /**
  * 收集发送的帧，在下一个微任务触发发送

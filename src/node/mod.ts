@@ -5,4 +5,4 @@ export {
   CpcUnregisteredCommandError,
   type MakeCallers,
 } from "cpcall";
-export * from "./socket_cpc.js";
+export * from "./socket_cpc.ts";

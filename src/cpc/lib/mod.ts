@@ -1,1 +1,1 @@
-export * from "./read_dbn_async.js";
+export * from "./read_dbn_async.ts";

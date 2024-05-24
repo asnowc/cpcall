@@ -1,7 +1,7 @@
-export type { RpcFrame, CalleeFrame, CallerFrame, CpCaller } from "./type.js";
-export * from "./const.js";
-export * from "./sub/caller.js";
-export * from "./sub/callee.js";
+export type { RpcFrame, CalleeFrame, CallerFrame, CpCaller } from "./type.ts";
+export * from "./const.ts";
+export * from "./sub/caller.ts";
+export * from "./sub/callee.ts";
 
-import trans from "./stream_trans/stream_cpc.js";
+import trans from "./stream_trans/stream_cpc.ts";
 export { trans };

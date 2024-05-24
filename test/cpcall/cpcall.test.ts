@@ -3,7 +3,7 @@ import { FrameType, RpcFrame, CpCall, RpcFrameCtrl, RemoteCallError } from "cpca
 import { DataCollector } from "evlib/async";
 import { afterTime } from "evlib";
 import { CpcFailRespondError, CpcFailAsyncRespondError } from "cpcall";
-import * as mocks from "../__mocks__/cpc_socket.mock.js";
+import * as mocks from "../__mocks__/cpc_socket.mock.ts";
 
 describe("CpCall", function () {
   const onSendFrame = vi.fn();
