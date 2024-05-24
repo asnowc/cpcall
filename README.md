@@ -1,3 +1,20 @@
+[![ESM-only package][package]][package-url]
+[![NPM version][npm]][npm-url]
+[![Node version][node]][node-url]
+[![Install size][size]][size-url]
+[![Build status][build]][build-url]
+
+[package]: https://img.shields.io/badge/package-ESM--only-ffe536.svg
+[package-url]: https://nodejs.org/api/esm.html
+[npm]: https://img.shields.io/npm/v/cpcall.svg
+[npm-url]: https://npmjs.com/package/cpcall
+[node]: https://img.shields.io/node/v/cpcall.svg
+[node-url]: https://nodejs.org
+[size]: https://packagephobia.com/badge?p=cpcall
+[size-url]: https://packagephobia.com/result?p=cpcall
+[build]: https://github.com/asnowc/cpcall/actions/workflows/ci.yaml/badge.svg?branch=main
+[build-url]: https://github.com/asnowc/cpcall/actions
+
 ## CPCALL
 
 A protocol independent library designed for remote procedure call (RPC) in JavaScript\
