@@ -8,22 +8,11 @@
 
 import { Duplex } from 'node:stream';
 
-// @public (undocumented)
-class CalleeError extends Error {
-}
-
-// @public (undocumented)
-class CallerError extends Error {
-}
-
 declare namespace core {
     export {
-        CalleeError,
-        CallerError,
         CpCall,
         CpCallBase,
         CpCaller,
-        CpcError,
         CpcFailAsyncRespondError,
         CpcFailRespondError,
         CpcUnregisteredCommandError,
@@ -96,11 +85,7 @@ interface CpCaller {
 }
 
 // @public
-class CpcError extends Error {
-}
-
-// @public
-class CpcFailAsyncRespondError extends CpcFailRespondError {
+class CpcFailAsyncRespondError extends Error {
 }
 
 // @public
@@ -136,7 +121,7 @@ const _default: {
     CpcFrameEncoder: typeof CpcFrameEncoder;
 };
 
-// @public (undocumented)
+// @public
 enum FrameType {
     // (undocumented)
     call = 1,
@@ -171,6 +156,8 @@ declare namespace node {
         CpcFailRespondError,
         CpcUnregisteredCommandError,
         MakeCallers,
+        RemoteCallError,
+        RpcFrameCtrl,
         CpCall,
         createSocketCpc
     }
@@ -204,6 +191,8 @@ declare namespace web {
         CpcFailRespondError,
         CpcUnregisteredCommandError,
         MakeCallers,
+        RemoteCallError,
+        RpcFrameCtrl,
         CpCall,
         createWebSocketCpc,
         createWebStreamCpc
