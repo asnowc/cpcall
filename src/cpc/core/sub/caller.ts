@@ -1,5 +1,5 @@
 import { OnceEventTrigger, WithPromise } from "evlib";
-import { ReturnQueue } from "./promise_queue.js";
+import { ReturnQueue } from "./promise_queue.ts";
 import {
   FrameType,
   CpcError,
@@ -7,9 +7,9 @@ import {
   CpcFailRespondError,
   CalleeError,
   RemoteCallError,
-} from "../const.js";
-import type { CalleeFrame, RpcFrame, CpCaller } from "../type.js";
-import type { SendCtrl } from "./type.js";
+} from "../const.ts";
+import type { CalleeFrame, RpcFrame, CpCaller } from "../type.ts";
+import type { SendCtrl } from "./type.ts";
 
 /** @internal */
 export class CallerCore implements CpCaller {

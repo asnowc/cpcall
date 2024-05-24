@@ -1,3 +1,3 @@
-export { trans, type RpcFrame, type CpCaller } from "./core/mod.js";
-export * from "./core/const.js";
-export * from "./cpc/mod.js";
+export { trans, type RpcFrame, type CpCaller } from "./core/mod.ts";
+export * from "./core/const.ts";
+export * from "./cpc/mod.ts";

@@ -1,4 +1,4 @@
-import type { FrameType } from "./const.js";
+import type { FrameType } from "./const.ts";
 import type { OnceEventTrigger } from "evlib";
 
 export namespace Frame {

@@ -8,7 +8,7 @@ import packageJson from "./package.json" with { type: "json" };
 
 const { deps } = getDeps();
 const src = path.resolve("src");
-
+const DEV=Boolean(process.env.DEV)
 export default defineEvConfig({
   input: {
     cpc: "src/cpc/mod.ts",
@@ -20,6 +20,8 @@ export default defineEvConfig({
     chunkFileNames: "internal/[name].js",
     minifyInternalExports: false,
     entryFileNames: "[name].js",
+    sourcemap:DEV,
+    sourcemapExcludeSources:true,
     manualChunks(id, meta) {
       if (id.startsWith(src)) return;
       else return "deps";
@@ -44,7 +46,6 @@ export default defineEvConfig({
         noEmit: false,
         declaration: true,
         declarationDir: "dist/types",
-        declarationMap: true,
         lib: ["ESNext", "dom"],
       },
     },

@@ -160,10 +160,10 @@ enum FrameType {
     throw = 12
 }
 
-// Warning: (ae-forgotten-export) The symbol "CallChianProxy" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "MakeCallerFn" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-type MakeCallers<T, E extends object = {}> = CallChianProxy<T, E>;
+type MakeCallers<T extends object, E extends object = {}> = T extends (...args: infer A) => infer R ? MakeCallerFn<A, R> & ChianProxy<T, E> : ChianProxy<T, E>;
 
 declare namespace node {
     export {

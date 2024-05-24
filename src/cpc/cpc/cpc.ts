@@ -1,8 +1,8 @@
-import { CalleeCore, CallerCore, RpcFrame, CpCaller } from "../core/mod.js";
+import { CalleeCore, CallerCore, RpcFrame, CpCaller } from "../core/mod.ts";
 import { OnceEventTrigger } from "evlib";
-import { RpcFn, genRpcCmdMap } from "./class_gen.js";
-import { createCallChain, CallChianProxy, getChainPath, ChianProxy } from "./callers_gen.js";
-import { ByteFrameCtrl } from "./ByteFrameCtrl.js";
+import { RpcFn, genRpcCmdMap } from "./class_gen.ts";
+import { ByteFrameCtrl } from "./ByteFrameCtrl.ts";
+import { createObjectChain, getChainPath } from "evlib/object";
 
 /** CpCall 构造函数依赖的接口。你可以实现自定义编解码器，或数据帧转发服务
  * @public
@@ -112,9 +112,6 @@ export abstract class CpCallBase {
   }
 }
 
-/** @public */
-export type MakeCallers<T, E extends object = {}> = CallChianProxy<T, E>;
-
 /**
  * @public
  */
@@ -181,19 +178,16 @@ export class CpCall extends CpCallBase {
   genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ChianProxy<R, CallerProxyPrototype>;
   genCaller(prefix = "", opts: GenCallerOpts = {}): object {
     const keepThen = opts.keepThen;
-    return createCallChain(
-      () => {
-        function src(target: CmdFn, args: any[], thisArg: any) {
-          return CpCall.call(target, ...args);
-        }
-        if (!keepThen) Reflect.set(src, "then", null);
+    return createObjectChain(prefix, undefined, () => {
+      function src(args: any[], thisArg: any, target: CmdFn) {
+        return CpCall.call(target, ...args);
+      }
+      if (!keepThen) Reflect.set(src, "then", null);
 
-        Reflect.set(src, cpcallRemoteObject, this);
-        Reflect.setPrototypeOf(src, callerProxyPrototype);
-        return src;
-      },
-      prefix ? { value: prefix } : undefined
-    );
+      Reflect.set(src, cpcallRemoteObject, this);
+      Reflect.setPrototypeOf(src, callerProxyPrototype);
+      return src;
+    });
   }
 }
 
@@ -230,3 +224,14 @@ const callerProxyPrototype = {
 type CallerProxyPrototype = typeof callerProxyPrototype & {
   [cpcallRemoteObject]: CpCall;
 };
+
+type ChianProxy<T extends object, E extends object> = E & {
+  [Key in keyof T as T[Key] extends object ? Key : never]: T[Key] extends object ? MakeCallers<T[Key], E> : never;
+};
+/** @public */
+export type MakeCallers<T extends object, E extends object = {}> = T extends (...args: infer A) => infer R
+  ? MakeCallerFn<A, R> & ChianProxy<T, E>
+  : ChianProxy<T, E>;
+
+type MakeCallerFn<A extends any[], R> = (...args: A) => ToPromise<R>;
+type ToPromise<T> = T extends Promise<any> ? T : Promise<T>;

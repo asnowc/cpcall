@@ -1,8 +1,8 @@
 import { UniqueKeyMap } from "evlib/data_struct";
 import { OnceEventTrigger } from "evlib";
-import { FrameType } from "../const.js";
-import type { Frame, CallerFrame, RpcFrame } from "../type.js";
-import type { SendCtrl } from "./type.js";
+import { FrameType } from "../const.ts";
+import type { Frame, CallerFrame, RpcFrame } from "../type.ts";
+import type { SendCtrl } from "./type.ts";
 
 /** @internal */
 export class CalleeCore {
