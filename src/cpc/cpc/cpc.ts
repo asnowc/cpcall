@@ -1,8 +1,8 @@
 import { CalleeCore, CallerCore, RpcFrame, CpCaller } from "../core/mod.js";
 import { OnceEventTrigger } from "evlib";
 import { RpcFn, genRpcCmdMap } from "./class_gen.js";
-import { createObjectChain, getChainPath } from "./callers_gen.js";
 import { ByteFrameCtrl } from "./ByteFrameCtrl.js";
+import { createObjectChain, getChainPath } from "evlib/object";
 
 /** CpCall 构造函数依赖的接口。你可以实现自定义编解码器，或数据帧转发服务
  * @public

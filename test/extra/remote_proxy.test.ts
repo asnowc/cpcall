@@ -44,28 +44,11 @@ test("原型", async function () {
   await caller.sub[Symbol.asyncDispose]();
   expect(mockCaller.end).toBeCalledWith();
 });
-describe("修改属性", function () {
-  test("修改属性", function () {
-    const caller = cpc.genCaller(undefined, { keepThen: true });
-    caller.att1 = 1 as any;
-    expect(Object.keys(caller)).toEqual(["att1"]);
-    expect(caller.att1).toBe(1);
-    delete caller.att1;
-  });
-  test("异步函数中传递", async function () {
-    // 注意： 在异步函数中 await 和 return 会获取 then 属性，如果 then 是 function 类型会被自动并执行
-    expect(cpc.genCaller().then).not.toBeTypeOf("function");
-    expect(cpc.genCaller().sub.then).not.toBeTypeOf("function");
-  });
-});
-test("很长的调用链", function () {
-  const { cpc } = createCpc();
-  (cpc.caller as any).call = () => {};
-  let c: any = cpc.genCaller();
-  for (let i = 0; i < 100; i++) {
-    c = c["a" + i];
-  }
-  c();
+
+test("异步函数中传递", async function () {
+  // 注意： 在异步函数中 await 和 return 会获取 then 属性，如果 then 是 function 类型会被自动并执行
+  expect(cpc.genCaller().then).not.toBeTypeOf("function");
+  expect(cpc.genCaller().sub.then).not.toBeTypeOf("function");
 });
 test("exec", function () {
   const remote = cpc.genCaller<TopCall>();
