@@ -13,12 +13,13 @@ declare namespace core {
         CpCall,
         CpCallBase,
         CpCaller,
+        CpcController,
         CpcFailAsyncRespondError,
         CpcFailRespondError,
+        CpcFrameSource,
         CpcUnregisteredCommandError,
         MakeCallers,
         RemoteCallError,
-        RpcFrameCtrl,
         FrameType,
         RpcFrame,
         _default as trans
@@ -33,10 +34,9 @@ export { core }
 //
 // @public (undocumented)
 class CpCall extends CpCallBase {
-    constructor(callerCtrl: RpcFrameCtrl<RpcFrame>);
     static call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T>;
     static exec<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): void;
-    static fromByteIterable(ctrl: RpcFrameCtrl<Uint8Array>): CpCall;
+    static fromByteIterable(ctrl: CpcFrameSource<Uint8Array>): CpCall;
     // Warning: (ae-forgotten-export) The symbol "GenCallerOpts" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "AnyCaller" needs to be exported by the entry point index.d.ts
     genCaller(prefix?: string, opts?: GenCallerOpts): AnyCaller;
@@ -50,7 +50,7 @@ class CpCall extends CpCallBase {
 
 // @internal
 abstract class CpCallBase {
-    constructor(ctrl: RpcFrameCtrl<RpcFrame>);
+    constructor(frameSource: CpcFrameSource<RpcFrame>);
     // Warning: (ae-forgotten-export) The symbol "CalleeCore" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -85,6 +85,12 @@ interface CpCaller {
 }
 
 // @public
+type CpcController<T = RpcFrame> = {
+    nextFrame(frame: T): boolean;
+    endFrame(error?: any): void;
+};
+
+// @public
 class CpcFailAsyncRespondError extends Error {
 }
 
@@ -92,6 +98,14 @@ class CpcFailAsyncRespondError extends Error {
 class CpcFailRespondError extends Error {
     constructor();
 }
+
+// @public
+type CpcFrameSource<T = RpcFrame> = {
+    sendFrame(frame: T): void;
+    init(controller: CpcController<T>): void;
+    close(): void | Promise<void>;
+    dispose(reason?: any): void;
+};
 
 // @public
 class CpcUnregisteredCommandError extends Error {
@@ -107,14 +121,12 @@ function createSocketCpc(duplex: Duplex): CpCall;
 function createWebSocketCpc(websocket: WebSocket_2): CpCall;
 
 // @public
-function createWebStreamCpc(stream: {
-    readable: ReadableStream_2<Uint8Array>;
-    writable: WritableStream_2<Uint8Array>;
-}): CpCall;
+function createWebStreamCpc(stream: WebStreamSuite): CpCall;
 
 // @internal (undocumented)
 const _default: {
     createFrameIterator: typeof createFrameIterator;
+    createCpcFrameParser: typeof createCpcFrameParser;
     packCpcFrames: typeof packCpcFrames;
     decodeCpcFrame: typeof decodeCpcFrame;
     unpackCpcFrames: typeof unpackCpcFrames;
@@ -157,7 +169,7 @@ declare namespace node {
         CpcUnregisteredCommandError,
         MakeCallers,
         RemoteCallError,
-        RpcFrameCtrl,
+        CpcFrameSource as RpcFrameCtrl,
         CpCall,
         createSocketCpc
     }
@@ -177,14 +189,6 @@ class RemoteCallError extends Error {
 // @public (undocumented)
 type RpcFrame = CalleeFrame | CallerFrame | Frame.ResponseError;
 
-// @public
-type RpcFrameCtrl<T = RpcFrame> = {
-    frameIter: AsyncIterable<T>;
-    sendFrame(frame: T): void;
-    close?(): Promise<void> | void;
-    dispose?(reason?: any): void;
-};
-
 declare namespace web {
     export {
         CpcFailAsyncRespondError,
@@ -192,23 +196,31 @@ declare namespace web {
         CpcUnregisteredCommandError,
         MakeCallers,
         RemoteCallError,
-        RpcFrameCtrl,
+        CpcFrameSource as RpcFrameCtrl,
         CpCall,
+        WebStreamSuite,
         createWebSocketCpc,
         createWebStreamCpc
     }
 }
 export { web }
 
+// @public (undocumented)
+type WebStreamSuite = {
+    readable: ReadableStream_2<Uint8Array>;
+    writable: WritableStream_2<Uint8Array>;
+};
+
 // Warnings were encountered during analysis:
 //
-// dist/cpc.d.ts:28:5 - (ae-forgotten-export) The symbol "createFrameIterator" needs to be exported by the entry point index.d.ts
-// dist/cpc.d.ts:29:5 - (ae-forgotten-export) The symbol "packCpcFrames" needs to be exported by the entry point index.d.ts
-// dist/cpc.d.ts:30:5 - (ae-forgotten-export) The symbol "decodeCpcFrame" needs to be exported by the entry point index.d.ts
-// dist/cpc.d.ts:31:5 - (ae-forgotten-export) The symbol "unpackCpcFrames" needs to be exported by the entry point index.d.ts
-// dist/cpc.d.ts:32:5 - (ae-forgotten-export) The symbol "CpcFrameEncoder" needs to be exported by the entry point index.d.ts
-// dist/web.d.ts:29:5 - (ae-forgotten-export) The symbol "ReadableStream_2" needs to be exported by the entry point index.d.ts
-// dist/web.d.ts:30:5 - (ae-forgotten-export) The symbol "WritableStream_2" needs to be exported by the entry point index.d.ts
+// dist/cpc.d.ts:36:5 - (ae-forgotten-export) The symbol "createFrameIterator" needs to be exported by the entry point index.d.ts
+// dist/cpc.d.ts:37:5 - (ae-forgotten-export) The symbol "createCpcFrameParser" needs to be exported by the entry point index.d.ts
+// dist/cpc.d.ts:38:5 - (ae-forgotten-export) The symbol "packCpcFrames" needs to be exported by the entry point index.d.ts
+// dist/cpc.d.ts:39:5 - (ae-forgotten-export) The symbol "decodeCpcFrame" needs to be exported by the entry point index.d.ts
+// dist/cpc.d.ts:40:5 - (ae-forgotten-export) The symbol "unpackCpcFrames" needs to be exported by the entry point index.d.ts
+// dist/cpc.d.ts:41:5 - (ae-forgotten-export) The symbol "CpcFrameEncoder" needs to be exported by the entry point index.d.ts
+// dist/web.d.ts:31:5 - (ae-forgotten-export) The symbol "ReadableStream_2" needs to be exported by the entry point index.d.ts
+// dist/web.d.ts:32:5 - (ae-forgotten-export) The symbol "WritableStream_2" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

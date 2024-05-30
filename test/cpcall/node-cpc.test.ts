@@ -70,6 +70,7 @@ describe("状态更改/cpc_socket", function () {
     expect(clientSocket.destroyed).toBeTruthy();
     expect(serverSocket.destroyed).toBeTruthy();
 
+    await afterTime();
     expect(serverCpc.closeEvent.done).toBeTruthy();
     expect(clientCpc.closeEvent.done).toBeTruthy();
 

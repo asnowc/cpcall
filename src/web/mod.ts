@@ -4,7 +4,7 @@ export {
   CpcFailRespondError,
   CpcUnregisteredCommandError,
   RemoteCallError,
-  type RpcFrameCtrl,
+  type CpcFrameSource as RpcFrameCtrl,
   type MakeCallers,
 } from "cpcall";
 export * from "./web_socket.ts";
