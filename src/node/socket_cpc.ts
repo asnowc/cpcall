@@ -8,14 +8,14 @@ export function createSocketCpc(duplex: Duplex): CpCall {
   if (!duplex.readable || !duplex.writable) throw createAbortedError();
   return CpCall.fromByteIterable({
     init(controller: CpcController<Uint8Array>): void {
-      duplex.on("data", (chunk) => controller.nextFrame(chunk));
+      duplex.on("data", (chunk) => {controller.nextFrame(chunk)});
       duplex.on("end", () => controller.endFrame(new Error("Duplex no more data")));
       duplex.on("error", (e) => controller.endFrame(e));
       duplex.on("close", () => controller.endFrame(new Error("Duplex has bend closed")));
     },
     close() {
       duplex.end();
-      setTimeout(() => duplex.destroy(), 50);
+      setTimeout(() => duplex.destroy(), 16);
       return new Promise((resolve, reject) => {
         duplex.once("close", resolve);
       });

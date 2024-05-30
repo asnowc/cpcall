@@ -18,22 +18,30 @@ export class CallerCore implements CpCaller {
   get ended() {
     return this.#end;
   }
+  get closed() {
+    return this.#end === 3;
+  }
   readonly disableEvent = new OnceEventTrigger<void>();
-  forceAbort() {
+  forceAbort(reason?: any) {
+    if (this.closed) return;
     if (!this.checkFinish()) {
-      this.#returnQueue.rejectAsyncAll(new CpcFailAsyncRespondError());
+      this.#returnQueue.rejectAsyncAll(reason ?? new CpcFailAsyncRespondError());
       this.emitFinish();
     }
   }
-  end(abort?: boolean): Promise<void> {
-    if (this.#end === 3) return Promise.resolve();
+  dispose(reason?: any) {
+    if (this.closed) return;
     if (this.#end === 0) {
-      this.sendCtrl.sendFrame([FrameType.end]);
       this.#end = 1;
+      this.sendCtrl.sendFrame([FrameType.end]);
     }
-    if (abort) {
-      this.forceAbort();
-      return Promise.resolve();
+    this.forceAbort(reason);
+  }
+  end(): Promise<void> {
+    if (this.closed) return Promise.resolve();
+    if (this.#end === 0) {
+      this.#end = 1;
+      this.sendCtrl.sendFrame([FrameType.end]);
     }
     return this.finishEvent.getPromise();
   }
@@ -47,9 +55,7 @@ export class CallerCore implements CpCaller {
     if (this.#end) return;
     this.sendCtrl.sendFrame([FrameType.exec, args]);
   }
-  get closed() {
-    return this.#end === 3;
-  }
+
   readonly finishEvent = new OnceEventTrigger<void>();
 
   onFrame(frame: RpcFrame): boolean | Error;

@@ -15,7 +15,7 @@ export class CpcByteFrameSource implements CpcFrameSource<RpcFrame> {
         while (parser.next(buf)) {
           const res = parser.finish();
           const frame = trans.decodeCpcFrame(res.value).frame;
-          if (nextFrame(frame)) return true;
+          nextFrame(frame);
           if (res.residue) buf = res.residue;
           else break;
         }

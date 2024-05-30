@@ -62,18 +62,19 @@ describe("状态更改/cpc_socket", function () {
   test("有等待响应,但对方已销毁流", async function () {
     const { serverCpc, clientCpc, clientSocket, serverSocket } = mock;
     serverCpc.setFn("neverRespond", () => new Promise(() => {}));
-    const res = clientCpc.caller.call("neverRespond").catch((e) => e instanceof CpcFailAsyncRespondError);
+    const err = new Error("aaa");
+    const res = clientCpc.caller.call("neverRespond").catch((e) => e);
     await afterTime();
-    clientSocket.destroy(new Error("aaa")); //客户端未等待服务端响应, 直接销毁流
+    clientSocket.destroy(err); //客户端未等待服务端响应, 直接销毁流
 
     await afterTime();
-    expect(clientSocket.destroyed).toBeTruthy();
-    expect(serverSocket.destroyed).toBeTruthy();
+    expect(clientSocket.destroyed, "client socket 销毁").toBeTruthy();
+    expect(serverSocket.destroyed, "server socket 销毁").toBeTruthy();
 
     await afterTime();
-    expect(serverCpc.closeEvent.done).toBeTruthy();
-    expect(clientCpc.closeEvent.done).toBeTruthy();
+    expect(serverCpc.closeEvent.done, "server emitted close").toBeTruthy();
+    expect(clientCpc.closeEvent.done, "client emitted close").toBeTruthy();
 
-    await expect(res).resolves.toBe(true);
+    await expect(res).resolves.toBe(err);
   });
 }, 500);

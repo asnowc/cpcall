@@ -27,22 +27,19 @@ export type CpcFrameSource<T = RpcFrame> = {
  */
 export type CpcController<T = RpcFrame> = {
   /** 当获取到帧时，应当调用它传给 CpCall 内部 */
-  nextFrame(frame: T): boolean;
+  nextFrame(frame: T): void;
   /** 如果不会再有更多帧，应该调用它，CpCall 内部会判断是正常关闭还是异常关闭 */
   endFrame(error?: any): void;
 };
 /** 提供最基础的命令调用
  * @internal  */
 export abstract class CpCallBase {
-  /**
-   * @param onDispose - 调用 dispose() 时调用。它这应该中断 frameIter。
-   */
   constructor(private readonly frameSource: CpcFrameSource<RpcFrame>) {
     const caller = new CallerCore(frameSource);
     const callee = new CalleeCore(frameSource);
     this.#caller = caller;
     this.caller = caller;
-    this.callee = callee;
+    this.#callee = callee;
     callee.onCall = (cmd, ...args) => {
       if (typeof cmd === "string") {
         const context = this._getFn(cmd);
@@ -57,7 +54,9 @@ export abstract class CpCallBase {
           if (this._closed) return;
           this.dispose(reason);
         },
-        nextFrame: this._nextFrame.bind(this),
+        nextFrame: (frame: RpcFrame) => {
+          this.#callee.onFrame(frame) || this.#caller.onFrame(frame);
+        },
       });
     } catch (error) {
       this.dispose(error);
@@ -83,11 +82,7 @@ export abstract class CpCallBase {
     return this._licensers.get(cmd);
   }
   private get _closed() {
-    return this.callee.status === 2 && this.#caller.closed;
-  }
-  private _nextFrame(frame: RpcFrame) {
-    this.callee.onFrame(frame) || this.#caller.onFrame(frame);
-    return this._closed;
+    return this.#callee.status === 2 && this.#caller.closed;
   }
 
   protected _licensers = new Map<string, RpcFn>();
@@ -109,8 +104,11 @@ export abstract class CpCallBase {
   clearFn() {
     this._licensers.clear();
   }
-  protected readonly callee: CalleeCore;
+  readonly #callee: CalleeCore;
   readonly #caller: CallerCore;
+  protected get calleePromiseNum() {
+    return this.#callee.promiseNum;
+  }
   /** CpCaller 对象**/
   caller: CpCaller;
   #errored: any;
@@ -123,7 +121,7 @@ export abstract class CpCallBase {
    * 为保证连接能正常关闭，当不再提供调用服务时，应手动调用。
    **/
   disable() {
-    return this.callee.disable();
+    return this.#callee.disable();
   }
   /** 销毁连接
    * @returns 返回 CpCall 完全关闭后解决的 Promise
@@ -131,8 +129,8 @@ export abstract class CpCallBase {
   dispose(reason: any = null): void {
     if (this.#errored !== undefined) return; //已经销毁过或已关闭
     this.#errored = reason;
-    this.callee.forceAbort();
-    this.#caller.forceAbort();
+    this.#callee.forceAbort();
+    this.#caller.forceAbort(reason);
     if (this.frameSource.dispose) {
       try {
         this.frameSource.dispose(reason);

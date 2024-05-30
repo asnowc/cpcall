@@ -6,11 +6,11 @@ import EventEmitter from "node:events";
 import { CalleeCore } from "../../src/cpc/core/mod.ts";
 /** 模拟两个已建立连接的 Socket, 并初始化监听他们的  close 事件 */
 export function getNoResponseCpc() {
-  return new CpCall({ init(controller) {}, sendFrame: () => {}, close() {} });
+  return new CpCall({ init(controller) {}, sendFrame: () => {}, close() {}, dispose() {} });
 }
 export type InternalCpcall = CpCall & {
   name: string;
-  callee: CalleeCore;
+  calleePromiseNum: number;
 };
 /** 模拟两个已连接的 CpcSocket */
 export function createConnectedCpc(clientFn?: object, serverFn?: object) {

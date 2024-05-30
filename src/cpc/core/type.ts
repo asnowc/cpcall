@@ -33,10 +33,9 @@ export interface CpCaller {
   exec(...args: any[]): void;
   /**
    * 结束远程调用。
-   * @param abort - 如果为true, 这将直接拒绝所有等待返回队列, 并将 ended 置为 3
    * @returns 当 ended 状态变为 3后解决的 Promise
    * */
-  end(abort?: boolean): Promise<void>;
+  end(): Promise<void>;
   /** caller 状态
    * @remarks
    * 3: 表示已调用 end() 或已收到 disable 帧并且所有等待队列已清空
@@ -46,7 +45,9 @@ export interface CpCaller {
   ended: 0 | 1 | 2 | 3;
 
   /** ended 变为 2 时触发 */
-  disableEvent: OnceListenable<void> & { getPromise(): Promise<void> };
+  readonly disableEvent: OnceListenable<void> & { getPromise(): Promise<void> };
   /** ended 变为 3 时触发 */
-  finishEvent: OnceListenable<void> & { getPromise(): Promise<void> };
+  readonly finishEvent: OnceListenable<void> & { getPromise(): Promise<void> };
+  /** 销毁 CpCaller*/
+  dispose(reason?: any): void;
 }
