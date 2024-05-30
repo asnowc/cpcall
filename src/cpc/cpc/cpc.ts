@@ -46,10 +46,10 @@ export abstract class CpCallBase {
     callee.onCall = (cmd, ...args) => {
       if (typeof cmd === "string") {
         const context = this._getFn(cmd);
-        if (!context) throw new CpcUnregisteredCommandError();
+        if (!context) throw new CpcUnregisteredCommandError(cmd);
         return context.fn.apply(context.this, args);
       }
-      throw new CpcUnregisteredCommandError();
+      throw new CpcUnregisteredCommandError(cmd);
     };
     try {
       frameSource.init({
@@ -236,8 +236,8 @@ type CmdFn = (...args: any[]) => any;
 /** 调用未注册的命令
  * @public */
 export class CpcUnregisteredCommandError extends Error {
-  constructor() {
-    super("CpcUnregisteredCommandError");
+  constructor(cmd: any) {
+    super("UnregisteredCommand: " + cmd);
   }
 }
 interface FnOpts {
