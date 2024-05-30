@@ -1,24 +1,16 @@
 import { Duplex, Readable } from "node:stream";
 import { createSocketCpc } from "cpcall/node";
 import { vi } from "vitest";
-import { CpCall, RpcFrame } from "cpcall";
+import { CpCall } from "cpcall";
 import EventEmitter from "node:events";
 import { CalleeCore } from "../../src/cpc/core/mod.ts";
 /** 模拟两个已建立连接的 Socket, 并初始化监听他们的  close 事件 */
 export function getNoResponseCpc() {
-  const iter: AsyncIterableIterator<RpcFrame> = {
-    next() {
-      return new Promise(() => {});
-    },
-    [Symbol.asyncIterator]() {
-      return this;
-    },
-  };
-  return new CpCall({ frameIter: iter, sendFrame: () => {} });
+  return new CpCall({ init(controller) {}, sendFrame: () => {}, close() {}, dispose() {} });
 }
 export type InternalCpcall = CpCall & {
   name: string;
-  callee: CalleeCore;
+  calleePromiseNum: number;
 };
 /** 模拟两个已连接的 CpcSocket */
 export function createConnectedCpc(clientFn?: object, serverFn?: object) {

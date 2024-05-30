@@ -1,6 +1,6 @@
-import { describe, test, expect, vi, beforeEach } from "vitest";
-import { RpcFrame, CpCall } from "cpcall";
-import { DataCollector } from "evlib/async";
+import { test, expect, vi, beforeEach } from "vitest";
+import { CpCall } from "cpcall";
+import { MockCpcFrameSource } from "../__mocks__/CpcMockControl.ts";
 
 interface SubCall {
   ab: number;
@@ -60,7 +60,7 @@ test("exec", function () {
 
 function createCpc() {
   const onSendFrame = vi.fn();
-  let hd = new DataCollector<RpcFrame>();
-  let cpc = new CpCall({ frameIter: hd, sendFrame: onSendFrame });
+  let hd = new MockCpcFrameSource();
+  let cpc = new CpCall(hd);
   return { onSendFrame, hd, cpc };
 }

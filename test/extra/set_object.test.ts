@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { RpcFrame, CpCall } from "cpcall";
-import { DataCollector } from "evlib/async";
+import { MockCpcFrameSource } from "../__mocks__/CpcMockControl.ts";
 
 describe("setObject", function () {
   const { cpc } = createCpc();
@@ -58,8 +58,8 @@ describe("setObject", function () {
 
 function createCpc() {
   const onSendFrame = vi.fn();
-  let hd = new DataCollector<RpcFrame>();
-  let cpc = new CpCall({ frameIter: hd, sendFrame: onSendFrame });
+  let hd = new MockCpcFrameSource();
+  let cpc = new CpCall(hd);
   return { onSendFrame, hd, cpc };
 }
 function setEq(s1: Iterable<any>, s2: Set<any>) {

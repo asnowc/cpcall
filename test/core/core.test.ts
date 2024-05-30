@@ -85,7 +85,7 @@ describe("caller", function () {
         caller.onFrame([FrameType.promise, 0]); //返回Promise id
         const r2 = caller.call(1); //发起另一个调用
 
-        caller.end(true);
+        caller.dispose();
         expect(caller.waitingNum, "等待队列被清空").toBe(0);
         expect(caller.ended).toBe(3);
 
@@ -116,7 +116,7 @@ describe("caller", function () {
       caller.onFrame([FrameType.promise, 1]);
       await expect(r2).rejects.toThrowError();
       caller.onFrame([FrameType.resolve, 1, "r1"]);
-      caller.end(true);
+      caller.dispose();
 
       await expect(r1).resolves.toBe("r1");
     });

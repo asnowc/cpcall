@@ -1,31 +1,30 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { FrameType, RpcFrame, CpCall, RpcFrameCtrl, RemoteCallError } from "cpcall";
-import { DataCollector } from "evlib/async";
+import { FrameType, CpCall, RemoteCallError } from "cpcall";
 import { afterTime } from "evlib";
 import { CpcFailRespondError, CpcFailAsyncRespondError } from "cpcall";
 import * as mocks from "../__mocks__/cpc_socket.mock.ts";
+import { MockCpcFrameSource } from "../__mocks__/CpcMockControl.ts";
 
 describe("CpCall", function () {
-  const onSendFrame = vi.fn();
-  let hd: DataCollector<RpcFrame>;
+  let hd: MockCpcFrameSource;
   let cpc: CpCall;
   beforeEach(() => {
-    hd = new DataCollector<RpcFrame>();
-    cpc = new CpCall({ frameIter: hd, sendFrame: onSendFrame });
+    hd = new MockCpcFrameSource();
+    cpc = new CpCall(hd);
   });
   test("close caller 和 callee 主动触发", async function () {
-    cpc.caller.end(true);
+    cpc.caller.dispose();
     cpc.disable();
-    hd.yield([FrameType.call, []]);
+    hd.nextFrame([FrameType.call, []]);
     await afterTime();
     expect(cpc.closeEvent.done).toBeTruthy();
   });
   test("被动触发", async function () {
-    hd.yield([FrameType.end]);
-    hd.yield([FrameType.disable]);
+    hd.nextFrame([FrameType.end]);
+    hd.nextFrame([FrameType.disable]);
     await afterTime();
     expect(cpc.caller.finishEvent.done, "caller finish").toBeTruthy();
-    hd.close();
+    hd.endFrame();
     await afterTime();
     expect(cpc.closeEvent.done, "cpc close").toBeTruthy();
   });
@@ -44,20 +43,21 @@ describe("创建连接与关闭连接", function () {
     await serverCpc.caller.disableEvent.getPromise();
     await Promise.all([clientFinish, serverFinish]);
   });
-  test("callee 关闭", async function () {
+  test("callee关闭", async function () {
     const { clientCpc, serverCpc } = mock;
     const serverFinish = serverCpc.disable();
     await clientCpc.caller.disableEvent.getPromise();
     const clientFinish = clientCpc.disable();
-    await serverCpc.caller.disableEvent.getPromise();
+
     await Promise.all([clientFinish, serverFinish]);
+    expect(serverCpc.caller.disableEvent.done).toBeTruthy();
   });
   test("单方中断", async function () {
     const { clientCpc, serverCpc } = mock;
     const c1 = clientCpc.closeEvent.getPromise();
     const s1 = serverCpc.closeEvent.getPromise();
     clientCpc.disable();
-    clientCpc.caller.end(true);
+    clientCpc.caller.dispose();
     await expect(c1).resolves.toBeUndefined();
     await expect(s1).resolves.toBeUndefined();
   });
@@ -127,7 +127,7 @@ describe("返回值", function () {
         return new Promise((resolve) => setTimeout(() => resolve(8)));
       });
       await expect(clientCpc.caller.call("fn", arg)).resolves.toBe(8);
-      expect(serverCpc.callee.promiseNum).toBe(0);
+      expect(serverCpc.calleePromiseNum).toBe(0);
     });
 
     test("多个异步返回", async function () {
@@ -136,11 +136,11 @@ describe("返回值", function () {
       fn.mockImplementation(() => Promise.resolve(count++));
       const caller = clientCpc.caller;
       await expect(caller.call("fn")).resolves.toBe(0);
-      expect(serverCpc.callee.promiseNum).toBe(0);
+      expect(serverCpc.calleePromiseNum).toBe(0);
       await expect(caller.call("fn")).resolves.toBe(1);
-      expect(serverCpc.callee.promiseNum).toBe(0);
+      expect(serverCpc.calleePromiseNum).toBe(0);
       await expect(caller.call("fn")).resolves.toBe(2);
-      expect(serverCpc.callee.promiseNum).toBe(0);
+      expect(serverCpc.calleePromiseNum).toBe(0);
     });
   });
 
@@ -190,7 +190,7 @@ describe("状态更改", function () {
     const cpc = mocks.getNoResponseCpc();
     const pms = cpc.caller.call("yyy");
     await afterTime(50);
-    cpc.caller.end(true);
+    cpc.caller.dispose();
     expect(cpc.caller.finishEvent.done).toBeTruthy();
     await expect(pms, "在返回前中断").rejects.toThrowError(CpcFailRespondError);
   });
@@ -204,23 +204,17 @@ describe("状态更改", function () {
     });
     let pms = clientCpc.caller.call("cmd");
     await afterTime();
-    clientCpc.caller.end(true);
+    clientCpc.caller.dispose();
     expect(clientCpc.caller.finishEvent.done).toBeTruthy();
 
     await expect(pms).rejects.toThrowError(CpcFailAsyncRespondError);
   });
   test("数据源实例发生异常后不能调用 sendFrame", async function () {
     const err = new Error("源发生异常");
-    class Ctrl implements RpcFrameCtrl {
-      frameIter = this.getAsyncGen();
-      dispose(): void | Promise<void> {}
-      sendFrame = vi.fn();
-      private async *getAsyncGen(): AsyncGenerator<RpcFrame> {
-        throw err;
-      }
-    }
-    const ctrl = new Ctrl();
+
+    const ctrl = new MockCpcFrameSource();
     const cpcall = new CpCall(ctrl);
+    cpcall.dispose(err);
 
     await expect(cpcall.closeEvent.getPromise()).rejects.toBe(err);
     expect(ctrl.sendFrame).not.toBeCalled();

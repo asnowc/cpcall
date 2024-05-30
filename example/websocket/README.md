@@ -25,8 +25,6 @@ async function connect() {
   cpc.setObject(new ClientApi()); // 暴露接口给服务端
   return cpc;
 }
-let cpc = await connect();
-let serverApi = cpc.genCaller();
 class SubApi {
   // 更改 web 页面的背景颜色
   changeBgColor(color) {
@@ -41,6 +39,8 @@ class ClientApi {
     console.log(data);
   }
 }
+let cpc = await connect();
+let serverApi = cpc.genCaller();
 ```
 
 4. 可以看到页面背景不断闪烁变化，这部分逻辑是在服务端控制的。

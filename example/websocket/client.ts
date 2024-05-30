@@ -17,9 +17,6 @@ async function connect() {
   return cpc;
 }
 
-let cpc = await connect();
-let serverApi = cpc.genCaller();
-
 class SubApi {
   // 更改 web 页面的背景颜色
   changeBgColor(color: string) {
@@ -34,4 +31,7 @@ class ClientApi {
     console.log(data);
   }
 }
+
+let cpc = await connect();
+let serverApi = cpc.genCaller();
 export type { ClientApi };

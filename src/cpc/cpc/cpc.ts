@@ -1,70 +1,90 @@
 import { CalleeCore, CallerCore, RpcFrame, CpCaller } from "../core/mod.ts";
-import { OnceEventTrigger } from "evlib";
+import { OnceEventTrigger, OnceListenable } from "evlib";
 import { RpcFn, genRpcCmdMap } from "./class_gen.ts";
-import { ByteFrameCtrl } from "./ByteFrameCtrl.ts";
+import { CpcByteFrameSource } from "./ByteFrameCtrl.ts";
 import { createObjectChain, getChainPath } from "evlib/object";
 
 /** CpCall 构造函数依赖的接口。你可以实现自定义编解码器，或数据帧转发服务
  * @public
  */
-export type RpcFrameCtrl<T = RpcFrame> = {
-  /** 一个异步迭代器，它应迭代 cpcall 数据帧 */
-  frameIter: AsyncIterable<T>;
+export type CpcFrameSource<T = RpcFrame> = {
   /** 当需要发送数据帧时被调用 */
   sendFrame(frame: T): void;
-  /** 在 closeEvent 发出前调用 */
-  close?(): Promise<void> | void;
-  /** 当用户手动调用 dispose() 时或迭代器抛出异常时调用  */
-  dispose?(reason?: any): void;
+  /** 初始化时被调用，在构造函数是，它是同步调用的。
+   * @param controller - CpCall 实例的控制器
+   */
+  init(controller: CpcController<T>): void;
+  /** 实例正常关闭时调用。它在 closeEvent 触发前被调用，如果返回Promise，则在 Promise 解决后 触发 closeEvent
+   * @remarks 如果调用时抛出异常，那么CpCall 的 closeEvent 将触发异常（非正常关闭）
+   */
+  close(): void | Promise<void>;
+  /** 当用户手动调用 dispose() 时或出现异常时调用  */
+  dispose(reason?: any): void;
 };
 
+/**  CpCall 实例的控制器
+ * @public
+ */
+export type CpcController<T = RpcFrame> = {
+  /** 当获取到帧时，应当调用它传给 CpCall 内部 */
+  nextFrame(frame: T): void;
+  /** 如果不会再有更多帧，应该调用它，CpCall 内部会判断是正常关闭还是异常关闭 */
+  endFrame(error?: any): void;
+};
 /** 提供最基础的命令调用
  * @internal  */
 export abstract class CpCallBase {
-  /**
-   * @param onDispose - 调用 dispose() 时调用。它这应该中断 frameIter。
-   */
-  constructor(private readonly ctrl: RpcFrameCtrl<RpcFrame>) {
-    const caller = new CallerCore(ctrl);
-    const callee = new CalleeCore(ctrl);
+  constructor(private readonly frameSource: CpcFrameSource<RpcFrame>) {
+    const caller = new CallerCore(frameSource);
+    const callee = new CalleeCore(frameSource);
     this.#caller = caller;
     this.caller = caller;
-    this.callee = callee;
-    this.bridgeRpcFrame(callee, caller, ctrl.frameIter);
+    this.#callee = callee;
     callee.onCall = (cmd, ...args) => {
       if (typeof cmd === "string") {
         const context = this._getFn(cmd);
-        if (!context) throw new CpcUnregisteredCommandError();
+        if (!context) throw new CpcUnregisteredCommandError(cmd);
         return context.fn.apply(context.this, args);
       }
-      throw new CpcUnregisteredCommandError();
+      throw new CpcUnregisteredCommandError(cmd);
     };
+    try {
+      frameSource.init({
+        endFrame: (reason = new Error("异常结束")) => {
+          if (this._closed) return;
+          this.dispose(reason);
+        },
+        nextFrame: (frame: RpcFrame) => {
+          this.#callee.onFrame(frame) || this.#caller.onFrame(frame);
+        },
+      });
+    } catch (error) {
+      this.dispose(error);
+      return;
+    }
+
+    const onClose = async () => {
+      if (this.#errored !== undefined) return; //已经发生异常或已关闭
+      if (!this._closed) return;
+      try {
+        await this.frameSource.close();
+        this.#errored = null;
+      } catch (error) {
+        this.dispose(error);
+        return;
+      }
+      this.#closeEvent.emit();
+    };
+    caller.finishEvent.then(onClose);
+    callee.finishEvent.then(onClose);
   }
   protected _getFn(cmd: string): RpcFn | undefined {
     return this._licensers.get(cmd);
   }
-  /**
-   * @internal
-   * @throws 继承自 frameIter
-   */
-  private async bridgeRpcFrame(
-    callee: CalleeCore,
-    caller: CallerCore,
-    frameIter: AsyncIterable<RpcFrame>
-  ): Promise<void | any> {
-    try {
-      for await (const chunk of frameIter) {
-        callee.onFrame(chunk) || caller.onFrame(chunk);
-        if (callee.status === 2 && caller.closed) break; // 检测是否满足结束状态，如果满足，终止外部的迭代器
-      }
-      if (callee.status !== 2) this.callee.forceAbort();
-      if (!caller.closed) this.#caller.forceAbort();
-      await this.ctrl.close?.();
-      this.closeEvent.emit();
-    } catch (err) {
-      this.dispose(err);
-    }
+  private get _closed() {
+    return this.#callee.status === 2 && this.#caller.closed;
   }
+
   protected _licensers = new Map<string, RpcFn>();
   /** 设置可调用函数
    * @param cmd - 方法名称
@@ -84,31 +104,41 @@ export abstract class CpCallBase {
   clearFn() {
     this._licensers.clear();
   }
-  protected readonly callee: CalleeCore;
+  readonly #callee: CalleeCore;
   readonly #caller: CallerCore;
+  protected get calleePromiseNum() {
+    return this.#callee.promiseNum;
+  }
   /** CpCaller 对象**/
   caller: CpCaller;
   #errored: any;
+  readonly #closeEvent = new OnceEventTrigger<void>();
   /** 关闭事件 */
-  readonly closeEvent = new OnceEventTrigger<void>();
+  readonly closeEvent: OnceListenable<void> & { getPromise(): Promise<void> } = this.#closeEvent;
   /** 向对方发送 disable 帧
    * @remarks
    * 调用后，对方如果继续发起远程调用，将会响应给对方异常。
    * 为保证连接能正常关闭，当不再提供调用服务时，应手动调用。
    **/
   disable() {
-    return this.callee.disable();
+    return this.#callee.disable();
   }
   /** 销毁连接
    * @returns 返回 CpCall 完全关闭后解决的 Promise
    */
   dispose(reason: any = null): void {
-    if (this.#errored !== undefined) return; //已经销毁过
+    if (this.#errored !== undefined) return; //已经销毁过或已关闭
     this.#errored = reason;
-    this.callee.forceAbort();
-    this.#caller.forceAbort();
-    this.ctrl.dispose?.(reason);
-    this.closeEvent.emitError(this.#errored);
+    this.#callee.forceAbort();
+    this.#caller.forceAbort(reason);
+    if (this.frameSource.dispose) {
+      try {
+        this.frameSource.dispose(reason);
+      } catch (error) {}
+    }
+    Promise.resolve().then(() => {
+      this.#closeEvent.emitError(this.#errored);
+    });
   }
 }
 
@@ -116,9 +146,12 @@ export abstract class CpCallBase {
  * @public
  */
 export class CpCall extends CpCallBase {
-  /** 创建基于 JBOD 编解码的CpCall实例 */
-  static fromByteIterable(ctrl: RpcFrameCtrl<Uint8Array>) {
-    return new this(new ByteFrameCtrl(ctrl));
+  /**
+   * 创建基于 JBOD 编解码的CpCall实例。
+   * @remarks  它会将 CpCall 在一个宏任务内的生成的帧进行打包
+   */
+  static fromByteIterable(ctrl: CpcFrameSource<Uint8Array>) {
+    return new this(new CpcByteFrameSource(ctrl));
   }
   static #getProxyInfo(proxyObj: (...args: any[]) => any) {
     const cpc: CpCall = Reflect.get(proxyObj, cpcallRemoteObject);
@@ -154,9 +187,6 @@ export class CpCall extends CpCallBase {
   static call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T> {
     const { cpc, path } = CpCall.#getProxyInfo(proxyObj);
     return cpc.caller.call(path, ...args) as Promise<any> as any;
-  }
-  constructor(callerCtrl: RpcFrameCtrl<RpcFrame>) {
-    super(callerCtrl);
   }
   // protected _getFn(cmd: string): RpcFn | undefined {
   //   const path = cmd.split(this.#sp);
@@ -205,8 +235,8 @@ type CmdFn = (...args: any[]) => any;
 /** 调用未注册的命令
  * @public */
 export class CpcUnregisteredCommandError extends Error {
-  constructor() {
-    super("CpcUnregisteredCommandError");
+  constructor(cmd: any) {
+    super("UnregisteredCommand: " + cmd);
   }
 }
 interface FnOpts {

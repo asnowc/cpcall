@@ -1,10 +1,13 @@
 import { FrameType } from "../const.ts";
 import { RpcFrame } from "../type.ts";
 import JBOD, { DataType, varints, UnsupportedDataTypeError, DataWriter } from "jbod";
-import { StepsByteParser, LengthByteParser } from "evlib/async";
-import { U32DByteParser } from "../../lib/mod.ts";
+import { StepsByteParser, LengthByteParser, ByteParser } from "evlib/async";
 
-function createCpcFrameParser() {
+const U32DByteParser = varints.U32DByteParser;
+/** 收集二进制chunk, 拼接成完整的二进制帧
+ * @internal
+ */
+export function createCpcFrameParser(): ByteParser<Uint8Array> {
   return new StepsByteParser<Uint8Array>({ first: new U32DByteParser() }, (len: number) => new LengthByteParser(len));
 }
 
@@ -30,7 +33,8 @@ export async function* createFrameIterator(iter: AsyncIterable<Uint8Array>) {
   }
   return chunk;
 }
-/** @internal */
+/** 将多个 RpcFrame 打包多个成二进制帧 JBOD-CPC 帧
+ * @internal */
 export function packCpcFrames(frames: RpcFrame[]) {
   const encoderList: CpcFrameEncoder[] = new Array(frames.length);
   let len = 0;
@@ -49,7 +53,8 @@ export function packCpcFrames(frames: RpcFrame[]) {
   }
   return u8Arr;
 }
-/** @internal 解码由 packCpcFrames 生成的二进制帧*/
+/** 解码由 packCpcFrames 生成的二进制帧
+ * @internal */
 export function* unpackCpcFrames(buf: Uint8Array, offset: number) {
   let decRes: ReturnType<typeof decodeCpcFrame>;
   do {
@@ -63,7 +68,8 @@ export function* unpackCpcFrames(buf: Uint8Array, offset: number) {
   } while (offset < buf.byteLength);
 }
 
-/** @internal */
+/** 解码二进制 JBOD-CPC 帧
+ * @internal */
 export function decodeCpcFrame(buf: Uint8Array, offset = 0): { frame: RpcFrame; offset: number } {
   const type: FrameType = buf[offset++];
   let frame: RpcFrame;
@@ -108,7 +114,8 @@ export function decodeCpcFrame(buf: Uint8Array, offset = 0): { frame: RpcFrame; 
   return { frame, offset };
 }
 
-/** @internal */
+/** 编码二进制 JBOD-CPC 帧
+ * @internal */
 export class CpcFrameEncoder {
   readonly type: FrameType;
   constructor(frame: RpcFrame) {
@@ -161,4 +168,11 @@ export class CpcFrameEncoder {
 }
 
 /** @internal */
-export default { createFrameIterator, packCpcFrames, decodeCpcFrame, unpackCpcFrames, CpcFrameEncoder };
+export default {
+  createFrameIterator,
+  createCpcFrameParser,
+  packCpcFrames,
+  decodeCpcFrame,
+  unpackCpcFrames,
+  CpcFrameEncoder,
+};

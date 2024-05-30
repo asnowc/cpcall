@@ -1,8 +1,18 @@
 ## 0.x
 
+### 0.5.x
+
+#### 0.5.0
+
+BREAKING CHANGE: end(true) 改为 dispose()
+BREAKING CHANGE: CpCall 的事件由 OnceEventTrigger 改为 OnceListenable 接口
+BREAKING CHANGE: CpCall 构造实现更改，由 RpcFrameCtrl 改为 CpcFrameSource
+feat(web): createWebsocketCpcOnOpen
+
 ### 0.4.x
 
 #### 0.4.9
+
 fix(web): createWebSocketCpc() 有时永远无法响应
 
 #### 0.4.8

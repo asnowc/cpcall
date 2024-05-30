@@ -1,38 +1,81 @@
-import { describe, test, expect, vi, beforeEach } from "vitest";
-import { RpcFrame, CpCall, RpcFrameCtrl, FrameType } from "cpcall";
-import { DataCollector } from "evlib/async";
+import { test, expect, beforeEach, vi } from "vitest";
+import { CpCall, CpcFrameSource, FrameType } from "cpcall";
 import { afterTime } from "evlib";
+import { MockCpcFrameSource } from "../__mocks__/CpcMockControl.ts";
+/**
+ * 测试 CpcFrameSource
+ */
 
-let hd: DataCollector<RpcFrame>;
 let cpc: CpCall;
-let ctrl: RpcFrameCtrl<RpcFrame>;
+let ctrl: MockCpcFrameSource;
 beforeEach(() => {
-  hd = new DataCollector<RpcFrame>();
-  ctrl = { frameIter: hd, sendFrame: vi.fn(), close: vi.fn(), dispose: vi.fn() };
+  ctrl = new MockCpcFrameSource();
   cpc = new CpCall(ctrl);
 });
-describe("正常关闭", function () {
-  test("主动正常关闭", async function () {
-    setTimeout(() => hd.yield([FrameType.end]));
-    await cpc.disable();
-    setTimeout(() => hd.yield([FrameType.disable]));
-    await cpc.caller.end();
-    await afterTime();
-    expect(ctrl.close).toBeCalledTimes(1);
-    expect(ctrl.dispose).toBeCalledTimes(0);
-    hd.yield([FrameType.call, ["abc"]]); //传一些错误的帧
-    hd.close();
-  });
-}, 500);
+test("init 同步被调用", function () {
+  const ctrl: CpcFrameSource = {
+    init: vi.fn(),
+    close: vi.fn(),
+    dispose: vi.fn(),
+    sendFrame: vi.fn(),
+  };
+  new CpCall(ctrl);
+  expect(ctrl.init).toBeCalled();
+});
+test("主动正常关闭", async function () {
+  setTimeout(() => ctrl.nextFrame([FrameType.end]));
+  await cpc.disable();
+  setTimeout(() => ctrl.nextFrame([FrameType.disable]));
+  await cpc.caller.end();
 
-describe("异常关闭", function () {
-  test("主动调用 dispose()", async function () {
-    const err = new Error("主动调用dispose");
-    cpc.dispose(err);
-    hd.yield([FrameType.call, ["abc"]]); //传一些错误的帧
-    expect(ctrl.close).toBeCalledTimes(0);
-    expect(ctrl.dispose).toBeCalledTimes(1);
-    expect(ctrl.dispose).toBeCalledWith(err);
-    hd.close();
-  });
-}, 500);
+  // 下面的帧应该被忽略
+  ctrl.nextFrame([FrameType.exec, []]);
+  ctrl.nextFrame([FrameType.call, []]);
+  ctrl.nextFrame([FrameType.end]);
+  ctrl.nextFrame([FrameType.disable]);
+  ctrl.endFrame(new Error("被忽略的异常"));
+  ctrl.endFrame(new Error("被忽略的异常"));
+
+  await afterTime();
+
+  expect(ctrl.close).toBeCalledTimes(1);
+  expect(ctrl.dispose).toBeCalledTimes(0);
+  ctrl.nextFrame([FrameType.call, ["abc"]]); //传一些错误的帧
+  expect(cpc.closeEvent.done).toBeTruthy();
+});
+
+test("主动调用 dispose()", async function () {
+  const err = new Error("主动调用dispose");
+  cpc.dispose(err);
+
+  // 下面的帧应该被忽略
+  ctrl.nextFrame([FrameType.exec, []]);
+  ctrl.nextFrame([FrameType.call, []]);
+  ctrl.nextFrame([FrameType.end]);
+  ctrl.nextFrame([FrameType.disable]);
+  ctrl.endFrame(new Error("被忽略的异常"));
+  ctrl.endFrame(new Error("被忽略的异常"));
+
+  expect(ctrl.close).toBeCalledTimes(0);
+  expect(ctrl.dispose).toBeCalledTimes(1);
+  expect(ctrl.dispose).toBeCalledWith(err);
+  ctrl.close();
+});
+
+test("source 异常", function () {
+  const closeEvent = cpc.closeEvent.getPromise();
+  const error = new Error("source error");
+  ctrl.endFrame(error);
+  expect(closeEvent).rejects.toThrowError(error);
+
+  // 下面的帧应该被忽略
+  ctrl.nextFrame([FrameType.exec, []]);
+  ctrl.nextFrame([FrameType.call, []]);
+  ctrl.nextFrame([FrameType.end]);
+  ctrl.nextFrame([FrameType.disable]);
+  ctrl.endFrame(new Error("被忽略的异常"));
+  ctrl.endFrame(new Error("被忽略的异常"));
+
+  expect(ctrl.dispose).toBeCalledWith(error);
+  expect(ctrl.close).not.toBeCalled();
+});
