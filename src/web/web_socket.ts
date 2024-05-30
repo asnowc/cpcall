@@ -1,10 +1,28 @@
 import { CpCall, trans, RpcFrame, CpcFrameSource, CpcController } from "cpcall";
 
+/** 创建一个基于 WebSocket 的 CpCall 实例。
+ * @public */
+export function createWebsocketCpcOnOpen(websocket: WebSocket): Promise<CpCall> {
+  return new Promise<CpCall>(function (resolve, reject) {
+    if (websocket.readyState === websocket.OPEN) return resolve(createWebSocketCpc(websocket));
+    if (websocket.readyState !== websocket.CONNECTING) throw new Error("Websocket must be opened or connecting");
+    const onConnect = () => {
+      websocket.removeEventListener("error", onError);
+      resolve(createWebSocketCpc(websocket));
+    };
+    const onError = () => {
+      websocket.removeEventListener("open", onConnect);
+    };
+    websocket.addEventListener("error", onError, { once: true });
+    websocket.addEventListener("open", onConnect, { once: true });
+  });
+}
+
 /** 创建一个基于 WebSocket 的 CpCall 实例。WebSocket 的状态必须是 open。 否则抛出异常
  * @public
  */
 export function createWebSocketCpc(websocket: WebSocket) {
-  if (websocket.readyState !== websocket.OPEN) throw new Error("Wrong websocket status");
+  if (websocket.readyState !== websocket.OPEN) throw new Error("Websocket must be opened");
   return new CpCall(new WsRpcFrameCtrl(websocket));
 }
 class WsRpcFrameCtrl implements CpcFrameSource {
@@ -56,15 +74,19 @@ class WsRpcFrameCtrl implements CpcFrameSource {
   }
 }
 // WebSocket 最小依赖。
-interface WebSocket {
+declare class WebSocket {
+  constructor(url: string);
   readonly OPEN: number;
+  readonly CONNECTING: number;
   readonly readyState: number;
   binaryType: string;
   close(): void;
   send(data: Uint8Array): void;
   addEventListener(name: "message", fn: (e: { readonly data: any }) => void): void;
+  addEventListener(name: "open", fn: (e: SameEvent) => void, opts?: { once?: boolean }): void;
+  addEventListener(name: "error", fn: (e: SameEvent) => void, opts?: { once?: boolean }): void;
   addEventListener(name: string, fn: (e: SameEvent) => void): void;
-  addEventListener(name: string, fn: (e: SameEvent) => void): void;
+  removeEventListener(name: string, fn: (...args: any) => any): void;
 }
 interface SameEvent {
   [key: string]: any;
