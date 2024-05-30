@@ -13,6 +13,7 @@ export default defineConfig({
     ],
     coverage: {
       exclude: ["**/__mocks__", "**/*errors.ts", "**/*.type.ts", "**/lib/**"],
+      include: ["src"],
     },
   },
 });
