@@ -224,11 +224,11 @@ export type RpcFrameCtrl<T = RpcFrame> = {
 };
 ```
 
-#### OnceEventTrigger
+#### OnceListenable
 
 ```ts
 /** 一次性可订阅对象, 可通过 await 语法等待触发 */
-interface OnceEventTrigger<T> {
+interface OnceListenable<T> {
   /** 订阅事件。如果事件已触发完成则抛出异常 */
   then(resolve: Listener<T>, reject: (data?: any) => void): void;
   /** 与 then 类似，它会返回 resolve 函数 */
@@ -245,11 +245,6 @@ interface OnceEventTrigger<T> {
   off(key: object): boolean;
   /** 返回一个 promise，在emit() 后 resolve, 在 emit() Error 后 reject */
   getPromise(signal?: BaseAbortSignal): Promise<T>;
-  /* 触发事件 */
-  emit(arg: T): number;
-  /* 以异常触发事件 */
-  emitError(err: any): number;
-
   // 事件是否已经被触发
   done: boolean;
 }
