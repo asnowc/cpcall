@@ -1,10 +1,10 @@
-[![ESM-only package][package]][package-url]
+[![ESM package][package]][package-url]
 [![NPM version][npm]][npm-url]
 [![Node version][node]][node-url]
 [![Install size][size]][size-url]
 [![Build status][build]][build-url]
 
-[package]: https://img.shields.io/badge/package-ESM--only-ffe536.svg
+[package]: https://img.shields.io/badge/package-ESM-ffe536.svg
 [package-url]: https://nodejs.org/api/esm.html
 [npm]: https://img.shields.io/npm/v/cpcall.svg
 [npm-url]: https://npmjs.com/package/cpcall
@@ -116,6 +116,7 @@ export function createWebStreamCpc(stream: {
 
 ````ts
 interface CpCall {
+  constructor(cpcSource: CpcFrameSource);
   /**
    * 设置可调用函数
    * @param cmd 方法名称
@@ -204,23 +205,37 @@ interface CpCaller {
 }
 ```
 
-##### RpcFrameCtrl
+##### CpcFrameSource
 
 ```ts
-/** CpCall 构造函数依赖的接口。你可以实现自定义编解码器，或数据帧转发服务 */
-export type RpcFrameCtrl<T = RpcFrame> = {
-  /** 一个异步迭代器，它应迭代 cpcall 数据帧 */
-  frameIter: AsyncIterable<T>;
+/** CpCall 构造函数依赖的接口。你可以实现自定义编解码器，或数据帧转发服务
+ */
+type CpcFrameSource<T = RpcFrame> = {
   /** 当需要发送数据帧时被调用 */
   sendFrame(frame: T): void;
-  /**
-   * 在 closeEvent 发出前调用
+  /** 初始化时被调用，在构造函数是，它是同步调用的。
+   * @param controller - CpCall 实例的控制器
    */
-  close?(): Promise<void> | void;
-  /**
-   *  当用户手动调用 dispose() 时或迭代器抛出异常时调用
+  init(controller: CpcController<T>): void;
+  /** 实例正常关闭时调用。它在 closeEvent 触发前被调用，如果返回Promise，则在 Promise 解决后 触发 closeEvent
+   * @remarks 如果调用时抛出异常，那么CpCall 的 closeEvent 将触发异常（非正常关闭）
    */
-  dispose?(reason?: any): void;
+  close(): void | Promise<void>;
+  /** 当用户手动调用 dispose() 时或出现异常时调用  */
+  dispose(reason?: any): void;
+};
+```
+
+#### CpcController
+
+```ts
+/**  CpCall 实例的控制器
+ */
+type CpcController<T = RpcFrame> = {
+  /** 当获取到帧时，应当调用它传给 CpCall 内部 */
+  nextFrame(frame: T): void;
+  /** 如果不会再有更多帧，应该调用它，CpCall 内部会判断是正常关闭还是异常关闭 */
+  endFrame(error?: any): void;
 };
 ```
 
