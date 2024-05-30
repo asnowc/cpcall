@@ -1,5 +1,5 @@
 import type { FrameType } from "./const.ts";
-import type { OnceEventTrigger } from "evlib";
+import type { OnceListenable } from "evlib";
 
 export namespace Frame {
   export type Call = [type: FrameType.call, args: any[]];
@@ -46,7 +46,7 @@ export interface CpCaller {
   ended: 0 | 1 | 2 | 3;
 
   /** ended 变为 2 时触发 */
-  disableEvent: OnceEventTrigger<void>;
+  disableEvent: OnceListenable<void> & { getPromise(): Promise<void> };
   /** ended 变为 3 时触发 */
-  finishEvent: OnceEventTrigger<void>;
+  finishEvent: OnceListenable<void> & { getPromise(): Promise<void> };
 }

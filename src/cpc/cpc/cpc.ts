@@ -1,5 +1,5 @@
 import { CalleeCore, CallerCore, RpcFrame, CpCaller } from "../core/mod.ts";
-import { OnceEventTrigger } from "evlib";
+import { OnceEventTrigger, OnceListenable } from "evlib";
 import { RpcFn, genRpcCmdMap } from "./class_gen.ts";
 import { CpcByteFrameSource } from "./ByteFrameCtrl.ts";
 import { createObjectChain, getChainPath } from "evlib/object";
@@ -74,7 +74,7 @@ export abstract class CpCallBase {
         this.dispose(error);
         return;
       }
-      this.closeEvent.emit();
+      this.#closeEvent.emit();
     };
     caller.finishEvent.then(onClose);
     callee.finishEvent.then(onClose);
@@ -114,8 +114,9 @@ export abstract class CpCallBase {
   /** CpCaller 对象**/
   caller: CpCaller;
   #errored: any;
+  readonly #closeEvent = new OnceEventTrigger<void>();
   /** 关闭事件 */
-  readonly closeEvent = new OnceEventTrigger<void>();
+  readonly closeEvent: OnceListenable<void> & { getPromise(): Promise<void> } = this.#closeEvent;
   /** 向对方发送 disable 帧
    * @remarks
    * 调用后，对方如果继续发起远程调用，将会响应给对方异常。
@@ -138,7 +139,7 @@ export abstract class CpCallBase {
       } catch (error) {}
     }
     Promise.resolve().then(() => {
-      this.closeEvent.emitError(this.#errored);
+      this.#closeEvent.emitError(this.#errored);
     });
   }
 }
