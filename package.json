@@ -1,6 +1,6 @@
 {
   "name": "cpcall",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "",
   "type": "module",
   "scripts": {
@@ -15,7 +15,7 @@
     "ci:check-api": "api-extractor run -c api-extractor.jsonc -v"
   },
   "dependencies": {
-    "jbod": "^0.4.6"
+    "jbod": "^0.4.7"
   },
   "devDependencies": {
     "@eavid/lib-dev": "^0.0.3",
@@ -37,7 +37,8 @@
   },
   "publishConfig": {
     "access": "public",
-    "registry": "https://registry.npmjs.org"
+    "registry": "https://registry.npmjs.org",
+    "provenance": true
   },
   "files": [
     "dist/**/*.js",
