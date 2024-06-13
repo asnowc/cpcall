@@ -2,6 +2,10 @@
 
 ### 0.5.x
 
+### 0.5.2
+
+fix(core): 编码 string 类型编码时，遇到较大的 Unicode 时编码错误
+
 #### 0.5.0
 
 BREAKING CHANGE: end(true) 改为 dispose()
