@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
 
-  "mainEntryPointFilePath": "<projectFolder>/api/index.d.ts",
+  "mainEntryPointFilePath": "<projectFolder>/build/api_extract/index.d.ts",
   "compiler": {
     "tsconfigFilePath": "<projectFolder>/tsconfig.json",
     "overrideTsconfig": {
@@ -31,35 +31,20 @@
   "apiReport": {
     "enabled": true,
     "reportFileName": "<unscopedPackageName>.api.md",
-    "reportFolder": "<projectFolder>/api/",
-    "reportTempFolder": "<projectFolder>/api/temp/"
+    "reportFolder": "<projectFolder>/build/api_extract/",
+    "reportTempFolder": "<projectFolder>/temp/"
     // "includeForgottenExports": false
   },
 
   "docModel": {
     "enabled": false
-    // "apiJsonFilePath": "<projectFolder>/temp/<unscopedPackageName>.api.json",
-    // "includeForgottenExports": false,
-    // "projectFolderUrl": "http://github.com/path/to/your/projectFolder"
   },
   "dtsRollup": {
-    "enabled": false,
-    // "untrimmedFilePath": "<projectFolder>/dist/<unscopedPackageName>.d.ts",
-    // "alphaTrimmedFilePath": "<projectFolder>/dist/<unscopedPackageName>-alpha.d.ts",
-    // "betaTrimmedFilePath": "<projectFolder>/dist/<unscopedPackageName>-beta.d.ts",
-    // "publicTrimmedFilePath": "<projectFolder>/dist/<unscopedPackageName>-public.d.ts",
-    "omitTrimmingComments": true
+    "enabled": false
   },
 
   "tsdocMetadata": {
     "enabled": false
-    // "tsdocMetadataFilePath": "<projectFolder>/dist/tsdoc-metadata.json"
   },
-  "messages": {
-    "tsdocMessageReporting": {
-      "tsdoc-undefined-tag": {
-        "logLevel": "warning"
-      }
-    }
-  }
+  "messages": {}
 }
