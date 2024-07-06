@@ -33,7 +33,7 @@ export class CallerCore implements CpCaller {
     if (this.closed) return;
     if (this.#end === 0) {
       this.#end = 1;
-      this.sendCtrl.sendFrame([FrameType.end]);
+      this.sendCtrl.sendFrame({ type: FrameType.end });
     }
     this.forceAbort(reason);
   }
@@ -41,19 +41,19 @@ export class CallerCore implements CpCaller {
     if (this.closed) return Promise.resolve();
     if (this.#end === 0) {
       this.#end = 1;
-      this.sendCtrl.sendFrame([FrameType.end]);
+      this.sendCtrl.sendFrame({ type: FrameType.end });
     }
     return this.finishEvent.getPromise();
   }
 
   call(...args: any[]) {
     if (this.#end) return Promise.reject(new Error("Cpc is ended"));
-    this.sendCtrl.sendFrame([FrameType.call, args]);
+    this.sendCtrl.sendFrame({ type: FrameType.call, args });
     return this.#returnQueue.add({});
   }
   exec(...args: any[]) {
     if (this.#end) return;
-    this.sendCtrl.sendFrame([FrameType.exec, args]);
+    this.sendCtrl.sendFrame({ type: FrameType.exec, args });
   }
 
   readonly finishEvent = new OnceEventTrigger<void>();
@@ -62,21 +62,21 @@ export class CallerCore implements CpCaller {
   onFrame(frame: CalleeFrame) {
     if (this.closed) return false;
     let err: Error | void;
-    switch (frame[0]) {
+    switch (frame.type) {
       case FrameType.promise:
-        err = this.onCpcReturnPromise(frame[1]);
+        err = this.onCpcReturnPromise(frame.id);
         break;
       case FrameType.reject:
-        err = this.onCpcPromiseChange(frame[1], frame[2], true);
+        err = this.onCpcPromiseChange(frame.id, frame.value, true);
         break;
       case FrameType.resolve:
-        err = this.onCpcPromiseChange(frame[1], frame[2], false);
+        err = this.onCpcPromiseChange(frame.id, frame.value, false);
         break;
       case FrameType.return:
-        err = this.onCpcReturn(frame[1]);
+        err = this.onCpcReturn(frame.value);
         break;
       case FrameType.throw:
-        err = this.onCpcReturn(frame[1], true);
+        err = this.onCpcReturn(frame.value, true);
         break;
       case FrameType.disable:
         err = this.onCpcDisable();

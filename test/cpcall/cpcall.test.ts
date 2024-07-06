@@ -15,13 +15,13 @@ describe("CpCall", function () {
   test("close caller 和 callee 主动触发", async function () {
     cpc.caller.dispose();
     cpc.disable();
-    hd.nextFrame([FrameType.call, []]);
+    hd.nextFrame({ type: FrameType.call, args: [] });
     await afterTime();
     expect(cpc.closeEvent.done).toBeTruthy();
   });
   test("被动触发", async function () {
-    hd.nextFrame([FrameType.end]);
-    hd.nextFrame([FrameType.disable]);
+    hd.nextFrame({ type: FrameType.end });
+    hd.nextFrame({ type: FrameType.disable });
     await afterTime();
     expect(cpc.caller.finishEvent.done, "caller finish").toBeTruthy();
     hd.endFrame();

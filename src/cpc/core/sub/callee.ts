@@ -34,14 +34,14 @@ export class CalleeCore {
    */
   onFrame(frame: RpcFrame): boolean;
   onFrame(chunk: CallerFrame) {
-    switch (chunk[0]) {
+    switch (chunk.type) {
       case FrameType.call:
         if (this.status > 0) return true; // 丢弃
-        this.onCpcCall(chunk[1]);
+        this.onCpcCall(chunk.args);
         break;
       case FrameType.exec:
         if (this.status > 0) return true; // 丢弃
-        this.onCpcExec(chunk[1]);
+        this.onCpcExec(chunk.args);
         break;
       case FrameType.end:
         if (this.status > 0) return true; // 丢弃
@@ -81,26 +81,26 @@ export class CalleeCore {
     try {
       res = this.onCall.apply(undefined, args);
     } catch (error) {
-      this.sendCtrl.sendFrame([FrameType.throw, error] as Frame.Throw);
+      this.sendCtrl.sendFrame({ type: FrameType.throw, value: error } satisfies Frame.Throw);
       return;
     }
     if (res instanceof Promise) this.handelReturnPromise(res);
-    else this.sendCtrl.sendFrame([FrameType.return, res] as Frame.Return);
+    else this.sendCtrl.sendFrame({ type: FrameType.return, value: res } satisfies Frame.Return);
   }
   private onCpcEnd() {
     if (this.status !== 0) return;
-    this.sendCtrl.sendFrame([FrameType.disable] as Frame.Finish);
+    this.sendCtrl.sendFrame({ type: FrameType.disable } satisfies Frame.Finish);
     this.#fin = 1;
     return this.testClose();
   }
 
   private handelReturnPromise(pms: Promise<any>) {
     const id = this.#sendingUniqueKey.allowKeySet(pms);
-    this.sendCtrl.sendFrame([FrameType.promise, id]);
+    this.sendCtrl.sendFrame({ type: FrameType.promise, id });
     return pms
       .then(
-        (value) => [FrameType.resolve, id, value] as Frame.Resolve,
-        (err) => [FrameType.reject, id, err] as Frame.Reject
+        (value) => ({ type: FrameType.resolve, id, value } satisfies Frame.Resolve),
+        (err) => ({ type: FrameType.reject, id, value: err } satisfies Frame.Reject)
       )
       .then((frame) => {
         this.#sendingUniqueKey.delete(id);

@@ -1,5 +1,5 @@
 import { FrameType } from "../const.ts";
-import { RpcFrame } from "../type.ts";
+import { RpcFrame, Frame } from "../type.ts";
 import JBOD, { DataType, varints, UnsupportedDataTypeError, DataWriter } from "jbod";
 import { StepsByteParser, LengthByteParser, ByteParser } from "evlib/async";
 
@@ -76,37 +76,37 @@ export function decodeCpcFrame(buf: Uint8Array, offset = 0): { frame: RpcFrame; 
 
   if (type === FrameType.call || type === FrameType.exec) {
     const res = JBOD.decode(buf, offset, DataType.anyArray);
-    frame = [type, res.data];
+    frame = { type, args: res.data } satisfies Frame.Call | Frame.Exec;
     offset = res.offset;
   } else if (type === FrameType.reject || type === FrameType.resolve) {
     const res = varints.decodeU32D(buf, offset);
     offset += res.byte;
     const value = JBOD.decode(buf, offset);
-    frame = [type, res.value, value.data];
+    frame = { type, id: res.value, value: value.data } satisfies Frame.Reject | Frame.Resolve;
     offset = value.offset;
   } else {
     switch (type) {
       case FrameType.return: {
         const res = JBOD.decode(buf, offset);
-        frame = [type, res.data];
+        frame = { type, value: res.data };
         offset = res.offset;
         return { frame, offset };
       }
       case FrameType.throw: {
         const res = JBOD.decode(buf, offset);
-        frame = [type, res.data];
+        frame = { type, value: res.data };
         offset = res.offset;
         return { frame, offset };
       }
       case FrameType.promise: {
         const res = varints.decodeU32D(buf, offset);
         offset += res.byte;
-        return { frame: [type, res.value], offset };
+        return { frame: { type, id: res.value }, offset };
       }
       case FrameType.end:
-        return { frame: [FrameType.end], offset };
+        return { frame: { type: FrameType.end }, offset };
       case FrameType.disable:
-        return { frame: [FrameType.disable], offset };
+        return { frame: { type: FrameType.disable }, offset };
       default:
         throw new UnsupportedDataTypeError(type);
     }
@@ -119,23 +119,23 @@ export function decodeCpcFrame(buf: Uint8Array, offset = 0): { frame: RpcFrame; 
 export class CpcFrameEncoder {
   readonly type: FrameType;
   constructor(frame: RpcFrame) {
-    this.type = frame[0];
-    const type = this.type;
+    const type = frame.type;
+    this.type = type;
     if (type === FrameType.call || type === FrameType.exec) {
-      this.pre = JBOD.createContentWriter(frame[1]);
+      this.pre = JBOD.createContentWriter(frame.args);
       this.byteLength = this.pre.byteLength + 1;
     } else if (type === FrameType.reject || type === FrameType.resolve) {
-      const len2 = varints.calcU32DByte(frame[1]);
-      const pre = JBOD.createWriter(frame[2]);
+      const len2 = varints.calcU32DByte(frame.id);
+      const pre = JBOD.createWriter(frame.value);
       this.byteLength = 1 + pre.byteLength + len2;
-      this.pre = { id: frame[1], body: pre };
+      this.pre = { id: frame.id, body: pre };
     } else {
       if (type === FrameType.return || type === FrameType.throw) {
-        this.pre = JBOD.createWriter(frame[1]);
+        this.pre = JBOD.createWriter(frame.value);
         this.byteLength = this.pre.byteLength + 1;
       } else if (type === FrameType.promise) {
-        this.pre = frame[1];
-        this.byteLength = varints.calcU32DByte(frame[1]) + 1;
+        this.pre = frame.id;
+        this.byteLength = varints.calcU32DByte(frame.id) + 1;
       } else {
         this.byteLength = 1;
       }

@@ -13,26 +13,26 @@ describe("caller", function () {
       const args = [1, "ab", null];
       const res = caller.call(...args);
 
-      expect(onSendFrame.mock.calls[0][0], "call frame").toEqual([FrameType.call, args] as CallerFrame);
+      expect(onSendFrame.mock.calls[0][0], "call frame").toEqual({ type: FrameType.call, args } satisfies CallerFrame);
 
-      caller.onFrame([FrameType.return, 98] as CalleeFrame);
+      caller.onFrame({ type: FrameType.return, value: 98 } satisfies CalleeFrame);
       await expect(res, "return").resolves.toBe(98);
     });
     test("call-throw", async function () {
       const res = caller.call();
-      caller.onFrame([FrameType.throw, "throw-value"] as CalleeFrame);
+      caller.onFrame({ type: FrameType.throw, value: "throw-value" } satisfies CalleeFrame);
       await expect(res, "return").rejects.toBe("throw-value");
     });
     test("call-resolve", async function () {
       const res = caller.call();
-      caller.onFrame([FrameType.promise, 32] as CalleeFrame);
-      caller.onFrame([FrameType.resolve, 32, "abc"] as CalleeFrame);
+      caller.onFrame({ type: FrameType.promise, id: 32 } satisfies CalleeFrame);
+      caller.onFrame({ type: FrameType.resolve, id: 32, value: "abc" } satisfies CalleeFrame);
       await expect(res, "return").resolves.toBe("abc");
     });
     test("call-reject", async function () {
       const res = caller.call();
-      caller.onFrame([FrameType.promise, 32] as CalleeFrame);
-      caller.onFrame([FrameType.reject, 32, "abc"] as CalleeFrame);
+      caller.onFrame({ type: FrameType.promise, id: 32 } satisfies CalleeFrame);
+      caller.onFrame({ type: FrameType.reject, id: 32, value: "abc" } satisfies CalleeFrame);
       await expect(res, "return").rejects.toBe("abc");
     });
   });
@@ -61,19 +61,19 @@ describe("caller", function () {
         expect(caller.ended).toBe(1);
         expect(caller.waitingNum).toBe(1);
 
-        expect(sendFrameMock.calls[1][0], "发送 end 帧").toEqual([FrameType.end] as Frame.End);
+        expect(sendFrameMock.calls[1][0], "发送 end 帧").toEqual({ type: FrameType.end } satisfies Frame.End);
 
         expect(onDisable).not.toBeCalled();
         expect(onFinish).not.toBeCalled();
-        caller.onFrame([FrameType.promise, 2]); //相应返回 promise
-        caller.onFrame([FrameType.disable]); // finish 帧
+        caller.onFrame({ type: FrameType.promise, id: 2 }); //相应返回 promise
+        caller.onFrame({ type: FrameType.disable }); // finish 帧
 
         expect(caller.ended).toBe(2);
         expect(onDisable, "收到 finish 帧后触发 onEnd 事件").toBeCalled();
         expect(onFinish).not.toBeCalled();
         expect(caller.disableEvent.done).toBeTruthy();
 
-        caller.onFrame([FrameType.resolve, 2, "r1"]); // r1 resolve
+        caller.onFrame({ type: FrameType.resolve, id: 2, value: "r1" }); // r1 resolve
         expect(onFinish, "队列清空后触发 close").toBeCalled();
         expect(caller.finishEvent.done).toBeTruthy();
         await expect(r1).resolves.toBe("r1");
@@ -82,7 +82,7 @@ describe("caller", function () {
         expect(caller.ended).toBe(0);
 
         const r1 = caller.call(0); //发起一个调用
-        caller.onFrame([FrameType.promise, 0]); //返回Promise id
+        caller.onFrame({ type: FrameType.promise, id: 0 }); //返回Promise id
         const r2 = caller.call(1); //发起另一个调用
 
         caller.dispose();
@@ -94,9 +94,9 @@ describe("caller", function () {
         await expect(r1).rejects.toThrowError();
         await expect(r2).rejects.toThrowError();
 
-        caller.onFrame([FrameType.return, 2]); //r2 的返回帧，应被丢弃
-        caller.onFrame([FrameType.disable]); //应被丢弃
-        caller.onFrame([FrameType.resolve, 2, "r1"]); //r1的resolve 帧应被丢弃
+        caller.onFrame({ type: FrameType.return, value: 2 }); //r2 的返回帧，应被丢弃
+        caller.onFrame({ type: FrameType.disable }); //应被丢弃
+        caller.onFrame({ type: FrameType.resolve, id: 2, value: "r1" }); //r1的resolve 帧应被丢弃
 
         expect(onDisable).toBeCalledTimes(1);
         expect(onFinish).toBeCalledTimes(1);
@@ -104,18 +104,18 @@ describe("caller", function () {
     });
 
     test("错误的响应", async function () {
-      caller.onFrame([FrameType.return, "value"]); //不存在的返回值"
-      caller.onFrame([FrameType.throw, "value"]);
-      caller.onFrame([FrameType.promise, 2]);
-      caller.onFrame([FrameType.resolve, 1, "a"]);
-      caller.onFrame([FrameType.reject, 2, "b"]);
+      caller.onFrame({ type: FrameType.return, value: "value" }); //不存在的返回值"
+      caller.onFrame({ type: FrameType.throw, value: "value" });
+      caller.onFrame({ type: FrameType.promise, id: 2 });
+      caller.onFrame({ type: FrameType.resolve, id: 1, value: "a" });
+      caller.onFrame({ type: FrameType.reject, id: 2, value: "b" });
 
       const r1 = caller.call();
       const r2 = caller.call();
-      caller.onFrame([FrameType.promise, 1]);
-      caller.onFrame([FrameType.promise, 1]);
+      caller.onFrame({ type: FrameType.promise, id: 1 });
+      caller.onFrame({ type: FrameType.promise, id: 1 });
       await expect(r2).rejects.toThrowError();
-      caller.onFrame([FrameType.resolve, 1, "r1"]);
+      caller.onFrame({ type: FrameType.resolve, id: 1, value: "r1" });
       caller.dispose();
 
       await expect(r1).resolves.toBe("r1");
@@ -146,9 +146,9 @@ describe("callee", function () {
       onCall.mockImplementation((...args) => args);
 
       const args = [1, "ab", null];
-      callee.onFrame([FrameType.call, args]);
+      callee.onFrame({ type: FrameType.call, args });
 
-      expect(sendMock.calls[0][0], "return").toEqual([FrameType.return, args]);
+      expect(sendMock.calls[0][0], "return").toEqual({ type: FrameType.return, value: args } satisfies Frame.Return);
     });
     test("call-throw", async function () {
       const err = new Error("err");
@@ -157,33 +157,41 @@ describe("callee", function () {
         throw err;
       });
 
-      callee.onFrame([FrameType.call, []]);
+      callee.onFrame({ type: FrameType.call, args: [] });
 
-      const throwFrame = sendMock.calls[0][0];
-      expect(throwFrame[0]).toBe(FrameType.throw);
-      expect(throwFrame[1]).toBeInstanceOf(Error);
+      const throwFrame: Frame.Throw = sendMock.calls[0][0];
+      expect(throwFrame.type).toBe(FrameType.throw);
+      expect(throwFrame.value).toBeInstanceOf(Error);
     });
     test("call-resolve", async function () {
       onCall.mockImplementation(async (...args) => args);
 
       const args = [1, "ab"];
-      callee.onFrame([FrameType.call, args]);
+      callee.onFrame({ type: FrameType.call, args });
       const id = 0;
-      expect(sendMock.calls[0][0], "promise").toEqual([FrameType.promise, id]);
+      expect(sendMock.calls[0][0], "promise").toEqual({ type: FrameType.promise, id } satisfies Frame.ReturnPromise);
       await afterTime();
 
-      expect(sendMock.calls[1][0], "resolve").toEqual([FrameType.resolve, id, args]);
+      expect(sendMock.calls[1][0], "resolve").toEqual({
+        type: FrameType.resolve,
+        id,
+        value: args,
+      } satisfies Frame.Resolve);
     });
     test("call-reject", async function () {
       onCall.mockImplementation((...args) => Promise.reject(args));
 
       const args = [1, "ab"];
-      callee.onFrame([FrameType.call, args]);
+      callee.onFrame({ type: FrameType.call, args });
       const id = 0;
-      expect(sendMock.calls[0][0], "promise").toEqual([FrameType.promise, id]);
+      expect(sendMock.calls[0][0], "promise").toEqual({ type: FrameType.promise, id } satisfies Frame.ReturnPromise);
       await afterTime();
 
-      expect(sendMock.calls[1][0], "reject").toEqual([FrameType.reject, id, args]);
+      expect(sendMock.calls[1][0], "reject").toEqual({
+        type: FrameType.reject,
+        id,
+        value: args,
+      } satisfies Frame.Reject);
     });
   });
   describe("disable", function () {
