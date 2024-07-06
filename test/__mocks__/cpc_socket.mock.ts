@@ -10,7 +10,7 @@ export function getNoResponseCpc() {
 }
 export type InternalCpcall = CpCall & {
   name: string;
-  calleePromiseNum: number;
+  responsePromiseNum: number;
 };
 /** 模拟两个已连接的 CpcSocket */
 export function createConnectedCpc(clientFn?: object, serverFn?: object) {

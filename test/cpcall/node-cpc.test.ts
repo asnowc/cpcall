@@ -14,10 +14,10 @@ describe("状态更改/cpc_socket", function () {
   });
   test("安全关闭", async function () {
     const { serverCpc, clientCpc, clientSocket, serverSocket } = mock;
-    serverCpc.caller.end();
-    clientCpc.caller.end();
+    serverCpc.caller.endCall();
+    clientCpc.caller.endCall();
 
-    await Promise.all([serverCpc.closeEvent.getPromise(), clientCpc.closeEvent.getPromise()]);
+    await Promise.all([serverCpc.onClose.getPromise(), clientCpc.onClose.getPromise()]);
 
     await afterTime();
     expect(clientSocket.errored).toBeFalsy();
@@ -35,18 +35,18 @@ describe("状态更改/cpc_socket", function () {
     clientSocket.end();
     await afterTime();
     expect(serverSocket.closed).toBeTruthy();
-    expect(serverCpc.closeEvent.done).toBeTruthy();
+    expect(serverCpc.onClose.done).toBeTruthy();
 
     expect(clientSocket.closed).toBeTruthy();
-    expect(clientCpc.closeEvent.done).toBeTruthy();
+    expect(clientCpc.onClose.done).toBeTruthy();
   });
   test("外部Duplex 销毁", async function () {
     const { serverCpc, clientCpc, clientSocket, serverSocket } = mock;
     const onSafeClose = vi.fn();
     const clientClose = vi.fn();
     const serverClose = vi.fn();
-    serverCpc.closeEvent.then(onSafeClose, clientClose);
-    clientCpc.closeEvent.then(onSafeClose, serverClose);
+    serverCpc.onClose.then(onSafeClose, clientClose);
+    clientCpc.onClose.then(onSafeClose, serverClose);
     // const err = new Error("外部Duplex 销毁");
     clientSocket.destroy();
     await afterTime();
@@ -56,8 +56,8 @@ describe("状态更改/cpc_socket", function () {
 
     expect(serverClose.mock.calls[0][0]).instanceof(Error);
     expect(clientClose.mock.calls[0][0]).instanceof(Error);
-    expect(clientCpc.closeEvent.done).toBeTruthy();
-    expect(serverCpc.closeEvent.done).toBeTruthy();
+    expect(clientCpc.onClose.done).toBeTruthy();
+    expect(serverCpc.onClose.done).toBeTruthy();
   });
   test("有等待响应,但对方已销毁流", async function () {
     const { serverCpc, clientCpc, clientSocket, serverSocket } = mock;
@@ -72,8 +72,8 @@ describe("状态更改/cpc_socket", function () {
     expect(serverSocket.destroyed, "server socket 销毁").toBeTruthy();
 
     await afterTime();
-    expect(serverCpc.closeEvent.done, "server emitted close").toBeTruthy();
-    expect(clientCpc.closeEvent.done, "client emitted close").toBeTruthy();
+    expect(serverCpc.onClose.done, "server emitted close").toBeTruthy();
+    expect(clientCpc.onClose.done, "client emitted close").toBeTruthy();
 
     await expect(res).resolves.toBe(err);
   });

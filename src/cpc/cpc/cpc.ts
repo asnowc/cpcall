@@ -75,14 +75,14 @@ export abstract class CpCallBase {
       }
       this.#closeEvent.emit();
     };
-    caller.finishEvent.then(onClose);
-    callee.finishEvent.then(onClose);
+    caller.onCallFinish.then(onClose);
+    callee.onServeFinish.then(onClose);
   }
   protected _getFn(cmd: string): RpcFn | undefined {
     return this._licensers.get(cmd);
   }
   private get _closed() {
-    return this.#callee.status === 2 && this.#caller.closed;
+    return this.#callee.status === 2 && this.#caller.callerFinished;
   }
 
   protected _licensers = new Map<string, RpcFn>();
@@ -106,7 +106,7 @@ export abstract class CpCallBase {
   }
   readonly #callee: CalleeCore;
   readonly #caller: CallerCore;
-  protected get calleePromiseNum() {
+  protected get responsePromiseNum() {
     return this.#callee.promiseNum;
   }
   /** CpCaller 对象**/
@@ -114,14 +114,14 @@ export abstract class CpCallBase {
   #errored: any;
   readonly #closeEvent = new OnceEventTrigger<void>();
   /** 关闭事件 */
-  readonly closeEvent: OnceListenable<void> & { getPromise(): Promise<void> } = this.#closeEvent;
-  /** 向对方发送 disable 帧
+  readonly onClose: OnceListenable<void> & { getPromise(): Promise<void> } = this.#closeEvent;
+  /** 向对方发送 endServe 帧
    * @remarks
    * 调用后，对方如果继续发起远程调用，将会响应给对方异常。
    * 为保证连接能正常关闭，当不再提供调用服务时，应手动调用。
    **/
-  disable() {
-    return this.#callee.disable();
+  endServe() {
+    return this.#callee.endServe();
   }
   /** 销毁连接
    * @returns 返回 CpCall 完全关闭后解决的 Promise
@@ -129,8 +129,8 @@ export abstract class CpCallBase {
   dispose(reason: any = null): void {
     if (this.#errored !== undefined) return; //已经销毁过或已关闭
     this.#errored = reason;
-    this.#callee.forceAbort();
-    this.#caller.forceAbort(reason);
+    this.#callee.abortServe();
+    this.#caller.abortCall(reason);
     if (this.frameSource.dispose) {
       try {
         this.frameSource.dispose(reason);
@@ -247,7 +247,7 @@ const cpcallRemoteObject = Symbol("cpcall remote object");
 
 const callerProxyPrototype = {
   [Symbol.asyncDispose](): Promise<void> {
-    return (this as CallerProxyPrototype)[cpcallRemoteObject].caller.end();
+    return (this as CallerProxyPrototype)[cpcallRemoteObject].caller.endCall();
   },
 };
 

@@ -51,16 +51,10 @@ class CpCall extends CpCallBase {
 // @internal
 abstract class CpCallBase {
     constructor(frameSource: CpcFrameSource<RpcFrame>);
-    // (undocumented)
-    protected get calleePromiseNum(): number;
     caller: CpCaller;
     clearFn(): void;
-    // Warning: (ae-forgotten-export) The symbol "OnceListenable" needs to be exported by the entry point index.d.ts
-    readonly closeEvent: OnceListenable<void> & {
-        getPromise(): Promise<void>;
-    };
-    disable(): Promise<void>;
     dispose(reason?: any): void;
+    endServe(): Promise<void>;
     getAllFn(): IterableIterator<string>;
     // Warning: (ae-forgotten-export) The symbol "RpcFn" needs to be exported by the entry point index.d.ts
     //
@@ -68,7 +62,13 @@ abstract class CpCallBase {
     protected _getFn(cmd: string): RpcFn | undefined;
     // (undocumented)
     protected _licensers: Map<string, RpcFn>;
+    // Warning: (ae-forgotten-export) The symbol "OnceListenable" needs to be exported by the entry point index.d.ts
+    readonly onClose: OnceListenable<void> & {
+        getPromise(): Promise<void>;
+    };
     removeFn(cmd: any): void;
+    // (undocumented)
+    protected get responsePromiseNum(): number;
     // Warning: (ae-forgotten-export) The symbol "CmdFn" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "FnOpts" needs to be exported by the entry point index.d.ts
     setFn(cmd: any, fn: CmdFn, opts?: FnOpts): void;
@@ -77,16 +77,13 @@ abstract class CpCallBase {
 // @public (undocumented)
 interface CpCaller {
     call(...args: any[]): Promise<any>;
-    readonly disableEvent: OnceListenable<void> & {
-        getPromise(): Promise<void>;
-    };
+    callEnded: 0 | 1 | 2 | 3;
     dispose(reason?: any): void;
-    end(): Promise<void>;
-    ended: 0 | 1 | 2 | 3;
+    endCall(): Promise<void>;
     exec(...args: any[]): void;
-    readonly finishEvent: OnceListenable<void> & {
-        getPromise(): Promise<void>;
-    };
+    readonly onCallFinish: OnceEvent<void>;
+    // Warning: (ae-forgotten-export) The symbol "OnceEvent" needs to be exported by the entry point index.d.ts
+    readonly onRemoteServeEnd: OnceEvent<void>;
 }
 
 // @public
@@ -146,9 +143,9 @@ enum FrameType {
     // (undocumented)
     call = 1,
     // (undocumented)
-    disable = 255,
+    endCall = 254,
     // (undocumented)
-    end = 254,
+    endServe = 255,
     // (undocumented)
     error = 7,
     // (undocumented)

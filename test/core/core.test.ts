@@ -48,38 +48,38 @@ describe("caller", function () {
       onFinish.mockReset();
       caller = new CallerCore({ sendFrame: onSendFrame });
 
-      caller.disableEvent.then(onDisable);
-      caller.finishEvent.then(onFinish);
+      caller.onRemoteServeEnd.then(onDisable);
+      caller.onCallFinish.then(onFinish);
     });
     describe("end", function () {
       test("end()", async function () {
-        expect(caller.ended).toBe(0);
+        expect(caller.callEnded).toBe(0);
 
         const r1 = caller.call(0); //发起一个调用
 
-        caller.end();
-        expect(caller.ended).toBe(1);
+        caller.endCall();
+        expect(caller.callEnded).toBe(1);
         expect(caller.waitingNum).toBe(1);
 
-        expect(sendFrameMock.calls[1][0], "发送 end 帧").toEqual({ type: FrameType.end } satisfies Frame.End);
+        expect(sendFrameMock.calls[1][0], "发送 end 帧").toEqual({ type: FrameType.endCall } satisfies Frame.EndCall);
 
         expect(onDisable).not.toBeCalled();
         expect(onFinish).not.toBeCalled();
         caller.onFrame({ type: FrameType.promise, id: 2 }); //相应返回 promise
-        caller.onFrame({ type: FrameType.disable }); // finish 帧
+        caller.onFrame({ type: FrameType.endServe }); // finish 帧
 
-        expect(caller.ended).toBe(2);
+        expect(caller.callEnded).toBe(2);
         expect(onDisable, "收到 finish 帧后触发 onEnd 事件").toBeCalled();
         expect(onFinish).not.toBeCalled();
-        expect(caller.disableEvent.done).toBeTruthy();
+        expect(caller.onRemoteServeEnd.done).toBeTruthy();
 
         caller.onFrame({ type: FrameType.resolve, id: 2, value: "r1" }); // r1 resolve
         expect(onFinish, "队列清空后触发 close").toBeCalled();
-        expect(caller.finishEvent.done).toBeTruthy();
+        expect(caller.onCallFinish.done).toBeTruthy();
         await expect(r1).resolves.toBe("r1");
       });
       test("end(true)", async function () {
-        expect(caller.ended).toBe(0);
+        expect(caller.callEnded).toBe(0);
 
         const r1 = caller.call(0); //发起一个调用
         caller.onFrame({ type: FrameType.promise, id: 0 }); //返回Promise id
@@ -87,7 +87,7 @@ describe("caller", function () {
 
         caller.dispose();
         expect(caller.waitingNum, "等待队列被清空").toBe(0);
-        expect(caller.ended).toBe(3);
+        expect(caller.callEnded).toBe(3);
 
         expect(onDisable).toBeCalledTimes(1);
         expect(onFinish).toBeCalledTimes(1);
@@ -95,7 +95,7 @@ describe("caller", function () {
         await expect(r2).rejects.toThrowError();
 
         caller.onFrame({ type: FrameType.return, value: 2 }); //r2 的返回帧，应被丢弃
-        caller.onFrame({ type: FrameType.disable }); //应被丢弃
+        caller.onFrame({ type: FrameType.endServe }); //应被丢弃
         caller.onFrame({ type: FrameType.resolve, id: 2, value: "r1" }); //r1的resolve 帧应被丢弃
 
         expect(onDisable).toBeCalledTimes(1);
@@ -137,9 +137,7 @@ describe("callee", function () {
     onCall.mockReset();
 
     onFinish.mockReset();
-    // onDisable.mockReset();
-    callee.finishEvent.then(onFinish);
-    // callee.$disable.on(onDisable);
+    callee.onServeFinish.then(onFinish);
   });
   describe("call-response", function () {
     test("call-return", async function () {
@@ -194,16 +192,14 @@ describe("callee", function () {
       } satisfies Frame.Reject);
     });
   });
-  describe("disable", function () {
-    test("disable()", function () {
-      callee.disable();
-      // expect(onDisable).toBeCalled();
-      expect(callee.disable).toBeTruthy();
-      // expect(callee.$disable.done).toBeTruthy();
+  describe("endServe", function () {
+    test("endServe()", function () {
+      callee.endServe();
+      expect(callee.endServe).toBeTruthy();
 
       //不存在返回队列自动结束
       expect(onFinish).toBeCalled();
-      expect(callee.finishEvent.done).toBeTruthy();
+      expect(callee.onServeFinish.done).toBeTruthy();
     });
   });
 });

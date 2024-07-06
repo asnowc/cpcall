@@ -27,16 +27,16 @@ test("init 同步被调用", function () {
   expect(ctrl.init).toBeCalled();
 });
 test("主动正常关闭", async function ({ cpc, ctrl }) {
-  setTimeout(() => ctrl.nextFrame({ type: FrameType.end }));
-  await cpc.disable();
-  setTimeout(() => ctrl.nextFrame({ type: FrameType.disable }));
-  await cpc.caller.end();
+  setTimeout(() => ctrl.nextFrame({ type: FrameType.endCall }));
+  await cpc.endServe();
+  setTimeout(() => ctrl.nextFrame({ type: FrameType.endServe }));
+  await cpc.caller.endCall();
 
   // 下面的帧应该被忽略
   ctrl.nextFrame({ type: FrameType.exec, args: [] });
   ctrl.nextFrame({ type: FrameType.call, args: [] });
-  ctrl.nextFrame({ type: FrameType.end });
-  ctrl.nextFrame({ type: FrameType.disable });
+  ctrl.nextFrame({ type: FrameType.endCall });
+  ctrl.nextFrame({ type: FrameType.endServe });
   ctrl.endFrame(new Error("被忽略的异常"));
   ctrl.endFrame(new Error("被忽略的异常"));
 
@@ -45,7 +45,7 @@ test("主动正常关闭", async function ({ cpc, ctrl }) {
   expect(ctrl.close).toBeCalledTimes(1);
   expect(ctrl.dispose).toBeCalledTimes(0);
   ctrl.nextFrame({ type: FrameType.call, args: ["abc"] }); //传一些错误的帧
-  expect(cpc.closeEvent.done).toBeTruthy();
+  expect(cpc.onClose.done).toBeTruthy();
 });
 
 test("主动调用 dispose()", async function ({ cpc, ctrl }) {
@@ -55,8 +55,8 @@ test("主动调用 dispose()", async function ({ cpc, ctrl }) {
   // 下面的帧应该被忽略
   ctrl.nextFrame({ type: FrameType.exec, args: [] });
   ctrl.nextFrame({ type: FrameType.call, args: [] });
-  ctrl.nextFrame({ type: FrameType.end });
-  ctrl.nextFrame({ type: FrameType.disable });
+  ctrl.nextFrame({ type: FrameType.endCall });
+  ctrl.nextFrame({ type: FrameType.endServe });
   ctrl.endFrame(new Error("被忽略的异常"));
   ctrl.endFrame(new Error("被忽略的异常"));
 
@@ -67,7 +67,7 @@ test("主动调用 dispose()", async function ({ cpc, ctrl }) {
 });
 
 test("source 异常", function ({ cpc, ctrl }) {
-  const closeEvent = cpc.closeEvent.getPromise();
+  const closeEvent = cpc.onClose.getPromise();
   const error = new Error("source error");
   ctrl.endFrame(error);
   expect(closeEvent).rejects.toThrowError(error);
@@ -75,8 +75,8 @@ test("source 异常", function ({ cpc, ctrl }) {
   // 下面的帧应该被忽略
   ctrl.nextFrame({ type: FrameType.exec, args: [] });
   ctrl.nextFrame({ type: FrameType.call, args: [] });
-  ctrl.nextFrame({ type: FrameType.end });
-  ctrl.nextFrame({ type: FrameType.disable });
+  ctrl.nextFrame({ type: FrameType.endCall });
+  ctrl.nextFrame({ type: FrameType.endServe });
   ctrl.endFrame(new Error("被忽略的异常"));
   ctrl.endFrame(new Error("被忽略的异常"));
 

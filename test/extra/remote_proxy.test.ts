@@ -1,5 +1,5 @@
 import { test, expect, vi, beforeEach } from "vitest";
-import { CpCall } from "cpcall";
+import { CpCall, CpCaller } from "cpcall";
 import { MockCpcFrameSource } from "../__mocks__/CpcMockControl.ts";
 
 interface SubCall {
@@ -17,7 +17,7 @@ const { cpc } = createCpc();
 const mockCaller = {
   call: vi.fn((...args: any[]) => args),
   exec: vi.fn(),
-  end: vi.fn(async () => {}),
+  endCall: vi.fn(async () => {}),
 };
 (cpc as any).caller = mockCaller;
 
@@ -32,7 +32,7 @@ test("空调用", async function () {
 
 test("链式远程调用", async function () {
   const caller = cpc.genCaller<TopCall>();
-  let res: any = caller.cd("a", true);
+  let res: any = await caller.cd("a", true);
   expect(res).toEqual(["cd", "a", true]);
 
   res = caller.sub.ef();
@@ -40,9 +40,8 @@ test("链式远程调用", async function () {
 });
 test("原型", async function () {
   const caller = cpc.genCaller<TopCall>();
-
   await caller.sub[Symbol.asyncDispose]();
-  expect(mockCaller.end).toBeCalledWith();
+  expect(mockCaller.endCall).toBeCalledWith();
 });
 
 test("异步函数中传递", async function () {

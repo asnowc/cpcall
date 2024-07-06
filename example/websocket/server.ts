@@ -16,7 +16,7 @@ Deno.serve({ port: 8888 }, function (req, res): Response {
 // 客户端 WebSocket 连接的回调函数
 async function onWebSocketConnect(ws: WebSocket) {
   const cpc = createWebSocketCpc(ws); // 创建 cpc 实例
-  cpc.closeEvent.then(() => console.log("cpc closed")); // rpc 断开连接事件
+  cpc.onClose.finally(() => console.log("cpc closed")); // rpc 断开连接事件
   cpc.setObject(new ServerAPi()); //设置暴露给客户端的接口
   const clientAPi = cpc.genCaller<ClientApi>(); //生成远程代理对象
 

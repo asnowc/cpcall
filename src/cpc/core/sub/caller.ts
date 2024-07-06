@@ -11,41 +11,41 @@ import {
 import type { CalleeFrame, RpcFrame, CpCaller } from "../type.ts";
 import type { SendCtrl } from "./type.ts";
 
-/** @internal */
 export class CallerCore implements CpCaller {
   constructor(private sendCtrl: SendCtrl) {}
   #end: 0 | 1 | 2 | 3 = 0;
-  get ended() {
+  get callEnded() {
     return this.#end;
   }
-  get closed() {
+  get callerFinished() {
     return this.#end === 3;
   }
-  readonly disableEvent = new OnceEventTrigger<void>();
-  forceAbort(reason?: any) {
-    if (this.closed) return;
+  readonly onRemoteServeEnd = new OnceEventTrigger<void>();
+  readonly onCallFinish = new OnceEventTrigger<void>();
+  abortCall(reason?: any) {
+    if (this.callerFinished) return;
     if (!this.checkFinish()) {
       this.#returnQueue.rejectAsyncAll(reason ?? new CpcFailAsyncRespondError());
       this.emitFinish();
     }
   }
   dispose(reason?: any) {
-    if (this.closed) return;
+    if (this.callerFinished) return;
     if (this.#end === 0) {
       this.#end = 1;
-      this.sendCtrl.sendFrame({ type: FrameType.end });
+      this.sendCtrl.sendFrame({ type: FrameType.endCall });
     }
-    this.forceAbort(reason);
-  }
-  end(): Promise<void> {
-    if (this.closed) return Promise.resolve();
-    if (this.#end === 0) {
-      this.#end = 1;
-      this.sendCtrl.sendFrame({ type: FrameType.end });
-    }
-    return this.finishEvent.getPromise();
+    this.abortCall(reason);
   }
 
+  endCall(): Promise<void> {
+    if (this.callerFinished) return Promise.resolve();
+    if (this.#end === 0) {
+      this.#end = 1;
+      this.sendCtrl.sendFrame({ type: FrameType.endCall });
+    }
+    return this.onCallFinish.getPromise();
+  }
   call(...args: any[]) {
     if (this.#end) return Promise.reject(new Error("Cpc is ended"));
     this.sendCtrl.sendFrame({ type: FrameType.call, args });
@@ -56,11 +56,9 @@ export class CallerCore implements CpCaller {
     this.sendCtrl.sendFrame({ type: FrameType.exec, args });
   }
 
-  readonly finishEvent = new OnceEventTrigger<void>();
-
   onFrame(frame: RpcFrame): boolean | Error;
   onFrame(frame: CalleeFrame) {
-    if (this.closed) return false;
+    if (this.callerFinished) return false;
     let err: Error | void;
     switch (frame.type) {
       case FrameType.promise:
@@ -78,8 +76,8 @@ export class CallerCore implements CpCaller {
       case FrameType.throw:
         err = this.onCpcReturn(frame.value, true);
         break;
-      case FrameType.disable:
-        err = this.onCpcDisable();
+      case FrameType.endServe:
+        err = this.onCpcRemoteServeEnd();
         break;
       default:
         return false;
@@ -112,12 +110,12 @@ export class CallerCore implements CpCaller {
       this.emitFinish();
     }
   }
-  private onCpcDisable() {
+  private onCpcRemoteServeEnd() {
     this.checkFinish();
   }
   private checkFinish() {
     if (this.#end >= 2) return;
-    this.emitDisable();
+    this.emitCallEnd();
     this.#returnQueue.rejectSyncAll(new CpcFailRespondError());
     if (this.#returnQueue.asyncMap.size === 0) {
       this.emitFinish();
@@ -142,11 +140,11 @@ export class CallerCore implements CpCaller {
   }
   private emitFinish() {
     this.#end = 3;
-    this.finishEvent.emit();
+    this.onCallFinish.emit();
   }
-  private emitDisable() {
+  private emitCallEnd() {
     this.#end = 2;
-    this.disableEvent.emit();
+    this.onRemoteServeEnd.emit();
   }
 }
 

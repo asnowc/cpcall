@@ -11,8 +11,9 @@ export enum FrameType {
 
   return = 11,
   throw = 12,
-  end = 0b1111_1110,
-  disable = 0xff,
+  
+  endCall = 0b1111_1110,
+  endServe = 0xff,
 }
 export class CalleeError extends Error {}
 export class CallerError extends Error {}

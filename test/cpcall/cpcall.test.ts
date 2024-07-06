@@ -14,19 +14,19 @@ describe("CpCall", function () {
   });
   test("close caller 和 callee 主动触发", async function () {
     cpc.caller.dispose();
-    cpc.disable();
+    cpc.endServe();
     hd.nextFrame({ type: FrameType.call, args: [] });
     await afterTime();
-    expect(cpc.closeEvent.done).toBeTruthy();
+    expect(cpc.onClose.done).toBeTruthy();
   });
   test("被动触发", async function () {
-    hd.nextFrame({ type: FrameType.end });
-    hd.nextFrame({ type: FrameType.disable });
+    hd.nextFrame({ type: FrameType.endCall });
+    hd.nextFrame({ type: FrameType.endServe });
     await afterTime();
-    expect(cpc.caller.finishEvent.done, "caller finish").toBeTruthy();
+    expect(cpc.caller.onCallFinish.done, "caller finish").toBeTruthy();
     hd.endFrame();
     await afterTime();
-    expect(cpc.closeEvent.done, "cpc close").toBeTruthy();
+    expect(cpc.onClose.done, "cpc close").toBeTruthy();
   });
 }, 500);
 
@@ -37,26 +37,26 @@ describe("创建连接与关闭连接", function () {
   });
   test("caller 关闭", async function () {
     const { clientCpc, serverCpc } = mock;
-    const clientFinish = clientCpc.caller.end();
-    await clientCpc.caller.disableEvent.getPromise();
-    const serverFinish = serverCpc.caller.end();
-    await serverCpc.caller.disableEvent.getPromise();
+    const clientFinish = clientCpc.caller.endCall();
+    await clientCpc.caller.onRemoteServeEnd.getPromise();
+    const serverFinish = serverCpc.caller.endCall();
+    await serverCpc.caller.onRemoteServeEnd.getPromise();
     await Promise.all([clientFinish, serverFinish]);
   });
   test("callee关闭", async function () {
     const { clientCpc, serverCpc } = mock;
-    const serverFinish = serverCpc.disable();
-    await clientCpc.caller.disableEvent.getPromise();
-    const clientFinish = clientCpc.disable();
+    const serverFinish = serverCpc.endServe();
+    await clientCpc.caller.onRemoteServeEnd.getPromise();
+    const clientFinish = clientCpc.endServe();
 
     await Promise.all([clientFinish, serverFinish]);
-    expect(serverCpc.caller.disableEvent.done).toBeTruthy();
+    expect(serverCpc.caller.onRemoteServeEnd.done).toBeTruthy();
   });
   test("单方中断", async function () {
     const { clientCpc, serverCpc } = mock;
-    const c1 = clientCpc.closeEvent.getPromise();
-    const s1 = serverCpc.closeEvent.getPromise();
-    clientCpc.disable();
+    const c1 = clientCpc.onClose.getPromise();
+    const s1 = serverCpc.onClose.getPromise();
+    clientCpc.endServe();
     clientCpc.caller.dispose();
     await expect(c1).resolves.toBeUndefined();
     await expect(s1).resolves.toBeUndefined();
@@ -127,7 +127,7 @@ describe("返回值", function () {
         return new Promise((resolve) => setTimeout(() => resolve(8)));
       });
       await expect(clientCpc.caller.call("fn", arg)).resolves.toBe(8);
-      expect(serverCpc.calleePromiseNum).toBe(0);
+      expect(serverCpc.responsePromiseNum).toBe(0);
     });
 
     test("多个异步返回", async function () {
@@ -136,11 +136,11 @@ describe("返回值", function () {
       fn.mockImplementation(() => Promise.resolve(count++));
       const caller = clientCpc.caller;
       await expect(caller.call("fn")).resolves.toBe(0);
-      expect(serverCpc.calleePromiseNum).toBe(0);
+      expect(serverCpc.responsePromiseNum).toBe(0);
       await expect(caller.call("fn")).resolves.toBe(1);
-      expect(serverCpc.calleePromiseNum).toBe(0);
+      expect(serverCpc.responsePromiseNum).toBe(0);
       await expect(caller.call("fn")).resolves.toBe(2);
-      expect(serverCpc.calleePromiseNum).toBe(0);
+      expect(serverCpc.responsePromiseNum).toBe(0);
     });
   });
 
@@ -178,11 +178,11 @@ describe("返回值", function () {
 test("dispose", async function () {
   const { clientCpc, serverCpc } = mocks.createConnectedCpc();
   const onClose = vi.fn();
-  clientCpc.closeEvent.catch(onClose);
+  clientCpc.onClose.catch(onClose);
   const error = new Error("主动dispose");
   clientCpc.dispose(error);
   await afterTime();
-  expect(clientCpc.closeEvent.done).toBeTruthy();
+  expect(clientCpc.onClose.done).toBeTruthy();
   expect(onClose).toBeCalled();
 });
 describe("状态更改", function () {
@@ -191,7 +191,7 @@ describe("状态更改", function () {
     const pms = cpc.caller.call("yyy");
     await afterTime(50);
     cpc.caller.dispose();
-    expect(cpc.caller.finishEvent.done).toBeTruthy();
+    expect(cpc.caller.onCallFinish.done).toBeTruthy();
     await expect(pms, "在返回前中断").rejects.toThrowError(CpcFailRespondError);
   });
   test("Promise状态在变化前断开连接", async function () {
@@ -205,7 +205,7 @@ describe("状态更改", function () {
     let pms = clientCpc.caller.call("cmd");
     await afterTime();
     clientCpc.caller.dispose();
-    expect(clientCpc.caller.finishEvent.done).toBeTruthy();
+    expect(clientCpc.caller.onCallFinish.done).toBeTruthy();
 
     await expect(pms).rejects.toThrowError(CpcFailAsyncRespondError);
   });
@@ -216,7 +216,7 @@ describe("状态更改", function () {
     const cpcall = new CpCall(ctrl);
     cpcall.dispose(err);
 
-    await expect(cpcall.closeEvent.getPromise()).rejects.toBe(err);
+    await expect(cpcall.onClose.getPromise()).rejects.toBe(err);
     expect(ctrl.sendFrame).not.toBeCalled();
   });
 }, 500);

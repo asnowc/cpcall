@@ -103,10 +103,10 @@ export function decodeCpcFrame(buf: Uint8Array, offset = 0): { frame: RpcFrame; 
         offset += res.byte;
         return { frame: { type, id: res.value }, offset };
       }
-      case FrameType.end:
-        return { frame: { type: FrameType.end }, offset };
-      case FrameType.disable:
-        return { frame: { type: FrameType.disable }, offset };
+      case FrameType.endCall:
+        return { frame: { type: FrameType.endCall }, offset };
+      case FrameType.endServe:
+        return { frame: { type: FrameType.endServe }, offset };
       default:
         throw new UnsupportedDataTypeError(type);
     }

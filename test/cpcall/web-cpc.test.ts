@@ -4,7 +4,7 @@ import { expect, test, vi } from "vitest";
 test("readable异常", async function () {
   const { writable, readable, readableCtrl, writableCtrl } = createMockStream();
   const cpc = createWebStreamCpc({ readable, writable });
-  const errEvent = cpc.closeEvent.getPromise();
+  const errEvent = cpc.onClose.getPromise();
   const err = new Error("ReadableStream error");
   readableCtrl.controller.error(err);
   await expect(errEvent).rejects.toThrowError(err);
@@ -12,7 +12,7 @@ test("readable异常", async function () {
 test("writable异常", async function () {
   const { writable, readable, readableCtrl, writableCtrl } = createMockStream();
   const cpc = createWebStreamCpc({ readable, writable });
-  const errEvent = cpc.closeEvent.getPromise();
+  const errEvent = cpc.onClose.getPromise();
   const err = new Error("WritableStream error");
   writableCtrl.controller.error(err);
   cpc.caller.exec("hh");
