@@ -5,7 +5,7 @@ import { CpcController, CpcFrameSource } from "./cpc_base.ts";
 /**
  * 自动处理二进制帧。它会将 CpCall 在一个宏任务内的生成的帧进行打包
  */
-export class CpcByteFrameSource implements CpcFrameSource<RpcFrame> {
+export class JbodFrameSource implements CpcFrameSource<RpcFrame> {
   constructor(private ctrl: CpcFrameSource<Uint8Array>) {}
   init({ endFrame, nextFrame }: CpcController): void {
     const parser = createCpcFrameParser();

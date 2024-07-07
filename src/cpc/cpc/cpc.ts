@@ -1,5 +1,5 @@
 import { genRpcCmdMap } from "./class_gen.ts";
-import { CpcByteFrameSource } from "./ByteFrameCtrl.ts";
+import { JbodFrameSource } from "./ByteFrameCtrl.ts";
 import { CpCallBase, CpCallOption, CpcFrameSource } from "./cpc_base.ts";
 import { createObjectChain, getChainPath } from "evlib/object";
 import { ServeFnTransform, SetServeFnOption } from "../core/type.ts";
@@ -12,8 +12,8 @@ export class CpCall extends CpCallBase {
    * 创建基于 JBOD 编解码的CpCall实例。
    * @remarks  它会将 CpCall 在一个宏任务内的生成的帧进行打包
    */
-  static fromByteIterable(ctrl: CpcFrameSource<Uint8Array>, option?: CpCallOption) {
-    return new this(new CpcByteFrameSource(ctrl), option);
+  static fromJbodFrameSource(ctrl: CpcFrameSource<Uint8Array>, option?: CpCallOption) {
+    return new this(new JbodFrameSource(ctrl), option);
   }
 
   /** 通过 exec 调用远程代理对象

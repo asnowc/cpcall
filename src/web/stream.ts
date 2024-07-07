@@ -4,7 +4,7 @@ import { CpCall, CpcController, CpcFrameSource } from "cpcall";
  * @public
  */
 export function createWebStreamCpc(stream: WebStreamSuite) {
-  return CpCall.fromByteIterable(new WebStreamSource(stream));
+  return CpCall.fromJbodFrameSource(new WebStreamSource(stream));
 }
 class WebStreamSource implements CpcFrameSource<Uint8Array> {
   constructor(stream: WebStreamSuite) {

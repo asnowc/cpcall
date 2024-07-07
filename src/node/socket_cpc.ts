@@ -6,7 +6,7 @@ import { CpCall, CpcController } from "cpcall";
  */
 export function createSocketCpc(duplex: Duplex): CpCall {
   if (!duplex.readable || !duplex.writable) throw createAbortedError();
-  return CpCall.fromByteIterable({
+  return CpCall.fromJbodFrameSource({
     init(controller: CpcController<Uint8Array>): void {
       duplex.on("data", (chunk) => {controller.nextFrame(chunk)});
       duplex.on("end", () => controller.endFrame(new Error("Duplex no more data")));
