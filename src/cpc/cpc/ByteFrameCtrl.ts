@@ -1,6 +1,6 @@
-import { trans } from "../core/mod.ts";
+import { createCpcFrameParser, decodeCpcFrame, packCpcFrames } from "../core/mod.ts";
 import { RpcFrame } from "../core/type.ts";
-import { CpcController, CpcFrameSource } from "./cpc.ts";
+import { CpcController, CpcFrameSource } from "./cpc_base.ts";
 
 /**
  * 自动处理二进制帧。它会将 CpCall 在一个宏任务内的生成的帧进行打包
@@ -8,13 +8,13 @@ import { CpcController, CpcFrameSource } from "./cpc.ts";
 export class CpcByteFrameSource implements CpcFrameSource<RpcFrame> {
   constructor(private ctrl: CpcFrameSource<Uint8Array>) {}
   init({ endFrame, nextFrame }: CpcController): void {
-    const parser = trans.createCpcFrameParser();
+    const parser = createCpcFrameParser();
     this.ctrl.init({
       endFrame: endFrame,
       nextFrame: function (buf): boolean {
         while (parser.next(buf)) {
           const res = parser.finish();
-          const frame = trans.decodeCpcFrame(res.value).frame;
+          const frame = decodeCpcFrame(res.value).frame;
           nextFrame(frame);
           if (res.residue) buf = res.residue;
           else break;
@@ -33,7 +33,7 @@ export class CpcByteFrameSource implements CpcFrameSource<RpcFrame> {
   }
   private send() {
     if (this.link.length) {
-      const chunk = trans.packCpcFrames(this.link);
+      const chunk = packCpcFrames(this.link);
       this.ctrl.sendFrame(chunk);
     }
     this.link.length = 0;

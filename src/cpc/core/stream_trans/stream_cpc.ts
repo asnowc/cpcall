@@ -4,8 +4,9 @@ import JBOD, { DataType, varints, UnsupportedDataTypeError, DataWriter } from "j
 import { StepsByteParser, LengthByteParser, ByteParser } from "evlib/async";
 
 const U32DByteParser = varints.U32DByteParser;
-/** 收集二进制chunk, 拼接成完整的二进制帧
- * @internal
+/**
+ * 收集二进制chunk, 拼接成完整的二进制帧
+ * @public
  */
 export function createCpcFrameParser(): ByteParser<Uint8Array> {
   return new StepsByteParser<Uint8Array>({ first: new U32DByteParser() }, (len: number) => new LengthByteParser(len));
@@ -166,13 +167,3 @@ export class CpcFrameEncoder {
     return buf;
   }
 }
-
-/** @internal */
-export default {
-  createFrameIterator,
-  createCpcFrameParser,
-  packCpcFrames,
-  decodeCpcFrame,
-  unpackCpcFrames,
-  CpcFrameEncoder,
-};

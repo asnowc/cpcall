@@ -1,27 +1,25 @@
-import { OnceEventTrigger, WithPromise } from "evlib";
+import { WithPromise } from "evlib";
 import { ReturnQueue } from "./promise_queue.ts";
 import {
   FrameType,
   CpcError,
   CpcFailAsyncRespondError,
   CpcFailRespondError,
-  CalleeError,
   RemoteCallError,
+  CallerStatus,
 } from "../const.ts";
-import type { CalleeFrame, RpcFrame, CpCaller } from "../type.ts";
+import type { CalleeFrame, RpcFrame } from "../type.ts";
 import type { SendCtrl } from "./type.ts";
 
-export class CallerCore implements CpCaller {
+export class CallerCore {
   constructor(private sendCtrl: SendCtrl) {}
-  #end: 0 | 1 | 2 | 3 = 0;
-  get callEnded() {
-    return this.#end;
-  }
+  callerStatus: CallerStatus = CallerStatus.callable;
+
   get callerFinished() {
-    return this.#end === 3;
+    return this.callerStatus === CallerStatus.finished;
   }
-  readonly onRemoteServeEnd = new OnceEventTrigger<void>();
-  readonly onCallFinish = new OnceEventTrigger<void>();
+  onRemoteServeEnd?: () => void;
+  onCallFinish?: () => void;
   abortCall(reason?: any) {
     if (this.callerFinished) return;
     if (!this.checkFinish()) {
@@ -31,28 +29,28 @@ export class CallerCore implements CpCaller {
   }
   dispose(reason?: any) {
     if (this.callerFinished) return;
-    if (this.#end === 0) {
-      this.#end = 1;
+    if (this.callerStatus === CallerStatus.callable) {
+      this.callerStatus = CallerStatus.ending;
       this.sendCtrl.sendFrame({ type: FrameType.endCall });
     }
     this.abortCall(reason);
   }
 
-  endCall(): Promise<void> {
-    if (this.callerFinished) return Promise.resolve();
-    if (this.#end === 0) {
-      this.#end = 1;
+  /** 向对方发送 endCall 帧 */
+  endCall(): void {
+    if (this.callerFinished) return;
+    if (this.callerStatus === 0) {
+      this.callerStatus = 1;
       this.sendCtrl.sendFrame({ type: FrameType.endCall });
     }
-    return this.onCallFinish.getPromise();
   }
   call(...args: any[]) {
-    if (this.#end) return Promise.reject(new Error("Cpc is ended"));
+    if (this.callerStatus) return Promise.reject(new Error("Cpc is ended"));
     this.sendCtrl.sendFrame({ type: FrameType.call, args });
     return this.#returnQueue.add({});
   }
   exec(...args: any[]) {
-    if (this.#end) return;
+    if (this.callerStatus) return;
     this.sendCtrl.sendFrame({ type: FrameType.exec, args });
   }
 
@@ -95,7 +93,7 @@ export class CallerCore implements CpCaller {
   private onCpcReturnPromise(id: number): Error | void {
     if (this.#returnQueue.asyncIdExist(id)) {
       const hd = this.#returnQueue.shift();
-      hd?.reject(new CalleeError("Callee response error Promise frame"));
+      hd?.reject(new CpcError("Callee response error Promise frame"));
       return createPromiseIdError(id, "Duplicate");
     }
     if (!this.#returnQueue.swapInAsyncMap(id)) {
@@ -106,7 +104,7 @@ export class CallerCore implements CpCaller {
     let res = this.#returnQueue.takeAsyncItem(id);
     if (!res) return new CpcError("Invalid Promise ID");
     this.handleAwait(res, arg, error);
-    if (this.#end && this.#returnQueue.size === 0) {
+    if (this.callerStatus && this.#returnQueue.size === 0) {
       this.emitFinish();
     }
   }
@@ -114,7 +112,7 @@ export class CallerCore implements CpCaller {
     this.checkFinish();
   }
   private checkFinish() {
-    if (this.#end >= 2) return;
+    if (this.callerStatus >= 2) return;
     this.emitCallEnd();
     this.#returnQueue.rejectSyncAll(new CpcFailRespondError());
     if (this.#returnQueue.asyncMap.size === 0) {
@@ -139,12 +137,12 @@ export class CallerCore implements CpCaller {
     } else handle.resolve(value);
   }
   private emitFinish() {
-    this.#end = 3;
-    this.onCallFinish.emit();
+    this.callerStatus = 3;
+    this.onCallFinish?.();
   }
   private emitCallEnd() {
-    this.#end = 2;
-    this.onRemoteServeEnd.emit();
+    this.callerStatus = 2;
+    this.onRemoteServeEnd?.();
   }
 }
 

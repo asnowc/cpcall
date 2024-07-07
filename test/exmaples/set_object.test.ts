@@ -51,8 +51,11 @@ describe("setObject", function () {
       sub2,
     };
     cpc.setObject(root);
-    const expectSet = new Set(["sub.a", "sub2.s.a"]);
-    setEq(cpc.getAllFn(), expectSet);
+    setEq(cpc.getAllFn(), new Set(["sub.a"])); // 最大深度为 2 sub2.s.a 被跳过
+
+    cpc.clearFn();
+    cpc.setObject(root, { deep: 0 }); // 不限制深度
+    setEq(cpc.getAllFn(), new Set(["sub.a", "sub2.s.a"]));
   });
 });
 

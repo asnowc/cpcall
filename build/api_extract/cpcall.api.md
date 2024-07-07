@@ -4,85 +4,126 @@
 
 ```ts
 
-/// <reference types="node" />
-
 import { Duplex } from 'node:stream';
+
+// @public (undocumented)
+type AnyCaller = {
+    (...args: any[]): Promise<any>;
+    [key: string]: AnyCaller;
+};
+
+// @public (undocumented)
+type AnyEmitter = {
+    (...args: any[]): void;
+    [key: string]: AnyCaller;
+};
+
+// @public (undocumented)
+type CalleeFrame = Frame.Return | Frame.ReturnPromise | Frame.Resolve | Frame.Reject | Frame.Throw | Frame.EndServe;
+
+// @public (undocumented)
+type CallerFrame = Frame.Call | Frame.Exec | Frame.EndCall;
+
+// @public (undocumented)
+type CallerProxyPrototype = {
+    [Symbol.asyncDispose](): Promise<void>;
+};
+
+// @public (undocumented)
+enum CallerStatus {
+    callable = 0,
+    ended = 2,
+    ending = 1,
+    finished = 3
+}
 
 declare namespace core {
     export {
+        AnyCaller,
+        AnyEmitter,
+        CalleeFrame,
+        CallerFrame,
+        CallerProxyPrototype,
+        CallerStatus,
         CpCall,
         CpCallBase,
-        CpCaller,
+        CpCallOption,
         CpcController,
+        CpcError,
         CpcFailAsyncRespondError,
         CpcFailRespondError,
+        CpcFrameEncoder,
         CpcFrameSource,
         CpcUnregisteredCommandError,
-        MakeCallers,
-        RemoteCallError,
+        Frame,
         FrameType,
+        GenCallerOpts,
+        MakeCallers,
+        MakeEmitter,
+        ParseObjectOption,
+        RemoteCallError,
         RpcFrame,
-        _default as trans
+        ServeFnTransform,
+        ServerStatus,
+        SetServeFnOption,
+        createCpcFrameParser,
+        createFrameIterator,
+        decodeCpcFrame,
+        packCpcFrames,
+        unpackCpcFrames
     }
 }
 
-// Warning: (ae-incompatible-release-tags) The symbol "CpCall" is marked as @public, but its signature references "CpCallBase" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "CpCall" is marked as @public, but its signature references "CpCallBase" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "CpCall" is marked as @public, but its signature references "CpCallBase" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "CpCall" is marked as @public, but its signature references "CpCallBase" which is marked as @internal
-//
 // @public (undocumented)
 class CpCall extends CpCallBase {
     static call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T>;
+    clearFn(): void;
     static exec<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): void;
-    static fromByteIterable(ctrl: CpcFrameSource<Uint8Array>): CpCall;
-    // Warning: (ae-forgotten-export) The symbol "GenCallerOpts" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-forgotten-export) The symbol "AnyCaller" needs to be exported by the entry point index.d.ts
-    genCaller(prefix?: string, opts?: GenCallerOpts): AnyCaller;
-    // Warning: (ae-forgotten-export) The symbol "ChianProxy" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-forgotten-export) The symbol "CallerProxyPrototype" needs to be exported by the entry point index.d.ts
-    //
+    static fromByteIterable(ctrl: CpcFrameSource<Uint8Array>, option?: CpCallOption): CpCall;
+    genCaller(opts?: GenCallerOpts): AnyCaller;
     // (undocumented)
-    genCaller<R extends object>(prefix?: string, opts?: GenCallerOpts): ChianProxy<R, CallerProxyPrototype>;
+    genCaller(base: string, opts?: GenCallerOpts): AnyCaller;
+    // (undocumented)
+    genCaller<R extends object>(base: string, opts?: GenCallerOpts): MakeCallers<R, CallerProxyPrototype>;
+    // (undocumented)
+    genCaller<R extends object>(opts?: GenCallerOpts): MakeCallers<R, CallerProxyPrototype>;
+    getAllFn(): IterableIterator<string>;
+    // (undocumented)
+    protected onCall(rawArgs: any[]): any;
+    removeFn(cmd: any): void;
+    setFn<A extends any[] = any[], R = any>(cmd: any, fn: (...args: A) => R, option?: SetServeFnOption & ServeFnTransform<A, Awaited<R>>): void;
     setObject(obj: object, cmd?: string): void;
+    setObject(obj: object, cmd: ParseObjectOption): void;
 }
 
-// @internal
+// @public
 abstract class CpCallBase {
-    constructor(frameSource: CpcFrameSource<RpcFrame>);
-    caller: CpCaller;
-    clearFn(): void;
+    constructor(frameSource: CpcFrameSource<RpcFrame>, opts?: CpCallOption);
+    call(...args: any[]): Promise<any>;
+    get callerStatus(): CallerStatus;
+    close(): Promise<void>;
+    // (undocumented)
+    get closed(): boolean;
     dispose(reason?: any): void;
+    endCall(): Promise<void>;
     endServe(): Promise<void>;
-    getAllFn(): IterableIterator<string>;
-    // Warning: (ae-forgotten-export) The symbol "RpcFn" needs to be exported by the entry point index.d.ts
-    //
+    exec(...args: any[]): void;
     // (undocumented)
-    protected _getFn(cmd: string): RpcFn | undefined;
-    // (undocumented)
-    protected _licensers: Map<string, RpcFn>;
-    // Warning: (ae-forgotten-export) The symbol "OnceListenable" needs to be exported by the entry point index.d.ts
-    readonly onClose: OnceListenable<void> & {
-        getPromise(): Promise<void>;
-    };
-    removeFn(cmd: any): void;
+    protected abstract onCall(rawArgs: any[]): any;
+    readonly onCallEnd: Promise<void>;
+    readonly onClose: Promise<void>;
+    readonly onServeEnd: Promise<void>;
     // (undocumented)
     protected get responsePromiseNum(): number;
-    // Warning: (ae-forgotten-export) The symbol "CmdFn" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-forgotten-export) The symbol "FnOpts" needs to be exported by the entry point index.d.ts
-    setFn(cmd: any, fn: CmdFn, opts?: FnOpts): void;
+    get serverStatus(): ServerStatus;
 }
 
 // @public (undocumented)
-interface CpCaller {
-    call(...args: any[]): Promise<any>;
-    callEnded: 0 | 1 | 2 | 3;
-    dispose(reason?: any): void;
-    endCall(): Promise<void>;
-    exec(...args: any[]): void;
-    readonly onCallFinish: OnceEvent<void>;
-    // Warning: (ae-forgotten-export) The symbol "OnceEvent" needs to be exported by the entry point index.d.ts
-    readonly onRemoteServeEnd: OnceEvent<void>;
+interface CpCallOption {
+    // (undocumented)
+    disableCall?: boolean;
+    // (undocumented)
+    disableServe?: boolean;
 }
 
 // @public
@@ -92,12 +133,29 @@ type CpcController<T = RpcFrame> = {
 };
 
 // @public
+class CpcError extends Error {
+}
+
+// @public
 class CpcFailAsyncRespondError extends Error {
 }
 
 // @public
 class CpcFailRespondError extends Error {
     constructor();
+}
+
+// @internal
+class CpcFrameEncoder {
+    constructor(frame: RpcFrame);
+    // (undocumented)
+    readonly byteLength: number;
+    // (undocumented)
+    encode(): Uint8Array;
+    // (undocumented)
+    encodeInto(buf: Uint8Array, offset?: number): number;
+    // (undocumented)
+    readonly type: FrameType;
 }
 
 // @public
@@ -113,6 +171,14 @@ class CpcUnregisteredCommandError extends Error {
     constructor(cmd: any);
 }
 
+// Warning: (ae-forgotten-export) The symbol "ByteParser" needs to be exported by the entry point index.d.ts
+//
+// @public
+function createCpcFrameParser(): ByteParser<Uint8Array>;
+
+// @internal
+function createFrameIterator(iter: AsyncIterable<Uint8Array>): AsyncGenerator<RpcFrame, Uint8Array | undefined, unknown>;
+
 // @public
 function createSocketCpc(duplex: Duplex): CpCall;
 
@@ -127,15 +193,65 @@ function createWebsocketCpcOnOpen(websocket: WebSocket_2): Promise<CpCall>;
 // @public
 function createWebStreamCpc(stream: WebStreamSuite): CpCall;
 
-// @internal (undocumented)
-const _default: {
-    createFrameIterator: typeof createFrameIterator;
-    createCpcFrameParser: typeof createCpcFrameParser;
-    packCpcFrames: typeof packCpcFrames;
-    decodeCpcFrame: typeof decodeCpcFrame;
-    unpackCpcFrames: typeof unpackCpcFrames;
-    CpcFrameEncoder: typeof CpcFrameEncoder;
+// @internal
+function decodeCpcFrame(buf: Uint8Array, offset?: number): {
+    frame: RpcFrame;
+    offset: number;
 };
+
+// @public (undocumented)
+namespace Frame {
+    // (undocumented)
+    type Call = {
+        type: FrameType.call;
+        args: any[];
+    };
+    // (undocumented)
+    type EndCall = {
+        type: FrameType.endCall;
+    };
+    // (undocumented)
+    type EndServe = {
+        type: FrameType.endServe;
+    };
+    // (undocumented)
+    type Exec = {
+        type: FrameType.exec;
+        args: any[];
+    };
+    // (undocumented)
+    type Reject = {
+        type: FrameType.reject;
+        id: number;
+        value: any;
+    };
+    // (undocumented)
+    type Resolve = {
+        type: FrameType.resolve;
+        id: number;
+        value: any;
+    };
+    // (undocumented)
+    type ResponseError = {
+        type: FrameType.error;
+        code: number;
+    };
+    // (undocumented)
+    type Return = {
+        type: FrameType.return;
+        value: any;
+    };
+    // (undocumented)
+    type ReturnPromise = {
+        type: FrameType.promise;
+        id: number;
+    };
+    // (undocumented)
+    type Throw = {
+        type: FrameType.throw;
+        value: any;
+    };
+}
 
 // @public
 enum FrameType {
@@ -161,23 +277,67 @@ enum FrameType {
     throw = 12
 }
 
-// Warning: (ae-forgotten-export) The symbol "MakeCallerFn" needs to be exported by the entry point index.d.ts
-//
 // @public (undocumented)
-type MakeCallers<T extends object, E extends object = {}> = T extends (...args: infer A) => infer R ? MakeCallerFn<A, R> & ChianProxy<T, E> : ChianProxy<T, E>;
+type GenCallerOpts = {
+    keepThen?: boolean;
+};
+
+// @public (undocumented)
+type MakeCallers<T extends object, E extends object = {}> = E & {
+    [Key in keyof T as T[Key] extends object ? Key : never]: T[Key] extends object ? MakeCallers<T[Key], E> : never;
+} & (T extends (...args: infer A) => infer R ? (...args: A) => Promise<Awaited<R>> : {});
+
+// @public (undocumented)
+type MakeEmitter<T extends object, E extends object = {}> = E & {
+    [Key in keyof T as T[Key] extends object ? Key : never]: T[Key] extends object ? MakeCallers<T[Key], E> : never;
+} & (T extends (...args: infer A) => any ? (...args: A) => void : {});
 
 declare namespace node {
     export {
+        AnyCaller,
+        AnyEmitter,
+        CalleeFrame,
+        CallerFrame,
+        CallerProxyPrototype,
+        CallerStatus,
+        CpCallBase,
+        CpCallOption,
+        CpcController,
+        CpcError,
         CpcFailAsyncRespondError,
         CpcFailRespondError,
+        CpcFrameEncoder,
+        CpcFrameSource,
         CpcUnregisteredCommandError,
+        Frame,
+        FrameType,
+        GenCallerOpts,
         MakeCallers,
+        MakeEmitter,
+        ParseObjectOption,
         RemoteCallError,
-        CpcFrameSource as RpcFrameCtrl,
+        RpcFrame,
+        ServeFnTransform,
+        ServerStatus,
+        SetServeFnOption,
+        createCpcFrameParser,
+        createFrameIterator,
+        decodeCpcFrame,
+        packCpcFrames,
+        unpackCpcFrames,
         CpCall,
         createSocketCpc
     }
 }
+
+// @internal
+function packCpcFrames(frames: RpcFrame[]): Uint8Array;
+
+// @public
+type ParseObjectOption = {
+    cmd?: string;
+    deep?: number;
+};
 
 // @public
 class RemoteCallError extends Error {
@@ -185,21 +345,63 @@ class RemoteCallError extends Error {
     code?: any;
 }
 
-// Warning: (ae-forgotten-export) The symbol "CalleeFrame" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "CallerFrame" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "Frame" needs to be exported by the entry point index.d.ts
-//
 // @public (undocumented)
-type RpcFrame = CalleeFrame | CallerFrame | Frame.ResponseError;
+type RpcFrame = Frame.Return | Frame.ReturnPromise | Frame.Resolve | Frame.Reject | Frame.Throw | Frame.EndServe | Frame.Call | Frame.Exec | Frame.EndCall | Frame.ResponseError;
+
+// @public (undocumented)
+interface ServeFnTransform<A extends any[], R> {
+    transformArgs?(args: any[]): A;
+    transformReturn?(data: R): any;
+}
+
+// @public (undocumented)
+enum ServerStatus {
+    ended = 1,
+    finished = 2,
+    serving = 0
+}
+
+// @public (undocumented)
+interface SetServeFnOption {
+    this?: object;
+}
+
+// @internal
+function unpackCpcFrames(buf: Uint8Array, offset: number): Generator<RpcFrame, void, unknown>;
 
 declare namespace web {
     export {
+        AnyCaller,
+        AnyEmitter,
+        CalleeFrame,
+        CallerFrame,
+        CallerProxyPrototype,
+        CallerStatus,
+        CpCallBase,
+        CpCallOption,
+        CpcController,
+        CpcError,
         CpcFailAsyncRespondError,
         CpcFailRespondError,
+        CpcFrameEncoder,
+        CpcFrameSource,
         CpcUnregisteredCommandError,
+        Frame,
+        FrameType,
+        GenCallerOpts,
         MakeCallers,
+        MakeEmitter,
+        ParseObjectOption,
         RemoteCallError,
-        CpcFrameSource as RpcFrameCtrl,
+        RpcFrame,
+        ServeFnTransform,
+        ServerStatus,
+        SetServeFnOption,
+        createCpcFrameParser,
+        createFrameIterator,
+        decodeCpcFrame,
+        packCpcFrames,
+        unpackCpcFrames,
         CpCall,
         WebStreamSuite,
         createWebSocketCpc,
@@ -216,12 +418,6 @@ type WebStreamSuite = {
 
 // Warnings were encountered during analysis:
 //
-// dist/cpc.d.ts:36:5 - (ae-forgotten-export) The symbol "createFrameIterator" needs to be exported by the entry point index.d.ts
-// dist/cpc.d.ts:37:5 - (ae-forgotten-export) The symbol "createCpcFrameParser" needs to be exported by the entry point index.d.ts
-// dist/cpc.d.ts:38:5 - (ae-forgotten-export) The symbol "packCpcFrames" needs to be exported by the entry point index.d.ts
-// dist/cpc.d.ts:39:5 - (ae-forgotten-export) The symbol "decodeCpcFrame" needs to be exported by the entry point index.d.ts
-// dist/cpc.d.ts:40:5 - (ae-forgotten-export) The symbol "unpackCpcFrames" needs to be exported by the entry point index.d.ts
-// dist/cpc.d.ts:41:5 - (ae-forgotten-export) The symbol "CpcFrameEncoder" needs to be exported by the entry point index.d.ts
 // dist/web.d.ts:42:5 - (ae-forgotten-export) The symbol "ReadableStream_2" needs to be exported by the entry point index.d.ts
 // dist/web.d.ts:43:5 - (ae-forgotten-export) The symbol "WritableStream_2" needs to be exported by the entry point index.d.ts
 

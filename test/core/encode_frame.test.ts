@@ -1,8 +1,7 @@
-import { RpcFrame, FrameType, trans } from "cpcall";
+import { RpcFrame, FrameType, CpcFrameEncoder } from "cpcall";
 import { describe } from "node:test";
 import { expect, test } from "vitest";
 import { baseDataTypes } from "../__mocks__/data_type.cases.ts";
-const { CpcFrameEncoder } = trans;
 function encodeCpcFrameHex(frame: RpcFrame) {
   const u8Arr = new CpcFrameEncoder(frame).encode();
   return u8ArrToHex(u8Arr);

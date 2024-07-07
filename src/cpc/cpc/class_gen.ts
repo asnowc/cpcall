@@ -17,15 +17,24 @@ const defaultExcludeObj = new Set<object>([
 // const objExcludeKeys = new Set(["constructor"]);
 // const functionExcludeKeys = new Set(["prototype"]);
 
-type GenConfig = {
+export type GenConfig = {
   exclude: Set<object>;
   /** 避免循环引用 */
   branchExclude: Set<object>;
-  map: Map<string, RpcFn>;
+  map: Map<string, FnGenContext>;
   sp: string;
+  deep?: number;
+};
+export type GenOption = {
+  exclude?: Set<object>;
+  /** 避免循环引用 */
+  branchExclude?: Set<object>;
+  map?: Map<string, FnGenContext>;
+  sp?: string;
+  deep?: number;
 };
 
-export function genRpcCmdMap(rootObj: object, base: string, opts: Partial<GenConfig> = {}) {
+export function genRpcCmdMap(rootObj: object, base: string, opts: GenOption = {}) {
   const { map = new Map(), sp = "." } = opts;
   let exclude = defaultExcludeObj;
   if (opts.exclude) {
@@ -34,9 +43,9 @@ export function genRpcCmdMap(rootObj: object, base: string, opts: Partial<GenCon
       exclude.add(item);
     }
   }
-  return privateGenRpcCmdMap(rootObj, base, { exclude, map, sp, branchExclude: new Set() });
+  return privateGenRpcCmdMap(rootObj, base, 1, { exclude, map, sp, branchExclude: new Set(), deep: opts.deep });
 }
-function privateGenRpcCmdMap(rootObj: object, base: string, opts: GenConfig) {
+function privateGenRpcCmdMap(rootObj: object, base: string, deep: number, opts: GenConfig) {
   const branchExclude = opts.branchExclude;
   branchExclude.add(rootObj);
 
@@ -59,8 +68,8 @@ function privateGenRpcCmdMap(rootObj: object, base: string, opts: GenConfig) {
         opts.map.set(base ? base + opts.sp + k : k, { fn: obj as Fn, this: rootObj });
         add++;
       } else if (typeof obj !== "object" || obj === null) continue;
-
-      add += privateGenRpcCmdMap(obj, base ? base + opts.sp + k : k, opts);
+      if (opts.deep && opts.deep <= deep) continue;
+      add += privateGenRpcCmdMap(obj, base ? base + opts.sp + k : k, deep + 1, opts);
     }
 
     branchExclude.delete(rootObj);
@@ -68,7 +77,7 @@ function privateGenRpcCmdMap(rootObj: object, base: string, opts: GenConfig) {
   return add;
 }
 type Fn = (...args: any[]) => any;
-export type RpcFn = {
+export type FnGenContext = {
   fn: Fn;
   this: any;
 };

@@ -6,6 +6,7 @@ class MockWebSocket extends EventTarget implements WS {
   constructor() {
     super();
   }
+  readonly CONNECTING: number = 0;
   readonly OPEN = 1;
   binaryType = "ArrayBuffer";
   send: (data: Uint8Array) => void = vi.fn();
@@ -54,7 +55,7 @@ test("事件触发", async function () {
 
   const fn = vi.fn((arg) => arg);
   cpc2.setFn("abc", fn);
-  const cal = cpc1.caller;
+  const cal = cpc1;
   const res = await Promise.all([cal.call("abc", 1), cal.call("abc", 3)]);
   expect(res).toEqual([1, 3]);
 });

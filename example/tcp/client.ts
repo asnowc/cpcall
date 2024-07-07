@@ -13,7 +13,7 @@ for (let i = 0; i < 5; i++) {
   console.log(res);
   await delay(1000);
 }
-await cpc.caller.endCall(); // 为了保证正常断开连接，需要手动调用 caller.end() 方法
+await cpc.endCall(); // 为了保证正常断开连接，需要手动调用 caller.end() 方法
 
 function delay(time: number) {
   return new Promise((resolve) => setTimeout(resolve, time));

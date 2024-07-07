@@ -26,7 +26,7 @@ async function onWebSocketConnect(ws: WebSocket) {
     await delay(1000);
   }
 
-  await cpc.caller.end();
+  await cpc.endCall();
 }
 
 // 暴露给客户端的类

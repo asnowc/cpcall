@@ -7,7 +7,7 @@ server.listen(8888);
 // 当客户端连接时的回调函数
 function onConnect(socket: Socket) {
   const cpc = createSocketCpc(socket);
-  cpc.caller.endCall(); //不需要调用客户端，为了保证后续正常断开连接，需要手动调用 caller.end() 方法
+  cpc.endCall(); //不需要调用客户端，为了保证后续正常断开连接，需要手动调用 caller.end() 方法
   cpc.onClose.finally(() => console.log("cpc closed")); //连接关闭事件
   cpc.setObject(new ServerApi()); //暴露接口
 }
