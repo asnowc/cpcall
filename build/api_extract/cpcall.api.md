@@ -52,7 +52,6 @@ declare namespace core {
         CpcError,
         CpcFailAsyncRespondError,
         CpcFailRespondError,
-        CpcFrameEncoder,
         CpcFrameSource,
         CpcUnregisteredCommandError,
         Frame,
@@ -66,11 +65,7 @@ declare namespace core {
         ServeFnTransform,
         ServerStatus,
         SetServeFnOption,
-        createCpcFrameParser,
-        createFrameIterator,
-        decodeCpcFrame,
-        packCpcFrames,
-        unpackCpcFrames
+        createJbodStreamFrameSource
     }
 }
 
@@ -79,7 +74,6 @@ class CpCall extends CpCallBase {
     static call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T>;
     clearFn(): void;
     static exec<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): void;
-    static fromByteIterable(ctrl: CpcFrameSource<Uint8Array>, option?: CpCallOption): CpCall;
     genCaller(opts?: GenCallerOpts): AnyCaller;
     // (undocumented)
     genCaller(base: string, opts?: GenCallerOpts): AnyCaller;
@@ -145,19 +139,6 @@ class CpcFailRespondError extends Error {
     constructor();
 }
 
-// @internal
-class CpcFrameEncoder {
-    constructor(frame: RpcFrame);
-    // (undocumented)
-    readonly byteLength: number;
-    // (undocumented)
-    encode(): Uint8Array;
-    // (undocumented)
-    encodeInto(buf: Uint8Array, offset?: number): number;
-    // (undocumented)
-    readonly type: FrameType;
-}
-
 // @public
 type CpcFrameSource<T = RpcFrame> = {
     sendFrame(frame: T): void;
@@ -171,13 +152,8 @@ class CpcUnregisteredCommandError extends Error {
     constructor(cmd: any);
 }
 
-// Warning: (ae-forgotten-export) The symbol "ByteParser" needs to be exported by the entry point index.d.ts
-//
 // @public
-function createCpcFrameParser(): ByteParser<Uint8Array>;
-
-// @internal
-function createFrameIterator(iter: AsyncIterable<Uint8Array>): AsyncGenerator<RpcFrame, Uint8Array | undefined, unknown>;
+function createJbodStreamFrameSource(ctrl: CpcFrameSource<Uint8Array>): CpcFrameSource<RpcFrame>;
 
 // @public
 function createSocketCpc(duplex: Duplex): CpCall;
@@ -192,12 +168,6 @@ function createWebsocketCpcOnOpen(websocket: WebSocket_2): Promise<CpCall>;
 
 // @public
 function createWebStreamCpc(stream: WebStreamSuite): CpCall;
-
-// @internal
-function decodeCpcFrame(buf: Uint8Array, offset?: number): {
-    frame: RpcFrame;
-    offset: number;
-};
 
 // @public (undocumented)
 namespace Frame {
@@ -306,7 +276,6 @@ declare namespace node {
         CpcError,
         CpcFailAsyncRespondError,
         CpcFailRespondError,
-        CpcFrameEncoder,
         CpcFrameSource,
         CpcUnregisteredCommandError,
         Frame,
@@ -320,18 +289,11 @@ declare namespace node {
         ServeFnTransform,
         ServerStatus,
         SetServeFnOption,
-        createCpcFrameParser,
-        createFrameIterator,
-        decodeCpcFrame,
-        packCpcFrames,
-        unpackCpcFrames,
+        createJbodStreamFrameSource,
         CpCall,
         createSocketCpc
     }
 }
-
-// @internal
-function packCpcFrames(frames: RpcFrame[]): Uint8Array;
 
 // @public
 type ParseObjectOption = {
@@ -366,9 +328,6 @@ interface SetServeFnOption {
     this?: object;
 }
 
-// @internal
-function unpackCpcFrames(buf: Uint8Array, offset: number): Generator<RpcFrame, void, unknown>;
-
 declare namespace web {
     export {
         AnyCaller,
@@ -383,7 +342,6 @@ declare namespace web {
         CpcError,
         CpcFailAsyncRespondError,
         CpcFailRespondError,
-        CpcFrameEncoder,
         CpcFrameSource,
         CpcUnregisteredCommandError,
         Frame,
@@ -397,11 +355,7 @@ declare namespace web {
         ServeFnTransform,
         ServerStatus,
         SetServeFnOption,
-        createCpcFrameParser,
-        createFrameIterator,
-        decodeCpcFrame,
-        packCpcFrames,
-        unpackCpcFrames,
+        createJbodStreamFrameSource,
         CpCall,
         WebStreamSuite,
         createWebSocketCpc,
@@ -418,8 +372,8 @@ type WebStreamSuite = {
 
 // Warnings were encountered during analysis:
 //
-// dist/web.d.ts:42:5 - (ae-forgotten-export) The symbol "ReadableStream_2" needs to be exported by the entry point index.d.ts
-// dist/web.d.ts:43:5 - (ae-forgotten-export) The symbol "WritableStream_2" needs to be exported by the entry point index.d.ts
+// dist/web.d.ts:41:5 - (ae-forgotten-export) The symbol "ReadableStream_2" needs to be exported by the entry point index.d.ts
+// dist/web.d.ts:42:5 - (ae-forgotten-export) The symbol "WritableStream_2" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

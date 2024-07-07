@@ -1,20 +1,18 @@
-import { FrameType } from "../const.ts";
-import { RpcFrame, Frame } from "../type.ts";
+import { FrameType } from "../core/const.ts";
+import { RpcFrame, Frame } from "../core/type.ts";
 import JBOD, { DataType, varints, UnsupportedDataTypeError, DataWriter } from "jbod";
 import { StepsByteParser, LengthByteParser, ByteParser } from "evlib/async";
 
 const U32DByteParser = varints.U32DByteParser;
-/**
- * 收集二进制chunk, 拼接成完整的二进制帧
- * @public
- */
+/** 收集二进制chunk, 拼接成完整的二进制帧 */
 export function createCpcFrameParser(): ByteParser<Uint8Array> {
   return new StepsByteParser<Uint8Array>({ first: new U32DByteParser() }, (len: number) => new LengthByteParser(len));
 }
 
-/** 解码二进制帧。输入应该是通过 packageCpcFrame 生成的二进制块，可以是经过流的碎片
- *  @internal */
-export async function* createFrameIterator(iter: AsyncIterable<Uint8Array>) {
+/** 解码二进制帧。输入应该是通过 packageCpcFrame 生成的二进制块，可以是经过流的碎片 */
+export async function* createFrameIterator(
+  iter: AsyncIterable<Uint8Array>
+): AsyncGenerator<RpcFrame, Uint8Array | undefined, unknown> {
   const parser = createCpcFrameParser();
   let chunk: Uint8Array | undefined;
   for await (chunk of iter) {
@@ -34,9 +32,8 @@ export async function* createFrameIterator(iter: AsyncIterable<Uint8Array>) {
   }
   return chunk;
 }
-/** 将多个 RpcFrame 打包多个成二进制帧 JBOD-CPC 帧
- * @internal */
-export function packCpcFrames(frames: RpcFrame[]) {
+/** 将多个 RpcFrame 打包多个成二进制帧 JBOD-CPC 帧 */
+export function packCpcFrames(frames: RpcFrame[]): Uint8Array {
   const encoderList: CpcFrameEncoder[] = new Array(frames.length);
   let len = 0;
   for (let i = 0; i < frames.length; i++) {
@@ -54,9 +51,8 @@ export function packCpcFrames(frames: RpcFrame[]) {
   }
   return u8Arr;
 }
-/** 解码由 packCpcFrames 生成的二进制帧
- * @internal */
-export function* unpackCpcFrames(buf: Uint8Array, offset: number) {
+/** 解码由 packCpcFrames 生成的二进制帧 */
+export function* unpackCpcFrames(buf: Uint8Array, offset: number): Generator<RpcFrame, void, void> {
   let decRes: ReturnType<typeof decodeCpcFrame>;
   do {
     let res = varints.decodeU32D(buf, offset);
@@ -69,8 +65,9 @@ export function* unpackCpcFrames(buf: Uint8Array, offset: number) {
   } while (offset < buf.byteLength);
 }
 
-/** 解码二进制 JBOD-CPC 帧
- * @internal */
+/* 单个帧 */
+
+/** 解码二进制 JBOD-CPC 帧 */
 export function decodeCpcFrame(buf: Uint8Array, offset = 0): { frame: RpcFrame; offset: number } {
   const type: FrameType = buf[offset++];
   let frame: RpcFrame;
@@ -115,8 +112,7 @@ export function decodeCpcFrame(buf: Uint8Array, offset = 0): { frame: RpcFrame; 
   return { frame, offset };
 }
 
-/** 编码二进制 JBOD-CPC 帧
- * @internal */
+/** 编码二进制 JBOD-CPC 帧 */
 export class CpcFrameEncoder {
   readonly type: FrameType;
   constructor(frame: RpcFrame) {

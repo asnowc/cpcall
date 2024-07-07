@@ -1,5 +1,4 @@
-import type { FrameType, CallerStatus, ServerStatus } from "./const.ts";
-import type { OnceListenable } from "evlib";
+import type { FrameType } from "./const.ts";
 
 /** @public */
 export namespace Frame {

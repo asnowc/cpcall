@@ -1,4 +1,5 @@
-import { CpCall, unpackCpcFrames, packCpcFrames, RpcFrame, CpcFrameSource, CpcController } from "cpcall";
+import { CpCall, RpcFrame, CpcFrameSource, CpcController } from "cpcall";
+import { unpackCpcFrames, packCpcFrames } from "../cpc/stream_trans/mod.ts";
 
 /** 创建一个基于 WebSocket 的 CpCall 实例。
  * @public */
