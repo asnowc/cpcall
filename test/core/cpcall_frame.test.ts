@@ -10,7 +10,7 @@ import { afterTime } from "evlib";
 describe("call-response", function () {
   test("call-return", async function ({ cpcSuite }) {
     const { cpc1, cpc1Src, cpc2, cpc2Src } = cpcSuite;
-    cpc2.setFn("cmd", (...args) => args);
+    cpc2.setObject({ cmd: (...args: any[]) => args });
 
     const args = ["cmd", 12, null, "str"];
 
@@ -29,8 +29,10 @@ describe("call-response", function () {
   test("call-throw", async function ({ cpcSuite }) {
     const { cpc1, cpc1Src, cpc2, cpc2Src } = cpcSuite;
 
-    cpc2.setFn("cmd", (...args) => {
-      throw new Error("hhh");
+    cpc2.setObject({
+      cmd: (...args: any[]) => {
+        throw new Error("hhh");
+      },
     });
     await expect(cpc1.call("cmd")).rejects.toThrowError("hhh");
 
@@ -40,8 +42,10 @@ describe("call-response", function () {
   });
   test("call-resolve", async function ({ cpcSuite }) {
     const { cpc1, cpc1Src, cpc2, cpc2Src } = cpcSuite;
-    cpc2.setFn("cmd", async (...args) => {
-      return "ok";
+    cpc2.setObject({
+      cmd: async (...args: any) => {
+        return "ok";
+      },
     });
     const promise = cpc1.call("cmd");
     await expect(promise).resolves.toBe("ok");
@@ -52,8 +56,11 @@ describe("call-response", function () {
   });
   test("call-reject", async function ({ cpcSuite }) {
     const { cpc1, cpc1Src, cpc2, cpc2Src } = cpcSuite;
-    cpc2.setFn("cmd", async (...args) => {
-      throw "err";
+
+    cpc2.setObject({
+      cmd: async (...args: any) => {
+        throw "err";
+      },
     });
     await expect(cpc1.call("cmd")).rejects.toBe("err");
 

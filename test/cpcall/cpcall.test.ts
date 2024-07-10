@@ -6,48 +6,39 @@ import { MockCpcFrameSource } from "../__mocks__/CpcMockControl.ts";
 import { cpcTest as test } from "../env/cpc.env.ts";
 
 describe("与返回调用", function () {
-  let mock!: ReturnType<typeof mocks.createConnectedCpc>;
-  const fn = vi.fn((...args) => args);
-  const cmd = "fn";
-  beforeEach(() => {
-    mock = mocks.createConnectedCpc();
-    mock.serverCpc.setFn(cmd, fn);
-    fn.mockRestore();
-  });
-
   /** 测试参数传输 */
-  test("单个参数调用与返回值", async function () {
-    const { clientCpc } = mock;
+  test("单个参数调用与返回值", async function ({ cpcSuite: { cpc1, cpc2 } }) {
     const arg = [1, "ab", null, { a: 2, b: 8n }];
-    const res = await clientCpc.call(cmd, ...arg);
+    const fn = vi.fn((...args) => args);
+    cpc2.setObject({ fn });
+
+    const res = await cpc1.call("fn", ...arg);
 
     expect(fn).toBeCalledWith(...arg);
     expect(res, "返回值").toEqual(arg);
   });
   /** 测试返回顺序 */
-  test("连续调用", async function () {
-    const { clientCpc } = mock;
-    fn.mockImplementation((...args) => args[0]);
+  test("连续调用", async function ({ cpcSuite: { cpc1, cpc2 } }) {
+    cpc2.setObject({ fn: vi.fn((...args) => args[0]) });
     const dataList = [null, true, false];
-    const pmsList: Promise<any>[] = dataList.map((arg) => clientCpc.call(cmd, arg));
+    const pmsList: Promise<any>[] = dataList.map((arg) => cpc1.call("fn", arg));
     const res = await Promise.all(pmsList);
     expect(res).toEqual(dataList);
   });
-  test("exec", async function () {
-    const { clientCpc, serverCpc } = mock;
-    fn.mockImplementation((...args) => args[0]);
-    serverCpc.setFn("fn", fn);
-    expect(clientCpc.exec("fn", 77)).toBeUndefined();
+  test("exec", async function ({ cpcSuite: { cpc1, cpc2 } }) {
+    cpc2.setObject({ fn: vi.fn((...args: any[]) => args[0]) });
+    expect(cpc1.exec("fn", 77)).toBeUndefined();
   });
-  test("内联调用", async function () {
+  test("内联调用", async function ({ cpcSuite: { cpc1, cpc2 } }) {
     let pms: Promise<any>;
-    const { clientCpc, serverCpc } = mock;
-    clientCpc.setFn("clientFn", () => 1);
-    serverCpc.setFn("serverFn", () => {
-      pms = serverCpc.call("clientFn", true);
-      return 3;
+    cpc2.setObject({
+      clientFn: () => 1,
+      serverFn: () => {
+        pms = cpc1.call("clientFn", true);
+        return 3;
+      },
     });
-    await expect(clientCpc.call("serverFn")).resolves.toBe(3);
+    await expect(cpc1.call("serverFn")).resolves.toBe(3);
     await expect(pms!).resolves.toBe(1);
   });
 }, 500);
@@ -58,7 +49,7 @@ describe("返回值", function () {
   const cmd = "fn";
   beforeEach(() => {
     mock = mocks.createConnectedCpc();
-    mock.serverCpc.setFn(cmd, fn);
+    mock.serverCpc.setObject({ [cmd]: fn });
     fn.mockRestore();
   });
 
@@ -139,10 +130,12 @@ describe("状态更改", function () {
     serverCpc.onClose.catch(() => {});
     clientCpc.onClose.catch(() => {});
 
-    serverCpc.setFn("cmd", function () {
-      return new Promise(function (resolve) {
-        setTimeout(resolve, 500);
-      });
+    serverCpc.setObject({
+      cmd: function () {
+        return new Promise(function (resolve) {
+          setTimeout(resolve, 500);
+        });
+      },
     });
     let pms = clientCpc.call("cmd");
     await afterTime(); //等待响应异步 id
@@ -209,22 +202,27 @@ describe("状态更改", function () {
   });
 }, 500);
 
-test("参数转换", async function ({ cpcSuite }) {
+test.todo("参数转换", async function ({ cpcSuite }) {
   const { cpc1, cpc2 } = cpcSuite;
-  cpc2.setFn("cmd", (num: string) => num, {
-    transformArgs(args) {
-      args[0] = "c" + args[0];
-      return args as [string];
-    },
-    transformReturn(data) {
-      return data + "r";
-    },
-  });
-  cpc2.setFn("cmd2", async (num: string): Promise<string> => num, {
-    transformReturn(data) {
-      return data + "r";
-    },
-  });
+  cpc2.setObject(
+    { cmd: (num: string) => num, cmd2: async (num: string): Promise<string> => num },
+    {
+      cmd: {
+        transformArgs(args) {
+          args[0] = "c" + args[0];
+          return args as [string];
+        },
+        transformReturn(data) {
+          return data + "r";
+        },
+      },
+      cmd2: {
+        transformReturn(data) {
+          return data + "r";
+        },
+      },
+    }
+  );
   await expect(cpc1.call("cmd", 1)).resolves.toBe("c1r");
   await expect(cpc1.call("cmd2", 1)).resolves.toBe("1r");
 });

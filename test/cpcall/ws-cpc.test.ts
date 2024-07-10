@@ -54,7 +54,7 @@ test("事件触发", async function () {
   const cpc2 = createWebSocketCpc(ws2);
 
   const fn = vi.fn((arg) => arg);
-  cpc2.setFn("abc", fn);
+  cpc2.setObject({ abc: fn });
   const cal = cpc1;
   const res = await Promise.all([cal.call("abc", 1), cal.call("abc", 3)]);
   expect(res).toEqual([1, 3]);

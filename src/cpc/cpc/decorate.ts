@@ -1,4 +1,5 @@
 import { ServeFnTransform, SetServeFnOption } from "../core/type.ts";
+import { getOrCreateRpcDecorateMeta } from "./registrar.ts";
 
 export function rpcService(path?: string, mode: "exclude" | "include" = "exclude") {
   return (input: new (...args: any[]) => Object, context: ClassDecoratorContext) => {
@@ -21,7 +22,7 @@ export function rpcFn(
     if (!option) option = {};
     switch (context.kind) {
       case "method": {
-        const meta = getOrCreateRpcMeta(context.metadata);
+        const meta = getOrCreateRpcDecorateMeta(context.metadata);
         meta.methods.set(context.name, option);
         break;
       }
@@ -42,24 +43,6 @@ class RpcDecorateError extends Error {
   }
 }
 
-interface RpcMeta {
-  methods: Map<string, ServeFnConfig>;
-  base?: string;
-}
-type ServeFnConfig = ServeFnTransform<any, Awaited<any>> & {
-  base?: string;
-};
-
-const RPC_SERVICE_META_MAP = new WeakMap<WeakKey, RpcMeta>();
-function getOrCreateRpcMeta(meta: DecoratorMetadata): RpcMeta {
-  let rpcMeta = RPC_SERVICE_META_MAP.get(meta);
-  if (!rpcMeta) {
-    rpcMeta = { methods: new Map() };
-    RPC_SERVICE_META_MAP.set(meta, rpcMeta);
-  }
-
-  return rpcMeta;
-}
 @rpcService("ksd")
 class S1 {
   @rpcFn()
@@ -69,6 +52,8 @@ class S1 {
   @rpcFn()
   att = (data: number) => "dg";
 }
+
+class S2 extends S1 {}
 
 type RpcDecorator<A extends any[] = any[], R = any> = (
   input: undefined | ((...args: A) => R),

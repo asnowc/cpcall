@@ -72,7 +72,7 @@ declare namespace core {
 // @public (undocumented)
 class CpCall extends CpCallBase {
     static call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T>;
-    clearFn(): void;
+    clearObject(): void;
     static exec<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): void;
     genCaller(opts?: GenCallerOpts): AnyCaller;
     // (undocumented)
@@ -81,13 +81,11 @@ class CpCall extends CpCallBase {
     genCaller<R extends object>(base: string, opts?: GenCallerOpts): MakeCallers<R, CallerProxyPrototype>;
     // (undocumented)
     genCaller<R extends object>(opts?: GenCallerOpts): MakeCallers<R, CallerProxyPrototype>;
-    getAllFn(): IterableIterator<string>;
     // (undocumented)
     protected onCall(rawArgs: any[]): any;
-    removeFn(cmd: any): void;
-    setFn<A extends any[] = any[], R = any>(cmd: any, fn: (...args: A) => R, option?: SetServeFnOption & ServeFnTransform<A, Awaited<R>>): void;
-    setObject(obj: object, cmd?: string): void;
-    setObject(obj: object, cmd: ParseObjectOption): void;
+    removeObject(path?: string | string[]): boolean;
+    setObject(obj: object, path?: string | string[]): void;
+    setObject(obj: object, option: ParseObjectOption): void;
 }
 
 // @public
@@ -298,7 +296,6 @@ declare namespace node {
 // @public
 type ParseObjectOption = {
     cmd?: string;
-    deep?: number;
 };
 
 // @public

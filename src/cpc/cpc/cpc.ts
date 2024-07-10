@@ -1,7 +1,6 @@
-import { genRpcCmdMap } from "./class_gen.ts";
 import { CpCallBase } from "./cpc_base.ts";
 import { createObjectChain, getChainPath } from "evlib/object";
-import { ServeFnTransform, SetServeFnOption } from "../core/type.ts";
+import { Registrar } from "./registrar.ts";
 
 /**
  * @public
@@ -38,74 +37,52 @@ export class CpCall extends CpCallBase {
   protected onCall(rawArgs: any[]) {
     let cmd = rawArgs[0];
     let args = rawArgs.slice(1);
-    if (typeof cmd === "string") {
-      const context = this.#licensers.get(cmd);
+    if (typeof cmd === "string" && cmd) {
+      const path = cmd.split(this.#separator);
+      const context = this.#registrar.getServe(path);
+
       if (!context) throw new CpcUnregisteredCommandError(cmd);
-      if (context.transformArgs) args = context.transformArgs.call(undefined, args);
-      let res = context.fn.apply(context.this, args);
-      if (context.transformReturn) {
-        if (res instanceof Promise) res = res.then(context.transformReturn);
-        else res = context.transformReturn.call(undefined, res);
+      const { fn, meta, this: _this } = context;
+      if (meta.transformArgs) args = meta.transformArgs.call(undefined, args);
+      let res = fn.apply(_this, args);
+      if (meta.transformReturn) {
+        if (res instanceof Promise) res = res.then(meta.transformReturn);
+        else res = meta.transformReturn.call(undefined, res);
       }
       return res;
     }
     throw new CpcUnregisteredCommandError(cmd);
   }
-  readonly #licensers = new Map<string, ServeContext>();
-  /**
-   * 设置可调用函数
-   * @param cmd - 方法名称
-   */
-  setFn<A extends any[] = any[], R = any>(
-    cmd: any,
-    fn: (...args: A) => R,
-    option: SetServeFnOption & ServeFnTransform<A, Awaited<R>> = {}
-  ): void {
-    const { transformArgs, transformReturn } = option;
-    if (transformArgs && typeof transformArgs !== "function") throw new Error("transformArgs must be a function");
-    if (transformReturn && typeof transformReturn !== "function") throw new Error("transformArgs must be a function");
+  readonly #registrar = new Registrar();
 
-    this.#licensers.set(cmd, {
-      fn,
-      this: option.this,
-      transformArgs,
-      transformReturn,
-    });
+  get #separator() {
+    return this.#registrar.separator;
   }
-  /** 删除可调用函数 */
-  removeFn(cmd: any) {
-    this.#licensers.delete(cmd);
+  /** 删除已设置的远程可调用对象 */
+  removeObject(path?: string | string[]): boolean {
+    if (typeof path === "string") path = path.split(this.#separator);
+    return this.#registrar.removeServe(path);
   }
-  /** 获取所有已设置的可调用函数，包括 setObject 设置的对象 */
-  getAllFn() {
-    return this.#licensers.keys();
+  /** 清空所有已设置的远程可调用对象 */
+  clearObject() {
+    this.#registrar.clear();
   }
-  /** 清空所有已设置的可调用函数，包括 setObject 设置的对象  */
-  clearFn() {
-    this.#licensers.clear();
-  }
-
-  // protected _getFn(cmd: string): RpcFn | undefined {
-  //   const path = cmd.split(this.#sp);
-  //   return getObjByPath(this.#object, path);
-  // }
-  // #object: Record<string | number, any> = {};
-  #separator = ".";
   /** 设置远程可调用对象。 */
-  setObject(obj: object, cmd?: string): void;
+  setObject(obj: object, path?: string | string[]): void;
   /** 设置远程可调用对象。 */
-  setObject(obj: object, cmd: ParseObjectOption): void;
-  setObject(obj: object, cmd_opts?: string | ParseObjectOption) {
-    const map = new Map<string, any>();
-    let opts: ParseObjectOption = typeof cmd_opts === "string" ? { cmd: cmd_opts } : cmd_opts ?? {};
-    genRpcCmdMap(obj, opts.cmd ?? "", {
-      map: map,
-      sp: this.#separator,
-      deep: opts.deep ?? 2,
-    });
-    for (const [k, v] of map) {
-      this.#licensers.set(k, v);
+  setObject(obj: object, option: ParseObjectOption): void;
+  setObject(obj: object, path_opts?: string | string[] | ParseObjectOption) {
+    let path: string[] | undefined;
+    let opts: ParseObjectOption;
+    if (typeof path_opts === "string") {
+      path = path_opts ? path_opts.split(this.#separator) : undefined;
+      opts = {};
+    } else if (path_opts instanceof Array) {
+      path = path_opts;
+    } else if (typeof path_opts === "object") {
+      opts = path_opts;
     }
+    this.#registrar.setObject(obj, path);
   }
 
   /** 生成远程代理对象 */
@@ -135,10 +112,7 @@ export class CpCall extends CpCallBase {
     });
   }
 }
-type ServeContext = ServeFnTransform<any, any> & {
-  this?: object;
-  fn: ServeFn;
-};
+
 type ServeFn = (...args: any[]) => any;
 
 /** 调用未注册的命令
@@ -155,8 +129,6 @@ export class CpcUnregisteredCommandError extends Error {
  */
 export type ParseObjectOption = {
   cmd?: string;
-  /** 解析的最大深度，默认为 2 */
-  deep?: number;
 };
 
 /** @public  */
