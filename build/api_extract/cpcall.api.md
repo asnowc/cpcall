@@ -25,11 +25,6 @@ type CalleeFrame = Frame.Return | Frame.ReturnPromise | Frame.Resolve | Frame.Re
 type CallerFrame = Frame.Call | Frame.Exec | Frame.EndCall;
 
 // @public (undocumented)
-type CallerProxyPrototype = {
-    [Symbol.asyncDispose](): Promise<void>;
-};
-
-// @public (undocumented)
 enum CallerStatus {
     callable = 0,
     ended = 2,
@@ -43,7 +38,6 @@ declare namespace core {
         AnyEmitter,
         CalleeFrame,
         CallerFrame,
-        CallerProxyPrototype,
         CallerStatus,
         CpCall,
         CpCallBase,
@@ -61,11 +55,18 @@ declare namespace core {
         MakeEmitter,
         ParseObjectOption,
         RemoteCallError,
+        RpcDecorator,
+        RpcExposed,
         RpcFrame,
-        ServeFnTransform,
+        RpcInterceptCall,
+        RpcInterceptReturn,
+        RpcService,
+        ServeFnConfig,
         ServerStatus,
-        SetServeFnOption,
-        createJbodStreamFrameSource
+        ServiceDefineMode,
+        createJbodStreamFrameSource,
+        manualDefineObject,
+        rpcExclude
     }
 }
 
@@ -78,9 +79,9 @@ class CpCall extends CpCallBase {
     // (undocumented)
     genCaller(base: string, opts?: GenCallerOpts): AnyCaller;
     // (undocumented)
-    genCaller<R extends object>(base: string, opts?: GenCallerOpts): MakeCallers<R, CallerProxyPrototype>;
+    genCaller<R extends object>(base: string, opts?: GenCallerOpts): MakeCallers<R>;
     // (undocumented)
-    genCaller<R extends object>(opts?: GenCallerOpts): MakeCallers<R, CallerProxyPrototype>;
+    genCaller<R extends object>(opts?: GenCallerOpts): MakeCallers<R>;
     // (undocumented)
     protected onCall(rawArgs: any[]): any;
     removeObject(path?: string | string[]): boolean;
@@ -260,13 +261,15 @@ type MakeEmitter<T extends object, E extends object = {}> = E & {
     [Key in keyof T as T[Key] extends object ? Key : never]: T[Key] extends object ? MakeCallers<T[Key], E> : never;
 } & (T extends (...args: infer A) => any ? (...args: A) => void : {});
 
+// @public
+function manualDefineObject(Class: new (...args: any[]) => any, serviceDecorator: RpcDecorator, define?: Record<string, RpcDecorator[]>): void;
+
 declare namespace node {
     export {
         AnyCaller,
         AnyEmitter,
         CalleeFrame,
         CallerFrame,
-        CallerProxyPrototype,
         CallerStatus,
         CpCallBase,
         CpCallOption,
@@ -283,11 +286,18 @@ declare namespace node {
         MakeEmitter,
         ParseObjectOption,
         RemoteCallError,
+        RpcDecorator,
+        RpcExposed,
         RpcFrame,
-        ServeFnTransform,
+        RpcInterceptCall,
+        RpcInterceptReturn,
+        RpcService,
+        ServeFnConfig,
         ServerStatus,
-        SetServeFnOption,
+        ServiceDefineMode,
         createJbodStreamFrameSource,
+        manualDefineObject,
+        rpcExclude,
         CpCall,
         createSocketCpc
     }
@@ -305,13 +315,34 @@ class RemoteCallError extends Error {
 }
 
 // @public (undocumented)
-type RpcFrame = Frame.Return | Frame.ReturnPromise | Frame.Resolve | Frame.Reject | Frame.Throw | Frame.EndServe | Frame.Call | Frame.Exec | Frame.EndCall | Frame.ResponseError;
+type RpcDecorator<A extends any[] = any[], R = any> = (input: unknown, context: {
+    name: string | symbol;
+    metadata: object;
+}) => void;
 
 // @public (undocumented)
-interface ServeFnTransform<A extends any[], R> {
-    transformArgs?(args: any[]): A;
-    transformReturn?(data: R): any;
-}
+const rpcExclude: RpcDecorator;
+
+// @public (undocumented)
+function RpcExposed(): RpcDecorator;
+
+// @public (undocumented)
+type RpcFrame = Frame.Return | Frame.ReturnPromise | Frame.Resolve | Frame.Reject | Frame.Throw | Frame.EndServe | Frame.Call | Frame.Exec | Frame.EndCall | Frame.ResponseError;
+
+// @public
+function RpcInterceptCall<T extends any[], A extends any[]>(interceptor: (args: T) => A): RpcDecorator<A>;
+
+// @public
+function RpcInterceptReturn<T, R>(interceptor?: (result: R) => T): RpcDecorator<any[], R>;
+
+// @public (undocumented)
+function RpcService(mode?: ServiceDefineMode): (input: new (...args: any[]) => Object, context: ClassDecoratorContext) => void;
+
+// @public (undocumented)
+type ServeFnConfig = {
+    interceptCall?(args: any[]): any[];
+    interceptReturn?(data: any): any;
+};
 
 // @public (undocumented)
 enum ServerStatus {
@@ -321,8 +352,11 @@ enum ServerStatus {
 }
 
 // @public (undocumented)
-interface SetServeFnOption {
-    this?: object;
+enum ServiceDefineMode {
+    // (undocumented)
+    exclude = 1,
+    // (undocumented)
+    include = 0
 }
 
 declare namespace web {
@@ -331,7 +365,6 @@ declare namespace web {
         AnyEmitter,
         CalleeFrame,
         CallerFrame,
-        CallerProxyPrototype,
         CallerStatus,
         CpCallBase,
         CpCallOption,
@@ -348,11 +381,18 @@ declare namespace web {
         MakeEmitter,
         ParseObjectOption,
         RemoteCallError,
+        RpcDecorator,
+        RpcExposed,
         RpcFrame,
-        ServeFnTransform,
+        RpcInterceptCall,
+        RpcInterceptReturn,
+        RpcService,
+        ServeFnConfig,
         ServerStatus,
-        SetServeFnOption,
+        ServiceDefineMode,
         createJbodStreamFrameSource,
+        manualDefineObject,
+        rpcExclude,
         CpCall,
         WebStreamSuite,
         createWebSocketCpc,

@@ -9,6 +9,9 @@ import packageJson from "./package.json" with { type: "json" };
 const { deps } = getDeps();
 const src = path.resolve("src");
 const DEV=Boolean(process.env.DEV)
+if(DEV){
+  console.log("Build in dev mode");
+}
 export default defineEvConfig({
   input: {
     cpc: "src/cpc/mod.ts",

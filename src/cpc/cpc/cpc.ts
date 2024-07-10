@@ -2,6 +2,8 @@ import { CpCallBase } from "./cpc_base.ts";
 import { createObjectChain, getChainPath } from "evlib/object";
 import { Registrar } from "./registrar.ts";
 
+export { ServiceDefineMode } from "./registrar.ts";
+export * from "./decorate.ts";
 /**
  * @public
  */
@@ -43,11 +45,11 @@ export class CpCall extends CpCallBase {
 
       if (!context) throw new CpcUnregisteredCommandError(cmd);
       const { fn, meta, this: _this } = context;
-      if (meta.transformArgs) args = meta.transformArgs.call(undefined, args);
+      if (meta.interceptCall) args = meta.interceptCall.call(undefined, args);
       let res = fn.apply(_this, args);
-      if (meta.transformReturn) {
-        if (res instanceof Promise) res = res.then(meta.transformReturn);
-        else res = meta.transformReturn.call(undefined, res);
+      if (meta.interceptReturn) {
+        if (res instanceof Promise) res = res.then(meta.interceptReturn);
+        else res = meta.interceptReturn.call(undefined, res);
       }
       return res;
     }
@@ -88,8 +90,8 @@ export class CpCall extends CpCallBase {
   /** 生成远程代理对象 */
   genCaller(opts?: GenCallerOpts): AnyCaller;
   genCaller(base: string, opts?: GenCallerOpts): AnyCaller;
-  genCaller<R extends object>(base: string, opts?: GenCallerOpts): MakeCallers<R, CallerProxyPrototype>;
-  genCaller<R extends object>(opts?: GenCallerOpts): MakeCallers<R, CallerProxyPrototype>;
+  genCaller<R extends object>(base: string, opts?: GenCallerOpts): MakeCallers<R>;
+  genCaller<R extends object>(opts?: GenCallerOpts): MakeCallers<R>;
   genCaller(base_opts?: string | GenCallerOpts, opts?: GenCallerOpts): object {
     let base: string;
     if (typeof base_opts === "string") {
@@ -147,17 +149,16 @@ function getProxyInfo(proxyObj: (...args: any[]) => any) {
 
 const CPC_SRC = Symbol("cpc src");
 const callerProxyPrototype: CallerProxyPrototype = {
-  [Symbol.asyncDispose](): Promise<void> {
-    return (this as any as CallerProxy)[CPC_SRC].endCall();
-  },
+  // [Symbol.asyncDispose](): Promise<void> {
+  //   return (this as any as CallerProxy)[CPC_SRC].endCall();
+  // },
 };
 interface CallerProxy {
   readonly [CPC_SRC]: CpCall;
 }
 
-/** @public */
-export type CallerProxyPrototype = {
-  [Symbol.asyncDispose](): Promise<void>;
+type CallerProxyPrototype = {
+  // [Symbol.asyncDispose](): Promise<void>;
 };
 
 /** @public */

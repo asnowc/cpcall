@@ -201,28 +201,3 @@ describe("状态更改", function () {
     expect(cpc1.closed).toBeTruthy();
   });
 }, 500);
-
-test.todo("参数转换", async function ({ cpcSuite }) {
-  const { cpc1, cpc2 } = cpcSuite;
-  cpc2.setObject(
-    { cmd: (num: string) => num, cmd2: async (num: string): Promise<string> => num },
-    {
-      cmd: {
-        transformArgs(args) {
-          args[0] = "c" + args[0];
-          return args as [string];
-        },
-        transformReturn(data) {
-          return data + "r";
-        },
-      },
-      cmd2: {
-        transformReturn(data) {
-          return data + "r";
-        },
-      },
-    }
-  );
-  await expect(cpc1.call("cmd", 1)).resolves.toBe("c1r");
-  await expect(cpc1.call("cmd2", 1)).resolves.toBe("1r");
-});

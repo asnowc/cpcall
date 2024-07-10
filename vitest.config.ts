@@ -4,7 +4,7 @@ import * as path from "node:path";
 const root = __dirname;
 
 export default defineConfig({
-  esbuild: { target: "es2023" },
+  esbuild: { target: "es2020" },
   test: {
     api: 8809,
     alias: [

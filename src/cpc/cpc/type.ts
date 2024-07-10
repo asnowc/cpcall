@@ -28,3 +28,11 @@ export type CpcController<T = RpcFrame> = {
   /** 如果不会再有更多帧，应该调用它，CpCall 内部会判断是正常关闭还是异常关闭 */
   endFrame(error?: any): void;
 };
+
+/** @public */
+export type ServeFnConfig = {
+  /** 参数转换 */
+  interceptCall?(args: any[]): any[];
+  /** 返回拦截器 */
+  interceptReturn?(data: any): any;
+};

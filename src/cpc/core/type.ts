@@ -38,16 +38,3 @@ export type RpcFrame =
   | Frame.Exec
   | Frame.EndCall
   | Frame.ResponseError;
-
-/** @public */
-export interface ServeFnTransform<A extends any[], R> {
-  /** 参数转换 */
-  transformArgs?(args: any[]): A;
-  /** 返回值转换 */
-  transformReturn?(data: R): any;
-}
-/** @public */
-export interface SetServeFnOption {
-  /** 函数执行上下文 */
-  this?: object;
-}

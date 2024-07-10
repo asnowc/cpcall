@@ -1,8 +1,7 @@
-import { ServeFnTransform } from "../core/type.ts";
+import { ServeFnConfig } from "./type.ts";
 
 export class Registrar {
   #map?: ServeMap | ServeObjectRoot;
-  constructor() {}
 
   removeServe(path?: string[]): boolean {
     if (!path || path.length === 0) {
@@ -73,44 +72,67 @@ export class Registrar {
     if (!root || i > max) return;
 
     let context = root.object as any;
+    let rpcMeta: ServiceConfig | undefined = getObjectRpcDecorateMeta(context);
+    let key: string;
     while (i < max) {
-      context = context[path[i++]];
+      key = path[i++];
+      if (rpcMeta) {
+        if (rpcMeta.mode === ServiceDefineMode.exclude) {
+          if (rpcMeta.excludes!.has(key)) return undefined;
+        } else {
+          if (!rpcMeta.includes.has(key)) return undefined;
+        }
+        context = context[key];
+      } else {
+        context = context[key];
+      }
+      rpcMeta = getObjectRpcDecorateMeta(context);
     }
 
     const field = path[max];
-    let fn = context[field];
-
-    const rpcMeta = getObjectRpcDecorateMeta(context);
-    let meta: ServeFnConfig;
+    let meta: ServeFnConfig | undefined;
     if (rpcMeta) {
-      meta = rpcMeta.methods.get(field) ?? {};
-    } else meta = {};
-
-    return { this: context, fn, meta };
+      if (rpcMeta.mode === ServiceDefineMode.exclude) {
+        if (rpcMeta.excludes!.has(field)) return;
+        meta = rpcMeta.includes.get(field) ?? {};
+      } else {
+        meta = rpcMeta.includes.get(field);
+        if (!meta) return;
+      }
+    } else {
+      meta = {};
+    }
+    return { this: context, fn: context[field], meta };
   }
 }
 
-export type ServeFnConfig = ServeFnTransform<any, Awaited<any>> & {};
-
-export function getObjectRpcDecorateMeta(object: object): RpcDecorateMeta | undefined {
+/** @public */
+export enum ServiceDefineMode {
+  include = 0,
+  exclude = 1,
+}
+export const SymbolMetadata = Symbol.metadata;
+export function getObjectRpcDecorateMeta(object: object): ServiceConfig | undefined {
   const prototype = Reflect.getPrototypeOf(object);
   if (!prototype) return;
   const constructor = prototype.constructor;
   if (!constructor) return;
 
-  const meta = Reflect.get(constructor, Symbol.metadata);
+  const meta = Reflect.get(constructor, SymbolMetadata);
   if (!meta) return;
   return RPC_SERVICE_META_MAP.get(meta);
 }
 
-export interface RpcDecorateMeta {
-  methods: Map<string, ServeFnConfig>;
-}
-const RPC_SERVICE_META_MAP = new WeakMap<WeakKey, RpcDecorateMeta>();
-export function getOrCreateRpcDecorateMeta(meta: object): RpcDecorateMeta {
+export type ServiceConfig = {
+  includes: Map<string, ServeFnConfig>;
+  mode?: ServiceDefineMode;
+  excludes?: Set<string>;
+};
+const RPC_SERVICE_META_MAP = new WeakMap<WeakKey, ServiceConfig>();
+export function getOrCreateRpcDecorateMeta(meta: object): ServiceConfig {
   let rpcMeta = RPC_SERVICE_META_MAP.get(meta);
   if (!rpcMeta) {
-    rpcMeta = { methods: new Map() };
+    rpcMeta = { includes: new Map() };
     RPC_SERVICE_META_MAP.set(meta, rpcMeta);
   }
 
@@ -121,11 +143,8 @@ type ServeObjectRoot = {
   object: object;
 };
 type ServeMap = Map<string, ServeMap | ServeObjectRoot>;
-
-type ServeFn = (...args: any[]) => any;
-
 export type ExecutionContext = {
   this?: object;
-  fn: ServeFn;
+  fn: (...args: any[]) => any;
   meta: ServeFnConfig;
 };

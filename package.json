@@ -8,7 +8,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage --ui",
     "check-type": "tsc --noEmit -p tsconfig.build.json",
-    "build": "pnpm rollup -c && pnpm gen-dts && pnpm api-extract",
+    "build": "pnpm rollup -c --environment DEV && pnpm gen-dts && pnpm api-extract",
     "api-extract": "pnpm run ci:check-api -l",
     "gen-dts": "node build/build_type.js",
     "ci:build": "pnpm rollup -c && pnpm gen-dts true",
