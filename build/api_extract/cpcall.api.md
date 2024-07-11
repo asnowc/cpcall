@@ -226,7 +226,7 @@ export type MakeEmitter<T extends object, E extends object = {}> = E & {
 } & (T extends (...args: infer A) => any ? (...args: A) => void : {});
 
 // @public
-export function manualDefineObject(Class: new (...args: any[]) => any, serviceDecorator: RpcDecorator, define?: Record<string, RpcDecorator[]>): void;
+export function manualDefineObject(Class: new (...args: any[]) => any, serviceDecorator: ReturnType<typeof RpcService>, define?: Record<string, RpcDecorator[]>): void;
 
 // @public
 export type ParseObjectOption = {
@@ -264,7 +264,9 @@ export function RpcInterceptCall<T extends any[], A extends any[]>(interceptor: 
 export function RpcInterceptReturn<T, R>(interceptor?: (result: R) => T): RpcDecorator<any[], R>;
 
 // @public (undocumented)
-export function RpcService(mode?: ServiceDefineMode): (input: new (...args: any[]) => Object, context: ClassDecoratorContext) => void;
+export function RpcService(mode?: ServiceDefineMode): (input: new (...args: any[]) => Object, context: {
+    metadata: object;
+}) => void;
 
 // @public (undocumented)
 export type ServeFnConfig = {
@@ -300,8 +302,8 @@ export type WebStreamSuite = {
 
 // Warnings were encountered during analysis:
 //
-// dist/mod.d.ts:373:5 - (ae-forgotten-export) The symbol "ReadableStream_2" needs to be exported by the entry point index.d.ts
-// dist/mod.d.ts:374:5 - (ae-forgotten-export) The symbol "WritableStream_2" needs to be exported by the entry point index.d.ts
+// dist/mod.d.ts:375:5 - (ae-forgotten-export) The symbol "ReadableStream_2" needs to be exported by the entry point index.d.ts
+// dist/mod.d.ts:376:5 - (ae-forgotten-export) The symbol "WritableStream_2" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
