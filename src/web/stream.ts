@@ -3,7 +3,7 @@ import { CpCall, CpcController, CpcFrameSource, createJbodStreamFrameSource } fr
 /** 创建一个基于 WebStream 的 CpCall 实例。这可以是 Deno.Conn 对象
  * @public
  */
-export function createWebStreamCpc(stream: WebStreamSuite) {
+export function createWebStreamCpc(stream: WebStreamSuite): CpCall {
   return new CpCall(createJbodStreamFrameSource(new WebStreamSource(stream)));
 }
 class WebStreamSource implements CpcFrameSource<Uint8Array> {

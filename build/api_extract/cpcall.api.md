@@ -123,6 +123,8 @@ interface CpCallOption {
     disableCall?: boolean;
     // (undocumented)
     disableServe?: boolean;
+    // (undocumented)
+    serveObject?: object;
 }
 
 // @public
@@ -156,15 +158,15 @@ type CpcFrameSource<T = RpcFrame> = {
 function createJbodStreamFrameSource(ctrl: CpcFrameSource<Uint8Array>): CpcFrameSource<RpcFrame>;
 
 // @public
-function createSocketCpc(duplex: Duplex): CpCall;
+function createSocketCpc(duplex: Duplex, option?: CpCallOption): CpCall;
 
 // Warning: (ae-forgotten-export) The symbol "WebSocket_2" needs to be exported by the entry point index.d.ts
 //
 // @public
-function createWebSocketCpc(websocket: WebSocket_2): CpCall;
+function createWebSocketCpc(websocket: WebSocket_2, option?: CpCallOption): CpCall;
 
 // @public
-function createWebsocketCpcOnOpen(websocket: WebSocket_2): Promise<CpCall>;
+function createWebsocketCpcOnOpen(websocket: WebSocket_2, option?: CpCallOption): Promise<CpCall>;
 
 // @public
 function createWebStreamCpc(stream: WebStreamSuite): CpCall;
@@ -274,7 +276,6 @@ declare namespace node {
         CallerStatus,
         CpCallBase,
         CpCallBaseOption,
-        CpCallOption,
         CpcController,
         CpcError,
         CpcFailAsyncRespondError,
@@ -301,6 +302,7 @@ declare namespace node {
         manualDefineObject,
         rpcExclude,
         CpCall,
+        CpCallOption,
         createSocketCpc
     }
 }
@@ -375,7 +377,6 @@ declare namespace web {
         CallerStatus,
         CpCallBase,
         CpCallBaseOption,
-        CpCallOption,
         CpcController,
         CpcError,
         CpcFailAsyncRespondError,
@@ -402,6 +403,7 @@ declare namespace web {
         manualDefineObject,
         rpcExclude,
         CpCall,
+        CpCallOption,
         WebStreamSuite,
         createWebSocketCpc,
         createWebStreamCpc,

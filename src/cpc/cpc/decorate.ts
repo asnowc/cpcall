@@ -8,8 +8,10 @@ import { ServiceDefineMode, SymbolMetadata, getOrCreateRpcDecorateMeta } from ".
  *
  * @public
  */
-export function RpcService(mode?: ServiceDefineMode) {
-  return (input: new (...args: any[]) => Object, context: ClassDecoratorContext) => {
+export function RpcService(
+  mode?: ServiceDefineMode
+): (input: new (...args: any[]) => Object, context: ClassDecoratorContext) => void {
+  return (input, context) => {
     const rpcDefineConfigMeta = getOrCreateRpcDecorateMeta(context.metadata!);
     rpcDefineConfigMeta.mode = mode;
   };

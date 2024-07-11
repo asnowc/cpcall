@@ -1,10 +1,10 @@
 import type { Duplex } from "node:stream";
-import { CpCall, CpcController, createJbodStreamFrameSource } from "cpcall";
+import { CpCall, CpcController, createJbodStreamFrameSource, CpCallOption } from "cpcall";
 
 /** 创建一个基于 duplex 的 CpCall 实例
  * @public
  */
-export function createSocketCpc(duplex: Duplex): CpCall {
+export function createSocketCpc(duplex: Duplex, option?: CpCallOption): CpCall {
   if (!duplex.readable || !duplex.writable) throw createAbortedError();
 
   const frameSource = createJbodStreamFrameSource({
@@ -30,7 +30,7 @@ export function createSocketCpc(duplex: Duplex): CpCall {
       duplex.destroy(reason);
     },
   });
-  return new CpCall(frameSource);
+  return new CpCall(frameSource, option);
 }
 
 function createAbortedError() {

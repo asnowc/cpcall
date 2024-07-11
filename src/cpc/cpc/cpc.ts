@@ -17,6 +17,11 @@ export class CpCall extends CpCallBase {
         return this.#onCall(args);
       },
     });
+    if (config) {
+      if (config.serveObject) {
+        this.setObject(config.serveObject);
+      }
+    }
   }
   /** 通过 exec 调用远程代理对象
    *
@@ -153,6 +158,7 @@ type CallerProxyPrototype = {
 export interface CpCallOption {
   disableCall?: boolean;
   disableServe?: boolean;
+  serveObject?: object;
 }
 
 /** @public */
