@@ -43,12 +43,18 @@ export class CalleeCore {
   }
   /** 向对方发送 endServe 帧 */
   endServe(): void {
-    if (this.serverStatus === 2) return;
+    if (this.serverStatus === ServerStatus.finished) return;
     this.onCpcRemoteCallEnd();
   }
   abortServe() {
     this.serverStatus = ServerStatus.finished;
     this.onServeFinish?.();
+  }
+  dispose() {
+    if (this.serverStatus === ServerStatus.serving) {
+      this.onCpcRemoteCallEnd();
+    }
+    this.abortServe();
   }
   private testClose() {
     if (this.promiseNum === 0) {

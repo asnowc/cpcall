@@ -126,8 +126,8 @@ export abstract class CpCallBase {
   dispose(reason: any = null): void {
     if (this.#errored !== undefined) return; //已经销毁过或已关闭
     this.#errored = reason;
-    this.#callee.abortServe();
-    this.#caller.abortCall(reason);
+    this.#callee.dispose();
+    this.#caller.dispose(reason);
     if (this.frameSource.dispose) {
       try {
         this.frameSource.dispose(reason);

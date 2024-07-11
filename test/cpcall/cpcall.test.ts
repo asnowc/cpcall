@@ -150,6 +150,7 @@ describe("状态更改", function () {
     const ctrl = new MockCpcFrameSource();
     const cpcall = new CpCall(ctrl);
     cpcall.dispose(err);
+    ctrl.sendFrame.mockRestore();
 
     await expect(cpcall.onClose).rejects.toBe(err);
     expect(ctrl.sendFrame).not.toBeCalled();
