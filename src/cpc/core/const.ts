@@ -41,6 +41,10 @@ export enum ServerStatus {
  * @public
  */
 export class RemoteCallError extends Error {
+  constructor(message: string, option?: { cause?: any }) {
+    //@ts-ignore option 是 es2022 特性
+    super(message, option);
+  }
   code?: any;
 }
 

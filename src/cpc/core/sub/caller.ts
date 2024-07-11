@@ -128,7 +128,10 @@ export class CallerCore {
   private handleAwait(handle: WithPromise<any>, value: any, error?: boolean) {
     if (error) {
       if (value instanceof Error) {
-        let remoteError = new RemoteCallError(value.message, { cause: value.cause });
+        let remoteError = new RemoteCallError(value.message, {
+          //@ts-ignore
+          cause: value.cause,
+        });
         const code = Reflect.get(value, "code");
         if (code !== undefined) remoteError.code = code;
         value = remoteError;

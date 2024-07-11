@@ -7,7 +7,7 @@
     "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage --ui",
-    "check-type": "tsc --noEmit -p tsconfig.build.json",
+    "check-type": "tsc --noEmit -p src/cpc/tsconfig.json",
     "build": "pnpm rollup -c --environment DEV && pnpm gen-dts && pnpm api-extract",
     "api-extract": "pnpm run ci:check-api -l",
     "gen-dts": "node build/build_type.js",
