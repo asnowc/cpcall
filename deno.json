@@ -1,12 +1,13 @@
 {
   "name": "@asn/cpcall",
-  "version": "0.6.0",
+  "version": "0.5.2",
   "imports": {
     "jbod": "jsr:@asn/jbod@^0.5.0",
+    "evlib": "jsr:@asn/evlib@^2.6.1",
     "cpcall": "./src/mod.ts"
   },
   "tasks": {
-    "publish-dry": "deno publish --dry-run"
+    "publish-dry": "deno publish --dry-run --allow-dirty"
   },
   "exports": {
     ".": "./src/mod.ts"
