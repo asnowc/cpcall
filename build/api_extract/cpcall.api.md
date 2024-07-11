@@ -41,6 +41,7 @@ declare namespace core {
         CallerStatus,
         CpCall,
         CpCallBase,
+        CpCallBaseOption,
         CpCallOption,
         CpcController,
         CpcError,
@@ -72,6 +73,7 @@ declare namespace core {
 
 // @public (undocumented)
 class CpCall extends CpCallBase {
+    constructor(frameSource: CpcFrameSource<RpcFrame>, config?: CpCallOption);
     static call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T>;
     static exec<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): void;
     genCaller(opts?: GenCallerOpts): AnyCaller;
@@ -81,15 +83,13 @@ class CpCall extends CpCallBase {
     genCaller<R extends object>(base: string, opts?: GenCallerOpts): MakeCallers<R>;
     // (undocumented)
     genCaller<R extends object>(opts?: GenCallerOpts): MakeCallers<R>;
-    // (undocumented)
-    protected onCall(rawArgs: any[]): any;
     setObject(obj?: object): void;
     setObject(obj: object): void;
 }
 
 // @public
 abstract class CpCallBase {
-    constructor(frameSource: CpcFrameSource<RpcFrame>, opts?: CpCallOption);
+    constructor(frameSource: CpcFrameSource<RpcFrame>, config: CpCallBaseOption);
     call(...args: any[]): Promise<any>;
     get callerStatus(): CallerStatus;
     close(): Promise<void>;
@@ -99,14 +99,22 @@ abstract class CpCallBase {
     endCall(): Promise<void>;
     endServe(): Promise<void>;
     exec(...args: any[]): void;
-    // (undocumented)
-    protected abstract onCall(rawArgs: any[]): any;
     readonly onCallEnd: Promise<void>;
     readonly onClose: Promise<void>;
     readonly onServeEnd: Promise<void>;
     // (undocumented)
     protected get responsePromiseNum(): number;
     get serverStatus(): ServerStatus;
+}
+
+// @public (undocumented)
+interface CpCallBaseOption {
+    // (undocumented)
+    disableCall?: boolean;
+    // (undocumented)
+    disableServe?: boolean;
+    // (undocumented)
+    onCall(args: unknown[]): any;
 }
 
 // @public (undocumented)
@@ -265,6 +273,7 @@ declare namespace node {
         CallerFrame,
         CallerStatus,
         CpCallBase,
+        CpCallBaseOption,
         CpCallOption,
         CpcController,
         CpcError,
@@ -365,6 +374,7 @@ declare namespace web {
         CallerFrame,
         CallerStatus,
         CpCallBase,
+        CpCallBaseOption,
         CpCallOption,
         CpcController,
         CpcError,

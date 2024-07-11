@@ -1,6 +1,8 @@
 import { CpCallBase } from "./cpc_base.ts";
 import { createObjectChain, getChainPath } from "evlib/object";
 import { getServe, ServeObjectRoot } from "./registrar.ts";
+import { CpcFrameSource } from "./type.ts";
+import { RpcFrame } from "../core/type.ts";
 
 export { ServiceDefineMode } from "./registrar.ts";
 export * from "./decorate.ts";
@@ -8,6 +10,14 @@ export * from "./decorate.ts";
  * @public
  */
 export class CpCall extends CpCallBase {
+  constructor(frameSource: CpcFrameSource<RpcFrame>, config?: CpCallOption) {
+    super(frameSource, {
+      ...config,
+      onCall: (args) => {
+        return this.#onCall(args);
+      },
+    });
+  }
   /** 通过 exec 调用远程代理对象
    *
    * @example
@@ -36,7 +46,7 @@ export class CpCall extends CpCallBase {
     const { cpc, path } = getProxyInfo(proxyObj);
     return cpc.call(path.join(cpc.#separator), ...args) as Promise<any> as any;
   }
-  protected onCall(rawArgs: any[]) {
+  #onCall(rawArgs: any[]) {
     let cmd = rawArgs[0];
     let args = rawArgs.slice(1);
     if (typeof cmd === "string" && cmd) {
@@ -139,6 +149,11 @@ interface CallerProxy {
 type CallerProxyPrototype = {
   // [Symbol.asyncDispose](): Promise<void>;
 };
+/** @public */
+export interface CpCallOption {
+  disableCall?: boolean;
+  disableServe?: boolean;
+}
 
 /** @public */
 export type AnyCaller = {

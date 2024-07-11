@@ -7,7 +7,7 @@ import { CpcFrameSource } from "./type.ts";
  * @public
  */
 export abstract class CpCallBase {
-  constructor(private readonly frameSource: CpcFrameSource<RpcFrame>, opts?: CpCallOption) {
+  constructor(private readonly frameSource: CpcFrameSource<RpcFrame>, config: CpCallBaseOption) {
     /* caller */
 
     const caller = new CallerCore(frameSource);
@@ -39,14 +39,12 @@ export abstract class CpCallBase {
       this.#onClose();
     };
 
-    callee.onCall = this.onCall.bind(this);
+    callee.onCall = config.onCall;
 
     /* init */
 
-    if (opts) {
-      if (!opts.disableCall) caller.abortCall();
-      if (!opts.disableServe) callee.abortServe();
-    }
+    if (config.disableCall) caller.abortCall();
+    if (config.disableServe) callee.abortServe();
 
     frameSource.init({
       endFrame: (reason) => {
@@ -97,7 +95,6 @@ export abstract class CpCallBase {
   get serverStatus(): ServerStatus {
     return this.#callee.serverStatus;
   }
-  protected abstract onCall(rawArgs: any[]): any;
   protected get responsePromiseNum(): number {
     return this.#callee.promiseNum;
   }
@@ -162,7 +159,8 @@ export abstract class CpCallBase {
 }
 
 /** @public */
-export interface CpCallOption {
+export interface CpCallBaseOption {
   disableCall?: boolean;
   disableServe?: boolean;
+  onCall(args: unknown[]): any;
 }
