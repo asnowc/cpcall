@@ -24,7 +24,7 @@
     "@types/node": "^20.14.10",
     "@vitest/coverage-v8": "^1.6.0",
     "@vitest/ui": "^1.6.0",
-    "evlib": "^2.6.0",
+    "evlib": "^2.6.1",
     "rollup-plugin-dts": "^6.1.1",
     "tslib": "^2.6.3",
     "typescript": "^5.5.3",
