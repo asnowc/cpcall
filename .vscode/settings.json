@@ -1,5 +1,5 @@
 {
   "deno.enablePaths": ["./benchmark", "./example"],
   "deno.config": "./deno.json",
-  "cSpell.words": ["binaryify", "cpcall", "jbod"]
+  "cSpell.words": ["cpcall", "jbod"]
 }
