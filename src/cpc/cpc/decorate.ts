@@ -1,4 +1,4 @@
-import { ServiceDefineMode, SymbolMetadata, getOrCreateRpcDecorateMeta } from "./registrar.ts";
+import { ServiceDefineMode, SymbolMetadata, getOrCreateRpcDecorateMeta, getClassRpcConfig } from "./registrar.ts";
 
 /**
  * @param mode - 定义模式
@@ -10,10 +10,25 @@ import { ServiceDefineMode, SymbolMetadata, getOrCreateRpcDecorateMeta } from ".
  */
 export function RpcService(
   mode?: ServiceDefineMode
-): (input: new (...args: any[]) => Object, context: ClassDecoratorContext) => void {
+): (input: new (...args: any[]) => Object, context: { metadata: object }) => void {
   return (input, context) => {
     const rpcDefineConfigMeta = getOrCreateRpcDecorateMeta(context.metadata!);
     rpcDefineConfigMeta.mode = mode;
+
+    let prototype = Reflect.getPrototypeOf(input.prototype);
+    while (prototype) {
+      let parent = prototype.constructor;
+      if (parent) {
+        const rpcDefineConfig = getClassRpcConfig(parent);
+        if (!rpcDefineConfig) break; // 普通类
+
+        Reflect.setPrototypeOf(rpcDefineConfigMeta.excludes, rpcDefineConfig.excludes);
+        Reflect.setPrototypeOf(rpcDefineConfigMeta.includes, rpcDefineConfig.includes);
+      } else {
+        break; // 普通类
+      }
+      prototype = Reflect.getPrototypeOf(prototype);
+    }
   };
 }
 /**
@@ -23,15 +38,14 @@ export function RpcExposed(): RpcDecorator {
   return function rpcFnDecorate(input, context) {
     if (typeof context.name !== "string") throw new RpcDecorateError();
     const serviceConfig = getOrCreateRpcDecorateMeta(context.metadata);
-    serviceConfig.includes.set(context.name, {});
+    serviceConfig.includes[context.name] = {};
   };
 }
 /** @public */
 export const rpcExclude: RpcDecorator = function rpcExclude(input, context) {
   if (typeof context.name !== "string") throw new RpcDecorateError();
   const serviceConfig = getOrCreateRpcDecorateMeta(context.metadata);
-  if (!serviceConfig.excludes) serviceConfig.excludes = new Set();
-  serviceConfig.excludes.add(context.name);
+  serviceConfig.excludes[context.name] = true;
 };
 
 /**
@@ -43,7 +57,7 @@ export function RpcInterceptCall<T extends any[], A extends any[]>(interceptor: 
   return function rpcFnDecorate(input, context) {
     if (typeof context.name !== "string") throw new RpcDecorateError();
     const meta = getOrCreateRpcDecorateMeta(context.metadata!);
-    const config = meta.includes.get(context.name);
+    const config = meta.includes[context.name];
     if (!config) throw new Error(`The attribute "${context.name}" is not marked as an rpc attribute`);
     config.interceptCall = interceptor;
   };
@@ -57,7 +71,7 @@ export function RpcInterceptReturn<T, R>(interceptor?: (result: R) => T): RpcDec
   return function rpcFnDecorate(input, context) {
     if (typeof context.name !== "string") throw new RpcDecorateError();
     const meta = getOrCreateRpcDecorateMeta(context.metadata!);
-    const config = meta.includes.get(context.name);
+    const config = meta.includes[context.name];
     if (!config) throw new Error(`The attribute "${context.name}" is not marked as an rpc attribute`);
     config.interceptReturn = interceptor;
   };
@@ -69,7 +83,7 @@ export function RpcInterceptReturn<T, R>(interceptor?: (result: R) => T): RpcDec
  */
 export function manualDefineObject(
   Class: new (...args: any[]) => any,
-  serviceDecorator: RpcDecorator,
+  serviceDecorator: ReturnType<typeof RpcService>,
   define?: Record<string, RpcDecorator[]>
 ) {
   if (typeof Class !== "function") throw new Error("Class must be a function");
@@ -78,7 +92,7 @@ export function manualDefineObject(
     metadata = {};
     Reflect.set(Class, SymbolMetadata, metadata);
   }
-  serviceDecorator(undefined, { name: Class.name, metadata });
+  serviceDecorator(Class, { metadata });
   if (define) {
     for (const key of Object.keys(define)) {
       for (const decorator of define[key]) {

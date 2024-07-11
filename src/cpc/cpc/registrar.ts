@@ -10,10 +10,9 @@ export function getServe(root: ServeObjectRoot, path: string[]): ExecutionContex
   while (i < max) {
     key = path[i++];
     if (rpcMeta) {
-      if (rpcMeta.mode === ServiceDefineMode.exclude) {
-        if (rpcMeta.excludes!.has(key)) return undefined;
-      } else {
-        if (!rpcMeta.includes.has(key)) return undefined;
+      if (rpcMeta.excludes[key]) return;
+      if (rpcMeta.mode !== ServiceDefineMode.exclude) {
+        if (!rpcMeta.includes[key]) return;
       }
       context = context[key];
     } else {
@@ -25,11 +24,11 @@ export function getServe(root: ServeObjectRoot, path: string[]): ExecutionContex
   const field = path[max];
   let meta: ServeFnConfig | undefined;
   if (rpcMeta) {
+    if (rpcMeta.excludes[field]) return;
     if (rpcMeta.mode === ServiceDefineMode.exclude) {
-      if (rpcMeta.excludes!.has(field)) return;
-      meta = rpcMeta.includes.get(field) ?? {};
+      meta = rpcMeta.includes[field] ?? {};
     } else {
-      meta = rpcMeta.includes.get(field);
+      meta = rpcMeta.includes[field];
       if (!meta) return;
     }
   } else {
@@ -57,19 +56,24 @@ export function getObjectRpcDecorateMeta(object: object): ServiceConfig | undefi
 }
 
 export type ServiceConfig = {
-  includes: Map<string, ServeFnConfig>;
+  includes: Record<string, ServeFnConfig>;
+  excludes: Record<string, boolean>;
   mode?: ServiceDefineMode;
-  excludes?: Set<string>;
 };
 const RPC_SERVICE_META_MAP = new WeakMap<WeakKey, ServiceConfig>();
 export function getOrCreateRpcDecorateMeta(meta: object): ServiceConfig {
   let rpcMeta = RPC_SERVICE_META_MAP.get(meta);
   if (!rpcMeta) {
-    rpcMeta = { includes: new Map() };
+    rpcMeta = { includes: {}, excludes: {} };
     RPC_SERVICE_META_MAP.set(meta, rpcMeta);
   }
 
   return rpcMeta;
+}
+export function getClassRpcConfig(Class: Function) {
+  const metadata = Reflect.get(Class, SymbolMetadata);
+  if (metadata) return RPC_SERVICE_META_MAP.get(metadata);
+  return;
 }
 
 export type ServeObjectRoot = {

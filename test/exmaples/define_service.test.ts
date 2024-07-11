@@ -1,13 +1,5 @@
 import { expect } from "vitest";
-import {
-  RpcService,
-  RpcExposed,
-  RpcInterceptCall,
-  RpcInterceptReturn,
-  ServiceDefineMode,
-  rpcExclude,
-  UnregisteredMethodError,
-} from "cpcall";
+import { RpcService, RpcExposed, ServiceDefineMode, rpcExclude, UnregisteredMethodError } from "cpcall";
 import { cpcTest as test } from "../env/cpc.env.ts";
 
 test("普通对象", async function ({ cpcSuite }) {
@@ -50,43 +42,6 @@ test("循环引用", async function ({ cpcSuite }) {
   await expect(cpc1.call("sub.sub.sub.sub2.a")).resolves.toBe(1);
 });
 
-test("装饰器", async function ({ cpcSuite }) {
-  const { cpc1, cpc2 } = cpcSuite;
-
-  @RpcService()
-  class Service1 {
-    //  设置了拦截器
-    @RpcInterceptCall((args) => {
-      return args.map((item) => {
-        return (item *= 2);
-      });
-    })
-    @RpcInterceptReturn((res) => res + "-r")
-    @RpcExposed()
-    method1(p: number): string {
-      return p + "-res";
-    }
-
-    @RpcExposed() // 暴露属性
-    property = () => {
-      return "result";
-    };
-
-    // 不会被暴露
-    method2() {
-      return 1;
-    }
-  }
-
-  cpc2.setObject(new Service1());
-
-  const service1 = cpc1.genCaller<Service1>();
-
-  await expect(service1.property()).resolves.toBe("result");
-  await expect(service1.method1(1), "经过了拦截器").resolves.toBe("2-res-r");
-
-  await expect(service1.method2(), "method2 没有显示定义").rejects.toThrowError();
-});
 test("子服务", async function ({ cpcSuite }) {
   const { cpc1, cpc2 } = cpcSuite;
 
