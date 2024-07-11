@@ -37,6 +37,7 @@ export const rpcExclude: RpcDecorator = function rpcExclude(input, context) {
  * @public
  */
 export function RpcInterceptCall<T extends any[], A extends any[]>(interceptor: (args: T) => A): RpcDecorator<A> {
+  if (typeof interceptor !== "function") throw new Error("interceptor must be a function");
   return function rpcFnDecorate(input, context) {
     if (typeof context.name !== "string") throw new RpcDecorateError();
     const meta = getOrCreateRpcDecorateMeta(context.metadata!);
@@ -50,6 +51,7 @@ export function RpcInterceptCall<T extends any[], A extends any[]>(interceptor: 
  * @public
  */
 export function RpcInterceptReturn<T, R>(interceptor?: (result: R) => T): RpcDecorator<any[], R> {
+  if (typeof interceptor !== "function") throw new Error("interceptor must be a function");
   return function rpcFnDecorate(input, context) {
     if (typeof context.name !== "string") throw new RpcDecorateError();
     const meta = getOrCreateRpcDecorateMeta(context.metadata!);
@@ -60,7 +62,7 @@ export function RpcInterceptReturn<T, R>(interceptor?: (result: R) => T): RpcDec
 }
 
 /**
- * 不支持装饰器看手动定义远程服务类
+ * 不支持装饰器的情况可以通过该函数手动标注服务类
  * @public
  */
 export function manualDefineObject(
@@ -68,6 +70,7 @@ export function manualDefineObject(
   serviceDecorator: RpcDecorator,
   define?: Record<string, RpcDecorator[]>
 ) {
+  if (typeof Class !== "function") throw new Error("Class must be a function");
   let metadata = Reflect.get(Class, SymbolMetadata);
   if (!metadata) {
     metadata = {};

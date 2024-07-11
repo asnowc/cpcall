@@ -1,6 +1,6 @@
 import { CpCallBase } from "./cpc_base.ts";
 import { createObjectChain, getChainPath } from "evlib/object";
-import { Registrar } from "./registrar.ts";
+import { getServe, ServeObjectRoot } from "./registrar.ts";
 
 export { ServiceDefineMode } from "./registrar.ts";
 export * from "./decorate.ts";
@@ -41,51 +41,33 @@ export class CpCall extends CpCallBase {
     let args = rawArgs.slice(1);
     if (typeof cmd === "string" && cmd) {
       const path = cmd.split(this.#separator);
-      const context = this.#registrar.getServe(path);
 
-      if (!context) throw new CpcUnregisteredCommandError(cmd);
+      const context = getServe(this.#root, path);
+
+      if (!context) throw new UnregisteredMethodError(cmd);
       const { fn, meta, this: _this } = context;
       if (meta.interceptCall) args = meta.interceptCall.call(undefined, args);
-      let res = fn.apply(_this, args);
+      let res = Reflect.apply(fn, _this, args);
       if (meta.interceptReturn) {
         if (res instanceof Promise) res = res.then(meta.interceptReturn);
         else res = meta.interceptReturn.call(undefined, res);
       }
       return res;
     }
-    throw new CpcUnregisteredCommandError(cmd);
+    throw new UnregisteredMethodError(cmd);
   }
-  readonly #registrar = new Registrar();
 
-  get #separator() {
-    return this.#registrar.separator;
+  /** 删除设置的可调用服务 */
+  setObject(obj?: object): void;
+  /** 设置可调用的服务 */
+  setObject(obj: object): void;
+  setObject(obj: object = {}, option?: ParseObjectOption) {
+    if (typeof obj !== "object" || obj === null) throw new Error("obj must be an object");
+    this.#root = { object: obj };
   }
-  /** 删除已设置的远程可调用对象 */
-  removeObject(path?: string | string[]): boolean {
-    if (typeof path === "string") path = path.split(this.#separator);
-    return this.#registrar.removeServe(path);
-  }
-  /** 清空所有已设置的远程可调用对象 */
-  clearObject() {
-    this.#registrar.clear();
-  }
-  /** 设置远程可调用对象。 */
-  setObject(obj: object, path?: string | string[]): void;
-  /** 设置远程可调用对象。 */
-  setObject(obj: object, option: ParseObjectOption): void;
-  setObject(obj: object, path_opts?: string | string[] | ParseObjectOption) {
-    let path: string[] | undefined;
-    let opts: ParseObjectOption;
-    if (typeof path_opts === "string") {
-      path = path_opts ? path_opts.split(this.#separator) : undefined;
-      opts = {};
-    } else if (path_opts instanceof Array) {
-      path = path_opts;
-    } else if (typeof path_opts === "object") {
-      opts = path_opts;
-    }
-    this.#registrar.setObject(obj, path);
-  }
+
+  #separator = ".";
+  #root: ServeObjectRoot = { object: {} };
 
   /** 生成远程代理对象 */
   genCaller(opts?: GenCallerOpts): AnyCaller;
@@ -104,7 +86,7 @@ export class CpCall extends CpCallBase {
     const keepThen = opts.keepThen;
 
     return createObjectChain(base, undefined, () => {
-      function src(args: any[], thisArg: any, target: ServeFn) {
+      function src(args: any[], thisArg: any, target: (...args: any[]) => any) {
         return CpCall.call(target, ...args);
       }
       if (!keepThen) Reflect.set(src, "then", null);
@@ -115,16 +97,13 @@ export class CpCall extends CpCallBase {
   }
 }
 
-type ServeFn = (...args: any[]) => any;
-
 /** 调用未注册的命令
  * @public */
-export class CpcUnregisteredCommandError extends Error {
+export class UnregisteredMethodError extends Error {
   constructor(cmd: any) {
-    super("UnregisteredCommand: " + cmd);
+    super("UnregisteredMethod: " + cmd);
   }
 }
-
 /**
  * 自动解析选项
  * @public

@@ -47,7 +47,6 @@ declare namespace core {
         CpcFailAsyncRespondError,
         CpcFailRespondError,
         CpcFrameSource,
-        CpcUnregisteredCommandError,
         Frame,
         FrameType,
         GenCallerOpts,
@@ -64,6 +63,7 @@ declare namespace core {
         ServeFnConfig,
         ServerStatus,
         ServiceDefineMode,
+        UnregisteredMethodError,
         createJbodStreamFrameSource,
         manualDefineObject,
         rpcExclude
@@ -73,7 +73,6 @@ declare namespace core {
 // @public (undocumented)
 class CpCall extends CpCallBase {
     static call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T>;
-    clearObject(): void;
     static exec<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): void;
     genCaller(opts?: GenCallerOpts): AnyCaller;
     // (undocumented)
@@ -84,9 +83,8 @@ class CpCall extends CpCallBase {
     genCaller<R extends object>(opts?: GenCallerOpts): MakeCallers<R>;
     // (undocumented)
     protected onCall(rawArgs: any[]): any;
-    removeObject(path?: string | string[]): boolean;
-    setObject(obj: object, path?: string | string[]): void;
-    setObject(obj: object, option: ParseObjectOption): void;
+    setObject(obj?: object): void;
+    setObject(obj: object): void;
 }
 
 // @public
@@ -145,11 +143,6 @@ type CpcFrameSource<T = RpcFrame> = {
     close(): void | Promise<void>;
     dispose(reason?: any): void;
 };
-
-// @public
-class CpcUnregisteredCommandError extends Error {
-    constructor(cmd: any);
-}
 
 // @public
 function createJbodStreamFrameSource(ctrl: CpcFrameSource<Uint8Array>): CpcFrameSource<RpcFrame>;
@@ -278,7 +271,6 @@ declare namespace node {
         CpcFailAsyncRespondError,
         CpcFailRespondError,
         CpcFrameSource,
-        CpcUnregisteredCommandError,
         Frame,
         FrameType,
         GenCallerOpts,
@@ -295,6 +287,7 @@ declare namespace node {
         ServeFnConfig,
         ServerStatus,
         ServiceDefineMode,
+        UnregisteredMethodError,
         createJbodStreamFrameSource,
         manualDefineObject,
         rpcExclude,
@@ -359,6 +352,11 @@ enum ServiceDefineMode {
     include = 0
 }
 
+// @public
+class UnregisteredMethodError extends Error {
+    constructor(cmd: any);
+}
+
 declare namespace web {
     export {
         AnyCaller,
@@ -373,7 +371,6 @@ declare namespace web {
         CpcFailAsyncRespondError,
         CpcFailRespondError,
         CpcFrameSource,
-        CpcUnregisteredCommandError,
         Frame,
         FrameType,
         GenCallerOpts,
@@ -390,6 +387,7 @@ declare namespace web {
         ServeFnConfig,
         ServerStatus,
         ServiceDefineMode,
+        UnregisteredMethodError,
         createJbodStreamFrameSource,
         manualDefineObject,
         rpcExclude,
