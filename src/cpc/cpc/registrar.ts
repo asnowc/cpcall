@@ -38,12 +38,20 @@ export function getServe(root: ServeObjectRoot, path: string[]): ExecutionContex
   if (typeof fn !== "function") return undefined;
   return { this: context, fn, meta };
 }
+
 /** @public */
 export enum ServiceDefineMode {
   include = 0,
   exclude = 1,
 }
-export const SymbolMetadata = Symbol.metadata;
+
+let sym = Symbol as { metadata?: symbol };
+/* 兼容低版本的 Javascript */
+if (!sym.metadata) {
+  sym.metadata = Symbol("Symbol.metadata");
+}
+export const SymbolMetadata = sym.metadata;
+
 export function getObjectRpcDecorateMeta(object: object): ServiceConfig | undefined {
   const prototype = Reflect.getPrototypeOf(object);
   if (!prototype) return;
