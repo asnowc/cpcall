@@ -1,7 +1,7 @@
 //@ts-check
 /// <reference lib="dom"/>
 
-const { createWebsocketCpcOnOpen } = await import("https://esm.sh/cpcall/web");
+const { createWebsocketCpcOnOpen } = await import("https://esm.sh/cpcall");
 
 // 与服务端创建基于 WebSocket 的 RPC 连接
 async function connect() {

@@ -1,4 +1,4 @@
-import { WithPromise } from "evlib";
+import { WithPromise } from "../../../deps/evlib.ts"
 import { ReturnQueue } from "./promise_queue.ts";
 import {
   FrameType,

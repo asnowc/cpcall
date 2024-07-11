@@ -1,4 +1,4 @@
-import { UniqueKeyMap } from "evlib/data_struct";
+import { UniqueKeyMap } from "../../../deps/evlib.ts";
 import { FrameType, ServerStatus } from "../const.ts";
 import type { Frame, CallerFrame, RpcFrame } from "../type.ts";
 import type { SendCtrl } from "./type.ts";

@@ -1,5 +1,5 @@
 import { Duplex, Readable } from "node:stream";
-import { createSocketCpc } from "cpcall/node";
+import { createSocketCpc } from "cpcall";
 import { vi } from "vitest";
 import { CpCall } from "cpcall";
 import EventEmitter from "node:events";

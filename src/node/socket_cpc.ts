@@ -1,5 +1,6 @@
-import type { Duplex } from "node:stream";
-import { CpCall, CpcController, createJbodStreamFrameSource, CpCallOption } from "cpcall";
+import { CpCall, CpcController, createJbodStreamFrameSource, CpCallOption } from "../cpc/mod.ts";
+
+declare function setTimeout(fn: () => void, timeout: number): number;
 
 /** 创建一个基于 duplex 的 CpCall 实例
  * @public
@@ -35,4 +36,13 @@ export function createSocketCpc(duplex: Duplex, option?: CpCallOption): CpCall {
 
 function createAbortedError() {
   return new Error("Stream has bend aborted");
+}
+interface Duplex {
+  readable?: boolean;
+  writable?: boolean;
+  on(eventName: string, listener: (...args: any[]) => any): void;
+  once(eventName: string, listener: (...args: any[]) => any): void;
+  destroy(reason?: any): void;
+  end(): void;
+  write(data: Uint8Array): void;
 }

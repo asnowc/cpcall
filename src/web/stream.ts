@@ -1,4 +1,4 @@
-import { CpCall, CpcController, CpcFrameSource, createJbodStreamFrameSource } from "cpcall";
+import { CpCall, CpcController, CpcFrameSource, createJbodStreamFrameSource } from "../cpc/mod.ts";
 
 /** 创建一个基于 WebStream 的 CpCall 实例。这可以是 Deno.Conn 对象
  * @public

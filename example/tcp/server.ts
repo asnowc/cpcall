@@ -1,5 +1,5 @@
 import { Socket, createServer } from "node:net";
-import { createSocketCpc } from "cpcall/node";
+import { createSocketCpc } from "cpcall";
 
 // 这是暴露给客户端调用的类
 class ServerApi {

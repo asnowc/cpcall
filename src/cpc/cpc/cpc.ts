@@ -1,5 +1,5 @@
 import { CpCallBase } from "./cpc_base.ts";
-import { createObjectChain, getChainPath } from "evlib/object";
+import { createObjectChain, getChainPath } from "../../deps/evlib.ts";
 import { getServe, ServeObjectRoot } from "./registrar.ts";
 import { CpcFrameSource } from "./type.ts";
 import { RpcFrame } from "../core/type.ts";

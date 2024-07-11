@@ -13,11 +13,7 @@ if(DEV){
   console.log("Build in dev mode");
 }
 export default defineEvConfig({
-  input: {
-    cpc: "src/cpc/mod.ts",
-    node: "src/node/mod.ts",
-    web: "src/web/mod.ts",
-  },
+  input: "src/mod.ts",
   output: {
     dir: "dist",
     chunkFileNames: "internal/[name].js",

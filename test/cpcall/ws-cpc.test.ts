@@ -1,4 +1,4 @@
-import { createWebSocketCpc } from "cpcall/web";
+import { createWebSocketCpc } from "cpcall";
 import { vi, test, expect } from "vitest";
 type WS = Parameters<typeof createWebSocketCpc>[0];
 

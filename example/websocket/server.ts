@@ -1,4 +1,4 @@
-import { createWebsocketCpcOnOpen } from "cpcall/web";
+import { createWebsocketCpcOnOpen } from "cpcall";
 
 interface ClientApi {
   changeBgColor(color: string): void;

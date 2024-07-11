@@ -48,20 +48,19 @@ Node
 `npm install cpcall`
 
 ```ts
-import { createSocketCpc } from "cpcall/node";
-import { createWebStreamCpc, createWebSocketCpc } from "npm:cpcall/web";
+import { createSocketCpc, createWebStreamCpc, createWebSocketCpc } from "cpcall";
 ```
 
 Deno
 
 ```ts
-import { createWebStreamCpc, createWebSocketCpc } from "jsr:@asn/cpcall/web";
+import { createWebStreamCpc, createWebSocketCpc } from "jsr:@asn/cpcall";
 ```
 
 Browser
 
 ```ts
-import { createWebStreamCpc, createWebSocketCpc } from "https://esm.sh/cpcall/web";
+import { createWebStreamCpc, createWebSocketCpc } from "https://esm.sh/cpcall";
 ```
 
 ### Why
@@ -101,7 +100,7 @@ socket.io 是一个基于 WebSocket 的库，可实现双端之间的双向实�
 client.ts
 
 ```ts
-import { createSocketCpc } from "cpcall/node";
+import { createSocketCpc } from "cpcall";
 import { Socket, connect } from "node:net";
 import type { ServerApi } from "./server.ts"; //导入服务端暴露 api 的类型
 
@@ -135,7 +134,7 @@ server.ts
 
 ```ts
 import { Socket, createServer } from "node:net";
-import { createSocketCpc } from "cpcall/node";
+import { createSocketCpc } from "cpcall";
 
 // 这是暴露给客户端调用的类
 class ServerApi {
@@ -168,7 +167,7 @@ export type { ServerApi }; //导出类型，以便客户端获得完整类型提
 server
 
 ```ts
-import { createWebStreamCpc } from "npm:cpcall/web";
+import { createWebStreamCpc } from "npm:cpcall";
 
 const server = Deno.listen({ port: 8888 });
 for await (const conn of server) {
@@ -180,7 +179,7 @@ for await (const conn of server) {
 client
 
 ```ts
-import { createWebStreamCpc } from "npm:cpcall/web";
+import { createWebStreamCpc } from "npm:cpcall";
 
 const conn = await Deno.connect({ port: 8888 });
 const clientCpc = createWebStreamCpc(conn);

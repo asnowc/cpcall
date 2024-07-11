@@ -1,4 +1,4 @@
-import { createWebStreamCpc } from "cpcall/web";
+import { createWebStreamCpc } from "cpcall";
 import { expect, test, vi } from "vitest";
 
 test("readable异常", async function () {

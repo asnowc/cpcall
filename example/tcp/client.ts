@@ -1,4 +1,4 @@
-import { createSocketCpc } from "cpcall/node";
+import { createSocketCpc } from "cpcall";
 import { Socket, connect } from "node:net";
 import type { ServerApi } from "./server.ts"; //导入服务端暴露 api 的类型
 

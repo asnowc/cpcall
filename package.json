@@ -7,7 +7,7 @@
     "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage --ui",
-    "check-type": "tsc --noEmit -p src/cpc/tsconfig.json",
+    "check-type": "tsc --noEmit -p src/tsconfig.json",
     "build": "pnpm rollup -c --environment DEV && pnpm gen-dts && pnpm api-extract",
     "api-extract": "pnpm run ci:check-api -l",
     "gen-dts": "node build/build_type.js",
@@ -32,9 +32,7 @@
   },
   "types": "./dist/cpc.d.ts",
   "exports": {
-    ".": "./dist/cpc.js",
-    "./node": "./dist/node.js",
-    "./web": "./dist/web.js"
+    ".": "./dist/mod.js"
   },
   "publishConfig": {
     "access": "public",

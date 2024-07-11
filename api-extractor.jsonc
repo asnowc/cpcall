@@ -14,8 +14,6 @@
         "strict": true,
         "lib": ["ESNext", "dom"],
         "paths": {
-          "cpcall/node": ["./dist/node/index.js"],
-          "cpcall/web": ["./dist/web/index.js"],
           "cpcall": ["./dist/cpc/cpc.js"]
         }
       },

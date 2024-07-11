@@ -1,5 +1,5 @@
 import { CalleeCore, CallerCore, RpcFrame, ServerStatus, CallerStatus } from "../core/mod.ts";
-import { WithPromise, withPromise } from "evlib";
+import { WithPromise, withPromise } from "../../deps/evlib.ts";
 import { CpcFrameSource } from "./type.ts";
 
 /**

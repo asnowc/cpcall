@@ -4,75 +4,34 @@
 
 ```ts
 
-import { Duplex } from 'node:stream';
-
 // @public (undocumented)
-type AnyCaller = {
+export type AnyCaller = {
     (...args: any[]): Promise<any>;
     [key: string]: AnyCaller;
 };
 
 // @public (undocumented)
-type AnyEmitter = {
+export type AnyEmitter = {
     (...args: any[]): void;
     [key: string]: AnyCaller;
 };
 
 // @public (undocumented)
-type CalleeFrame = Frame.Return | Frame.ReturnPromise | Frame.Resolve | Frame.Reject | Frame.Throw | Frame.EndServe;
+export type CalleeFrame = Frame.Return | Frame.ReturnPromise | Frame.Resolve | Frame.Reject | Frame.Throw | Frame.EndServe;
 
 // @public (undocumented)
-type CallerFrame = Frame.Call | Frame.Exec | Frame.EndCall;
+export type CallerFrame = Frame.Call | Frame.Exec | Frame.EndCall;
 
 // @public (undocumented)
-enum CallerStatus {
+export enum CallerStatus {
     callable = 0,
     ended = 2,
     ending = 1,
     finished = 3
 }
 
-declare namespace core {
-    export {
-        AnyCaller,
-        AnyEmitter,
-        CalleeFrame,
-        CallerFrame,
-        CallerStatus,
-        CpCall,
-        CpCallBase,
-        CpCallBaseOption,
-        CpCallOption,
-        CpcController,
-        CpcError,
-        CpcFailAsyncRespondError,
-        CpcFailRespondError,
-        CpcFrameSource,
-        Frame,
-        FrameType,
-        GenCallerOpts,
-        MakeCallers,
-        MakeEmitter,
-        ParseObjectOption,
-        RemoteCallError,
-        RpcDecorator,
-        RpcExposed,
-        RpcFrame,
-        RpcInterceptCall,
-        RpcInterceptReturn,
-        RpcService,
-        ServeFnConfig,
-        ServerStatus,
-        ServiceDefineMode,
-        UnregisteredMethodError,
-        createJbodStreamFrameSource,
-        manualDefineObject,
-        rpcExclude
-    }
-}
-
 // @public (undocumented)
-class CpCall extends CpCallBase {
+export class CpCall extends CpCallBase {
     constructor(frameSource: CpcFrameSource<RpcFrame>, config?: CpCallOption);
     static call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T>;
     static exec<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): void;
@@ -88,7 +47,7 @@ class CpCall extends CpCallBase {
 }
 
 // @public
-abstract class CpCallBase {
+export abstract class CpCallBase {
     constructor(frameSource: CpcFrameSource<RpcFrame>, config: CpCallBaseOption);
     call(...args: any[]): Promise<any>;
     get callerStatus(): CallerStatus;
@@ -108,7 +67,7 @@ abstract class CpCallBase {
 }
 
 // @public (undocumented)
-interface CpCallBaseOption {
+export interface CpCallBaseOption {
     // (undocumented)
     disableCall?: boolean;
     // (undocumented)
@@ -118,7 +77,7 @@ interface CpCallBaseOption {
 }
 
 // @public (undocumented)
-interface CpCallOption {
+export interface CpCallOption {
     // (undocumented)
     disableCall?: boolean;
     // (undocumented)
@@ -128,26 +87,26 @@ interface CpCallOption {
 }
 
 // @public
-type CpcController<T = RpcFrame> = {
+export type CpcController<T = RpcFrame> = {
     nextFrame(frame: T): void;
     endFrame(error?: any): void;
 };
 
 // @public
-class CpcError extends Error {
+export class CpcError extends Error {
 }
 
 // @public
-class CpcFailAsyncRespondError extends Error {
+export class CpcFailAsyncRespondError extends Error {
 }
 
 // @public
-class CpcFailRespondError extends Error {
+export class CpcFailRespondError extends Error {
     constructor();
 }
 
 // @public
-type CpcFrameSource<T = RpcFrame> = {
+export type CpcFrameSource<T = RpcFrame> = {
     sendFrame(frame: T): void;
     init(controller: CpcController<T>): void;
     close(): void | Promise<void>;
@@ -155,78 +114,80 @@ type CpcFrameSource<T = RpcFrame> = {
 };
 
 // @public
-function createJbodStreamFrameSource(ctrl: CpcFrameSource<Uint8Array>): CpcFrameSource<RpcFrame>;
+export function createJbodStreamFrameSource(ctrl: CpcFrameSource<Uint8Array>): CpcFrameSource<RpcFrame>;
 
+// Warning: (ae-forgotten-export) The symbol "Duplex" needs to be exported by the entry point index.d.ts
+//
 // @public
-function createSocketCpc(duplex: Duplex, option?: CpCallOption): CpCall;
+export function createSocketCpc(duplex: Duplex, option?: CpCallOption): CpCall;
 
 // Warning: (ae-forgotten-export) The symbol "WebSocket_2" needs to be exported by the entry point index.d.ts
 //
 // @public
-function createWebSocketCpc(websocket: WebSocket_2, option?: CpCallOption): CpCall;
+export function createWebSocketCpc(websocket: WebSocket_2, option?: CpCallOption): CpCall;
 
 // @public
-function createWebsocketCpcOnOpen(websocket: WebSocket_2, option?: CpCallOption): Promise<CpCall>;
+export function createWebsocketCpcOnOpen(websocket: WebSocket_2, option?: CpCallOption): Promise<CpCall>;
 
 // @public
-function createWebStreamCpc(stream: WebStreamSuite): CpCall;
+export function createWebStreamCpc(stream: WebStreamSuite): CpCall;
 
 // @public (undocumented)
-namespace Frame {
+export namespace Frame {
     // (undocumented)
-    type Call = {
+    export type Call = {
         type: FrameType.call;
         args: any[];
     };
     // (undocumented)
-    type EndCall = {
+    export type EndCall = {
         type: FrameType.endCall;
     };
     // (undocumented)
-    type EndServe = {
+    export type EndServe = {
         type: FrameType.endServe;
     };
     // (undocumented)
-    type Exec = {
+    export type Exec = {
         type: FrameType.exec;
         args: any[];
     };
     // (undocumented)
-    type Reject = {
+    export type Reject = {
         type: FrameType.reject;
         id: number;
         value: any;
     };
     // (undocumented)
-    type Resolve = {
+    export type Resolve = {
         type: FrameType.resolve;
         id: number;
         value: any;
     };
     // (undocumented)
-    type ResponseError = {
+    export type ResponseError = {
         type: FrameType.error;
         code: number;
     };
     // (undocumented)
-    type Return = {
+    export type Return = {
         type: FrameType.return;
         value: any;
     };
     // (undocumented)
-    type ReturnPromise = {
+    export type ReturnPromise = {
         type: FrameType.promise;
         id: number;
     };
     // (undocumented)
-    type Throw = {
+    export type Throw = {
         type: FrameType.throw;
         value: any;
     };
 }
 
 // @public
-enum FrameType {
+export enum FrameType {
     // (undocumented)
     call = 1,
     // (undocumented)
@@ -250,113 +211,76 @@ enum FrameType {
 }
 
 // @public (undocumented)
-type GenCallerOpts = {
+export type GenCallerOpts = {
     keepThen?: boolean;
 };
 
 // @public (undocumented)
-type MakeCallers<T extends object, E extends object = {}> = E & {
+export type MakeCallers<T extends object, E extends object = {}> = E & {
     [Key in keyof T as T[Key] extends object ? Key : never]: T[Key] extends object ? MakeCallers<T[Key], E> : never;
 } & (T extends (...args: infer A) => infer R ? (...args: A) => Promise<Awaited<R>> : {});
 
 // @public (undocumented)
-type MakeEmitter<T extends object, E extends object = {}> = E & {
+export type MakeEmitter<T extends object, E extends object = {}> = E & {
     [Key in keyof T as T[Key] extends object ? Key : never]: T[Key] extends object ? MakeCallers<T[Key], E> : never;
 } & (T extends (...args: infer A) => any ? (...args: A) => void : {});
 
 // @public
-function manualDefineObject(Class: new (...args: any[]) => any, serviceDecorator: RpcDecorator, define?: Record<string, RpcDecorator[]>): void;
-
-declare namespace node {
-    export {
-        AnyCaller,
-        AnyEmitter,
-        CalleeFrame,
-        CallerFrame,
-        CallerStatus,
-        CpCallBase,
-        CpCallBaseOption,
-        CpcController,
-        CpcError,
-        CpcFailAsyncRespondError,
-        CpcFailRespondError,
-        CpcFrameSource,
-        Frame,
-        FrameType,
-        GenCallerOpts,
-        MakeCallers,
-        MakeEmitter,
-        ParseObjectOption,
-        RemoteCallError,
-        RpcDecorator,
-        RpcExposed,
-        RpcFrame,
-        RpcInterceptCall,
-        RpcInterceptReturn,
-        RpcService,
-        ServeFnConfig,
-        ServerStatus,
-        ServiceDefineMode,
-        UnregisteredMethodError,
-        createJbodStreamFrameSource,
-        manualDefineObject,
-        rpcExclude,
-        CpCall,
-        CpCallOption,
-        createSocketCpc
-    }
-}
+export function manualDefineObject(Class: new (...args: any[]) => any, serviceDecorator: RpcDecorator, define?: Record<string, RpcDecorator[]>): void;
 
 // @public
-type ParseObjectOption = {
+export type ParseObjectOption = {
     cmd?: string;
 };
 
 // @public
-class RemoteCallError extends Error {
+export class RemoteCallError extends Error {
+    constructor(message: string, option?: {
+        cause?: any;
+    });
     // (undocumented)
     code?: any;
 }
 
 // @public (undocumented)
-type RpcDecorator<A extends any[] = any[], R = any> = (input: unknown, context: {
+export type RpcDecorator<A extends any[] = any[], R = any> = (input: unknown, context: {
     name: string | symbol;
     metadata: object;
 }) => void;
 
 // @public (undocumented)
-const rpcExclude: RpcDecorator;
+export const rpcExclude: RpcDecorator;
 
 // @public (undocumented)
-function RpcExposed(): RpcDecorator;
+export function RpcExposed(): RpcDecorator;
 
 // @public (undocumented)
-type RpcFrame = Frame.Return | Frame.ReturnPromise | Frame.Resolve | Frame.Reject | Frame.Throw | Frame.EndServe | Frame.Call | Frame.Exec | Frame.EndCall | Frame.ResponseError;
+export type RpcFrame = Frame.Return | Frame.ReturnPromise | Frame.Resolve | Frame.Reject | Frame.Throw | Frame.EndServe | Frame.Call | Frame.Exec | Frame.EndCall | Frame.ResponseError;
 
 // @public
-function RpcInterceptCall<T extends any[], A extends any[]>(interceptor: (args: T) => A): RpcDecorator<A>;
+export function RpcInterceptCall<T extends any[], A extends any[]>(interceptor: (args: T) => A): RpcDecorator<A>;
 
 // @public
-function RpcInterceptReturn<T, R>(interceptor?: (result: R) => T): RpcDecorator<any[], R>;
+export function RpcInterceptReturn<T, R>(interceptor?: (result: R) => T): RpcDecorator<any[], R>;
 
 // @public (undocumented)
-function RpcService(mode?: ServiceDefineMode): (input: new (...args: any[]) => Object, context: ClassDecoratorContext) => void;
+export function RpcService(mode?: ServiceDefineMode): (input: new (...args: any[]) => Object, context: ClassDecoratorContext) => void;
 
 // @public (undocumented)
-type ServeFnConfig = {
+export type ServeFnConfig = {
     interceptCall?(args: any[]): any[];
     interceptReturn?(data: any): any;
 };
 
 // @public (undocumented)
-enum ServerStatus {
+export enum ServerStatus {
     ended = 1,
     finished = 2,
     serving = 0
 }
 
 // @public (undocumented)
-enum ServiceDefineMode {
+export enum ServiceDefineMode {
     // (undocumented)
     exclude = 1,
     // (undocumented)
@@ -364,63 +288,20 @@ enum ServiceDefineMode {
 }
 
 // @public
-class UnregisteredMethodError extends Error {
+export class UnregisteredMethodError extends Error {
     constructor(cmd: any);
 }
 
-declare namespace web {
-    export {
-        AnyCaller,
-        AnyEmitter,
-        CalleeFrame,
-        CallerFrame,
-        CallerStatus,
-        CpCallBase,
-        CpCallBaseOption,
-        CpcController,
-        CpcError,
-        CpcFailAsyncRespondError,
-        CpcFailRespondError,
-        CpcFrameSource,
-        Frame,
-        FrameType,
-        GenCallerOpts,
-        MakeCallers,
-        MakeEmitter,
-        ParseObjectOption,
-        RemoteCallError,
-        RpcDecorator,
-        RpcExposed,
-        RpcFrame,
-        RpcInterceptCall,
-        RpcInterceptReturn,
-        RpcService,
-        ServeFnConfig,
-        ServerStatus,
-        ServiceDefineMode,
-        UnregisteredMethodError,
-        createJbodStreamFrameSource,
-        manualDefineObject,
-        rpcExclude,
-        CpCall,
-        CpCallOption,
-        WebStreamSuite,
-        createWebSocketCpc,
-        createWebStreamCpc,
-        createWebsocketCpcOnOpen
-    }
-}
-
 // @public (undocumented)
-type WebStreamSuite = {
+export type WebStreamSuite = {
     readable: ReadableStream_2<Uint8Array>;
     writable: WritableStream_2<Uint8Array>;
 };
 
 // Warnings were encountered during analysis:
 //
-// dist/web.d.ts:41:5 - (ae-forgotten-export) The symbol "ReadableStream_2" needs to be exported by the entry point index.d.ts
-// dist/web.d.ts:42:5 - (ae-forgotten-export) The symbol "WritableStream_2" needs to be exported by the entry point index.d.ts
+// dist/mod.d.ts:373:5 - (ae-forgotten-export) The symbol "ReadableStream_2" needs to be exported by the entry point index.d.ts
+// dist/mod.d.ts:374:5 - (ae-forgotten-export) The symbol "WritableStream_2" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

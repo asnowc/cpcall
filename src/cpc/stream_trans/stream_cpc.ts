@@ -1,7 +1,7 @@
 import { FrameType } from "../core/const.ts";
 import { RpcFrame, Frame } from "../core/type.ts";
 import JBOD, { DataType, varints, UnsupportedDataTypeError, DataWriter } from "jbod";
-import { StepsByteParser, LengthByteParser, ByteParser } from "evlib/async";
+import { StepsByteParser, LengthByteParser, ByteParser } from "../../deps/evlib.ts";
 
 const U32DByteParser = varints.U32DByteParser;
 /** 收集二进制chunk, 拼接成完整的二进制帧 */

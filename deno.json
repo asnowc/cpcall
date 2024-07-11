@@ -3,17 +3,13 @@
   "version": "0.6.0",
   "imports": {
     "jbod": "jsr:@asn/jbod@^0.5.0",
-    "cpcall": "./src/cpc/mod.ts",
-    "cpcall/node": "./src/node/mod.ts",
-    "cpcall/web": "./src/web/mod.ts"
+    "cpcall": "./src/mod.ts"
   },
   "tasks": {
     "publish-dry": "deno publish --dry-run"
   },
   "exports": {
-    ".": "./src/cpc/mod.ts",
-    "./node": "./src/node/mod.ts",
-    "./web": "./src/web/mod.ts"
+    ".": "./src/mod.ts"
   },
   "publish": {
     "include": ["README.md", "LICENSE", "src/**/*.ts"]
