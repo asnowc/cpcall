@@ -1,4 +1,4 @@
-import { WithPromise, withPromise } from "evlib";
+import { WithPromise, withPromise } from "../../../deps/evlib.ts";
 
 export class ReturnQueue<T extends {} = {}> {
   readonly syncQueue: WithPromise<T>[] = [];

@@ -1,14 +1,15 @@
-import { CpCall, trans, RpcFrame, CpcFrameSource, CpcController } from "cpcall";
+import { CpCall, RpcFrame, CpcFrameSource, CpcController, CpCallOption } from "../cpc/mod.ts";
+import { unpackCpcFrames, packCpcFrames } from "../cpc/stream_trans/mod.ts";
 
 /** 创建一个基于 WebSocket 的 CpCall 实例。
  * @public */
-export function createWebsocketCpcOnOpen(websocket: WebSocket): Promise<CpCall> {
+export function createWebsocketCpcOnOpen(websocket: WebSocket, option?: CpCallOption): Promise<CpCall> {
   return new Promise<CpCall>(function (resolve, reject) {
     if (websocket.readyState === websocket.OPEN) return resolve(createWebSocketCpc(websocket));
     if (websocket.readyState !== websocket.CONNECTING) throw new Error("Websocket must be opened or connecting");
     const onConnect = () => {
       websocket.removeEventListener("error", onError);
-      resolve(createWebSocketCpc(websocket));
+      resolve(createWebSocketCpc(websocket, option));
     };
     const onError = () => {
       websocket.removeEventListener("open", onConnect);
@@ -21,9 +22,9 @@ export function createWebsocketCpcOnOpen(websocket: WebSocket): Promise<CpCall> 
 /** 创建一个基于 WebSocket 的 CpCall 实例。WebSocket 的状态必须是 open。 否则抛出异常
  * @public
  */
-export function createWebSocketCpc(websocket: WebSocket) {
+export function createWebSocketCpc(websocket: WebSocket, option?: CpCallOption): CpCall {
   if (websocket.readyState !== websocket.OPEN) throw new Error("Websocket must be opened");
-  return new CpCall(new WsRpcFrameCtrl(websocket));
+  return new CpCall(new WsRpcFrameCtrl(websocket), option);
 }
 class WsRpcFrameCtrl implements CpcFrameSource {
   constructor(private ws: WebSocket) {
@@ -34,12 +35,9 @@ class WsRpcFrameCtrl implements CpcFrameSource {
     const webSocket = this.ws;
     webSocket.addEventListener("message", (e) => {
       if (e.data instanceof ArrayBuffer) {
-        const framesIterator = trans.unpackCpcFrames(new Uint8Array(e.data), 0);
+        const framesIterator = unpackCpcFrames(new Uint8Array(e.data), 0);
         for (const frame of framesIterator) {
-          if (controller.nextFrame(frame)) {
-            webSocket.close();
-            break;
-          }
+          controller.nextFrame(frame);
         }
       }
     });
@@ -54,7 +52,7 @@ class WsRpcFrameCtrl implements CpcFrameSource {
     if (!this.link.length) return;
     //todo: 需要改进，当源关闭后直接将 callee 和 caller 关闭
     if (this.ws.readyState === this.ws.OPEN) {
-      const chunk = trans.packCpcFrames(this.link);
+      const chunk = packCpcFrames(this.link);
       this.ws.send(chunk);
       this.link.length = 0;
     } else {

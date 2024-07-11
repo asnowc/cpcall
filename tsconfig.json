@@ -2,7 +2,7 @@
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "target": "ES2022",
+    "target": "ES2020",
     "lib": ["ESNext"],
     "strict": true,
     "skipDefaultLibCheck": true,
@@ -11,9 +11,7 @@
     "isolatedModules": true,
     "allowImportingTsExtensions": true,
     "paths": {
-      "cpcall/node": ["./src/node/mod.ts"],
-      "cpcall/web": ["./src/web/mod.ts"],
-      "cpcall": ["./src/cpc/mod.ts"]
+      "cpcall": ["./src/mod.ts"]
     }
   },
   "exclude": ["node_modules", "dist"]

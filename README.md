@@ -1,5 +1,6 @@
 [![ESM package][package]][package-url]
 [![NPM version][npm]][npm-url]
+[![JSR version][jsr]][jsr-url]
 [![Node version][node]][node-url]
 [![Install size][size]][size-url]
 [![Build status][build]][build-url]
@@ -8,6 +9,8 @@
 [package-url]: https://nodejs.org/api/esm.html
 [npm]: https://img.shields.io/npm/v/cpcall.svg
 [npm-url]: https://npmjs.com/package/cpcall
+[jsr]: https://jsr.io/badges/@asn/cpcall
+[jsr-url]: https://jsr.io/@asn/cpcall
 [node]: https://img.shields.io/node/v/cpcall.svg
 [node-url]: https://nodejs.org
 [size]: https://packagephobia.com/badge?p=cpcall
@@ -25,7 +28,7 @@ A protocol independent library designed for remote procedure call (RPC) in JavaS
 
 ## Overview
 
-[API](#api)
+[API](https://jsr.io/@asn/cpcall/doc)
 [Examples](#examples)
 
 ### Features
@@ -33,7 +36,6 @@ A protocol independent library designed for remote procedure call (RPC) in JavaS
 - 远程调用可操作代理对象，与原生 JavaScript 调用语法非常相近
 - 与协议无关，可用于基于 TCP、IPC、WebSocket 等
 - 双向远程调用
-- 类型安全
 - 数据传输默认采用 [JBOD](https://github.com/asnowc/jbod) 编码。相比 JSON，有如下优势：
   - 更多的数据类型。如 bigint、Set、Map、RegExp、Error、UInt8Array 等（查看[支持的数据类型](https://github.com/asnowc/jbod)），这意味着在调用远程方法时，你可以直接传递这些参数，而无需进行转换
   - 更小的数据大小。对于常见场景，编码后大小比 JSON 小得多，
@@ -46,20 +48,19 @@ Node
 `npm install cpcall`
 
 ```ts
-import { createSocketCpc } from "cpcall/node";
-import { createWebStreamCpc, createWebSocketCpc } from "npm:cpcall/web";
+import { createSocketCpc, createWebStreamCpc, createWebSocketCpc } from "cpcall";
 ```
 
 Deno
 
 ```ts
-import { createWebStreamCpc, createWebSocketCpc } from "npm:cpcall/web";
+import { createWebStreamCpc, createWebSocketCpc } from "jsr:@asn/cpcall";
 ```
 
 Browser
 
 ```ts
-import { createWebStreamCpc, createWebSocketCpc } from "https://esm.sh/cpcall@latest/web";
+import { createWebStreamCpc, createWebSocketCpc } from "https://esm.sh/cpcall";
 ```
 
 ### Why
@@ -88,182 +89,7 @@ RPC（Remote Procedure Call Protocol）远程过程调用协议。
 socket.io 是一个基于 WebSocket 的库，可实现双端之间的双向实时通信，它提供了单播、多播等行为。使用它主要用到发布订阅模式。
 而 cpcall，是一个端到端双向调用的 RPC 库。cpcall 与 socket.io 本质上不属于同一类型的库，但在 WebSocket 协议下，他们都能达到相似的行为。
 
-## API
-
-### cpcall/node
-
-```ts
-/* 创建一个基于 duplex 的 CpCall 实例。  */
-export function createSocketCpc(duplex: Duplex): CpCall;
-```
-
-### cpcall/web
-
-```ts
-/* 创建一个基于 WebSocket 的 CpCall 实例。WebSocket 的状态必须是 open。 否则抛出异常  */
-export function createWebSocketCpc(ws: WebSocket): CpCall;
-
-/* 创建一个基于 WebStream 的 CpCall 实例。这可以是 Deno.Conn 对象 */
-export function createWebStreamCpc(stream: {
-  readable: ReadableStream<Uint8Array>;
-  writable: WritableStream<Uint8Array>;
-}): CpCall;
-```
-
-### cpcall 类型
-
-#### CpCall
-
-````ts
-interface CpCall {
-  constructor(cpcSource: CpcFrameSource);
-  /**
-   * 设置可调用函数
-   * @param cmd 方法名称
-   * @param opts.this 函数执行时的 this 指向
-   */
-  setFn(cmd: any, fn: CmdFn, opts?: FnOpts): void;
-  /** 删除可调用函数 */
-  removeFn(cmd: any): void;
-  /** 获取所有已设置的可调用函数，包括 setObject 设置的对象 */
-  getAllFn(): IterableIterator<string>;
-  /** 清空所有已设置的可调用函数，包括 setObject 设置的对象 */
-  clearFn(): void;
-  /** CpCaller 对象**/
-  caller: CpCaller;
-  /** CpCall 关闭事件. */
-  readonly closeEvent: OnceListenable<void>;
-  /** 向对方发送 disable 帧。调用后，对方如果继续发起远程调用，将会响应给对方异常\
-   * 为保证连接能正常关闭，当不再提供调用服务时，应手动调用。 */
-  disable(): Promise<void>;
-  /**
-   * 销毁连接
-   * @returns 返回完全关闭后解决的 Promise
-   */
-  dispose(reason?: Error): void;
-
-  /**
-   * 根据对象设置调用服务。遍历对象自身和原型上值为function 类型的键，将其添加为函数服务*
-   * @param obj 需要添加为服务的对象。
-   * @param cmd 前缀
-   */
-  setObject(obj: object, cmd?: string): void;
-  /**
-   * 生成一个代理对象。
-   * @returns 一个代理对象，其本质仍然是 caller.call()
-   * @example
-   * ```ts
-   *  const service=cpcall.genCaller("pre")
-   *  service.s1.get(1,2)  //等价于  cpcall.caller.call("pre.s1.get",1,2)
-   * ```
-   */
-  genCaller(prefix?: string, opts?: GenCallerOpts): AnyCaller;
-
-  /** 创建基于 JBOD 编解码的CpCall实例 */
-  static fromByteIterable(ctrl: RpcFrameCtrl<Uint8Array>): CpCall;
-  /** 通过 exec 调用远程代理对象
-   *
-   * const api= cpc.genCaller()
-   * CpCall.exec(api.a.b,"arg1","arg2") //这等价与 cpc.caller.exec("api.a.b","arg1","arg2")
-   */
-  static exec<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): void;
-  /** 通过 call 调用远程代理对象
-   *
-   * const api= cpc.genCaller()
-   * CpCall.call(api.a.b,"arg1","arg2") //这等价于 cpc.caller.call("api.a.b","arg1","arg2")
-   */
-  static call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T>;
-}
-````
-
-#### CpCaller
-
-```ts
-interface CpCaller {
-  /** 调用远程设置的函数 */
-  call(...args: any[]): Promise<any>;
-  /** 调用远程设置的函数。与call不同的是，它没有返回值 */
-  exec(...args: any[]): void;
-  /**
-   * 结束远程调用。
-   * @param abort - 如果为true, 这将直接拒绝所有等待返回队列, 并将 ended 置为 3
-   * @returns 当 ended 状态变为 3后解决的 Promise
-   * */
-  end(abort?: boolean): Promise<void>;
-  /**
-   * @remarks
-   * 3: 表示已调用 end() 或已收到 disable 帧并且所有等待队列已清空
-   * 2: 已收到 disable 帧. 后续不再会收到任何返回帧, 当前非异步返回的等待队列会被全部拒绝 (如果错误的收到了对方的返回帧, 会被丢弃)
-   * 1: 已调用 end(). 当前不能再执行 exec() 或 call() 方法
-   * 0: 当前可调用  */
-  ended: 0 | 1 | 2 | 3;
-
-  /** ended 变为 2 时触发 */
-  disableEvent: OnceListenable<void>;
-  /** ended 变为 3 时触发 */
-  finishEvent: OnceListenable<void>;
-}
-```
-
-##### CpcFrameSource
-
-```ts
-/** CpCall 构造函数依赖的接口。你可以实现自定义编解码器，或数据帧转发服务
- */
-type CpcFrameSource<T = RpcFrame> = {
-  /** 当需要发送数据帧时被调用 */
-  sendFrame(frame: T): void;
-  /** 初始化时被调用，在构造函数是，它是同步调用的。
-   * @param controller - CpCall 实例的控制器
-   */
-  init(controller: CpcController<T>): void;
-  /** 实例正常关闭时调用。它在 closeEvent 触发前被调用，如果返回Promise，则在 Promise 解决后 触发 closeEvent
-   * @remarks 如果调用时抛出异常，那么CpCall 的 closeEvent 将触发异常（非正常关闭）
-   */
-  close(): void | Promise<void>;
-  /** 当用户手动调用 dispose() 时或出现异常时调用  */
-  dispose(reason?: any): void;
-};
-```
-
-#### CpcController
-
-```ts
-/**  CpCall 实例的控制器
- */
-type CpcController<T = RpcFrame> = {
-  /** 当获取到帧时，应当调用它传给 CpCall 内部 */
-  nextFrame(frame: T): void;
-  /** 如果不会再有更多帧，应该调用它，CpCall 内部会判断是正常关闭还是异常关闭 */
-  endFrame(error?: any): void;
-};
-```
-
-#### OnceListenable
-
-```ts
-/** 一次性可订阅对象, 可通过 await 语法等待触发 */
-interface OnceListenable<T> {
-  /** 订阅事件。如果事件已触发完成则抛出异常 */
-  then(resolve: Listener<T>, reject: (data?: any) => void): void;
-  /** 与 then 类似，它会返回 resolve 函数 */
-  once<R extends Listener<T>>(resolve: R, reject?: (arg: any) => void): R;
-
-  /** 这个是订阅 emitError() 触发的事件 */
-  catch<R extends (reason: any) => void>(listener: R): void;
-  /** 无论最终是 emit 还是 emitError. 都会被触发 */
-  finally(listener: () => void): void;
-  /**
-   * 取消订阅事件
-   * @returns 如果取消成功，则返回 true, 否则返回 false
-   */
-  off(key: object): boolean;
-  /** 返回一个 promise，在emit() 后 resolve, 在 emit() Error 后 reject */
-  getPromise(signal?: BaseAbortSignal): Promise<T>;
-  // 事件是否已经被触发
-  done: boolean;
-}
-```
+## 概念
 
 ## Examples
 
@@ -274,13 +100,15 @@ interface OnceListenable<T> {
 client.ts
 
 ```ts
-import { createSocketCpc } from "cpcall/node";
+import { createSocketCpc } from "cpcall";
 import { Socket, connect } from "node:net";
-import type { ServerApi } from "./server.js"; //导入服务端暴露 api 的类型
+import type { ServerApi } from "./server.ts"; //导入服务端暴露 api 的类型
 
-const socket = await connectSocket(7788, "localhost"); //创建 TCP 连接
+const socket = await connectSocket(8888, "localhost"); //创建 TCP 连接
 
-const cpc = createSocketCpc(socket); //创建 cpc 实例
+const cpc = createSocketCpc(socket, {
+  disableServe: true, // 关闭了调用服务。如果需要暴露对象，则应忽略或设置为 false
+}); //创建 cpc 实例
 const serverApi = cpc.genCaller<ServerApi>(); //生成远程代理对象。传入类型，可获得完整类型提示
 
 // 每秒调用一次远程方法 add, 并输出结果。 调用5次后结束
@@ -289,7 +117,6 @@ for (let i = 0; i < 5; i++) {
   console.log(res);
   await delay(1000);
 }
-await cpc.caller.end(); // 为了保证正常断开连接，需要手动调用 caller.end() 方法
 
 function delay(time: number) {
   return new Promise((resolve) => setTimeout(resolve, time));
@@ -307,18 +134,7 @@ server.ts
 
 ```ts
 import { Socket, createServer } from "node:net";
-import { createSocketCpc } from "cpcall/node";
-
-const server = createServer(onConnect);
-server.listen(8888);
-
-// 当客户端连接时的回调函数
-function onConnect(socket: Socket) {
-  const cpc = createSocketCpc(socket);
-  cpc.caller.end(); //不需要调用客户端，为了保证后续正常断开连接，需要手动调用 caller.end() 方法
-  cpc.closeEvent.then(() => console.log("cpc closed")); //连接关闭事件
-  cpc.setObject(new ServerApi()); //暴露接口
-}
+import { createSocketCpc } from "cpcall";
 
 // 这是暴露给客户端调用的类
 class ServerApi {
@@ -327,6 +143,19 @@ class ServerApi {
     console.log(`${a} + ${b} = ${res}`);
     return res;
   }
+}
+
+const server = createServer(onConnect);
+server.listen(8888, "127.0.0.1");
+console.log("listen 127.0.0.1:8888");
+
+// 当客户端连接时的回调函数
+function onConnect(socket: Socket) {
+  const cpc = createSocketCpc(socket, {
+    disableCall: true, //关闭了调用端。如果需要发起调用，则应忽略或设置为 false
+    serveObject: new ServerApi(), //暴露接口
+  });
+  cpc.onClose.finally(() => console.log("cpc closed")); //连接关闭事件
 }
 
 export type { ServerApi }; //导出类型，以便客户端获得完整类型提示
@@ -338,7 +167,7 @@ export type { ServerApi }; //导出类型，以便客户端获得完整类型提
 server
 
 ```ts
-import { createWebStreamCpc } from "npm:cpcall/web";
+import { createWebStreamCpc } from "npm:cpcall";
 
 const server = Deno.listen({ port: 8888 });
 for await (const conn of server) {
@@ -350,7 +179,7 @@ for await (const conn of server) {
 client
 
 ```ts
-import { createWebStreamCpc } from "npm:cpcall/web";
+import { createWebStreamCpc } from "npm:cpcall";
 
 const conn = await Deno.connect({ port: 8888 });
 const clientCpc = createWebStreamCpc(conn);

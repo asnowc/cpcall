@@ -9,12 +9,11 @@ import packageJson from "./package.json" with { type: "json" };
 const { deps } = getDeps();
 const src = path.resolve("src");
 const DEV=Boolean(process.env.DEV)
+if(DEV){
+  console.log("Build in dev mode");
+}
 export default defineEvConfig({
-  input: {
-    cpc: "src/cpc/mod.ts",
-    node: "src/node/mod.ts",
-    web: "src/web/mod.ts",
-  },
+  input: "src/mod.ts",
   output: {
     dir: "dist",
     chunkFileNames: "internal/[name].js",

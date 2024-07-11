@@ -1,22 +1,20 @@
-import { createWebStreamCpc } from "cpcall/web";
+import { createWebStreamCpc } from "cpcall";
 import { expect, test, vi } from "vitest";
 
 test("readable异常", async function () {
   const { writable, readable, readableCtrl, writableCtrl } = createMockStream();
   const cpc = createWebStreamCpc({ readable, writable });
-  const errEvent = cpc.closeEvent.getPromise();
   const err = new Error("ReadableStream error");
   readableCtrl.controller.error(err);
-  await expect(errEvent).rejects.toThrowError(err);
+  await expect(cpc.onClose).rejects.toThrowError(err);
 }, 500);
 test("writable异常", async function () {
   const { writable, readable, readableCtrl, writableCtrl } = createMockStream();
   const cpc = createWebStreamCpc({ readable, writable });
-  const errEvent = cpc.closeEvent.getPromise();
   const err = new Error("WritableStream error");
   writableCtrl.controller.error(err);
-  cpc.caller.exec("hh");
-  await expect(errEvent).rejects.toThrowError(err);
+  cpc.exec("hh");
+  await expect(cpc.onClose).rejects.toThrowError(err);
 }, 500);
 
 function createMockStream() {

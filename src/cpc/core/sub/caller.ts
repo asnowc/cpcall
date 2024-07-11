@@ -1,85 +1,81 @@
-import { OnceEventTrigger, WithPromise } from "evlib";
+import { WithPromise } from "../../../deps/evlib.ts"
 import { ReturnQueue } from "./promise_queue.ts";
 import {
   FrameType,
   CpcError,
   CpcFailAsyncRespondError,
   CpcFailRespondError,
-  CalleeError,
   RemoteCallError,
+  CallerStatus,
 } from "../const.ts";
-import type { CalleeFrame, RpcFrame, CpCaller } from "../type.ts";
+import type { CalleeFrame, RpcFrame } from "../type.ts";
 import type { SendCtrl } from "./type.ts";
 
-/** @internal */
-export class CallerCore implements CpCaller {
+export class CallerCore {
   constructor(private sendCtrl: SendCtrl) {}
-  #end: 0 | 1 | 2 | 3 = 0;
-  get ended() {
-    return this.#end;
+  callerStatus: CallerStatus = CallerStatus.callable;
+
+  get callerFinished() {
+    return this.callerStatus === CallerStatus.finished;
   }
-  get closed() {
-    return this.#end === 3;
-  }
-  readonly disableEvent = new OnceEventTrigger<void>();
-  forceAbort(reason?: any) {
-    if (this.closed) return;
+  onRemoteServeEnd?: () => void;
+  onCallFinish?: () => void;
+  abortCall(reason?: any) {
+    if (this.callerFinished) return;
     if (!this.checkFinish()) {
       this.#returnQueue.rejectAsyncAll(reason ?? new CpcFailAsyncRespondError());
       this.emitFinish();
     }
   }
   dispose(reason?: any) {
-    if (this.closed) return;
-    if (this.#end === 0) {
-      this.#end = 1;
-      this.sendCtrl.sendFrame([FrameType.end]);
+    if (this.callerFinished) return;
+    if (this.callerStatus === CallerStatus.callable) {
+      this.callerStatus = CallerStatus.ending;
+      this.sendCtrl.sendFrame({ type: FrameType.endCall });
     }
-    this.forceAbort(reason);
-  }
-  end(): Promise<void> {
-    if (this.closed) return Promise.resolve();
-    if (this.#end === 0) {
-      this.#end = 1;
-      this.sendCtrl.sendFrame([FrameType.end]);
-    }
-    return this.finishEvent.getPromise();
+    this.abortCall(reason);
   }
 
+  /** 向对方发送 endCall 帧 */
+  endCall(): void {
+    if (this.callerFinished) return;
+    if (this.callerStatus === 0) {
+      this.callerStatus = 1;
+      this.sendCtrl.sendFrame({ type: FrameType.endCall });
+    }
+  }
   call(...args: any[]) {
-    if (this.#end) return Promise.reject(new Error("Cpc is ended"));
-    this.sendCtrl.sendFrame([FrameType.call, args]);
+    if (this.callerStatus) return Promise.reject(new Error("Cpc is ended"));
+    this.sendCtrl.sendFrame({ type: FrameType.call, args });
     return this.#returnQueue.add({});
   }
   exec(...args: any[]) {
-    if (this.#end) return;
-    this.sendCtrl.sendFrame([FrameType.exec, args]);
+    if (this.callerStatus) return;
+    this.sendCtrl.sendFrame({ type: FrameType.exec, args });
   }
-
-  readonly finishEvent = new OnceEventTrigger<void>();
 
   onFrame(frame: RpcFrame): boolean | Error;
   onFrame(frame: CalleeFrame) {
-    if (this.closed) return false;
+    if (this.callerFinished) return false;
     let err: Error | void;
-    switch (frame[0]) {
+    switch (frame.type) {
       case FrameType.promise:
-        err = this.onCpcReturnPromise(frame[1]);
+        err = this.onCpcReturnPromise(frame.id);
         break;
       case FrameType.reject:
-        err = this.onCpcPromiseChange(frame[1], frame[2], true);
+        err = this.onCpcPromiseChange(frame.id, frame.value, true);
         break;
       case FrameType.resolve:
-        err = this.onCpcPromiseChange(frame[1], frame[2], false);
+        err = this.onCpcPromiseChange(frame.id, frame.value, false);
         break;
       case FrameType.return:
-        err = this.onCpcReturn(frame[1]);
+        err = this.onCpcReturn(frame.value);
         break;
       case FrameType.throw:
-        err = this.onCpcReturn(frame[1], true);
+        err = this.onCpcReturn(frame.value, true);
         break;
-      case FrameType.disable:
-        err = this.onCpcDisable();
+      case FrameType.endServe:
+        err = this.onCpcRemoteServeEnd();
         break;
       default:
         return false;
@@ -97,7 +93,7 @@ export class CallerCore implements CpCaller {
   private onCpcReturnPromise(id: number): Error | void {
     if (this.#returnQueue.asyncIdExist(id)) {
       const hd = this.#returnQueue.shift();
-      hd?.reject(new CalleeError("Callee response error Promise frame"));
+      hd?.reject(new CpcError("Callee response error Promise frame"));
       return createPromiseIdError(id, "Duplicate");
     }
     if (!this.#returnQueue.swapInAsyncMap(id)) {
@@ -108,16 +104,16 @@ export class CallerCore implements CpCaller {
     let res = this.#returnQueue.takeAsyncItem(id);
     if (!res) return new CpcError("Invalid Promise ID");
     this.handleAwait(res, arg, error);
-    if (this.#end && this.#returnQueue.size === 0) {
+    if (this.callerStatus && this.#returnQueue.size === 0) {
       this.emitFinish();
     }
   }
-  private onCpcDisable() {
+  private onCpcRemoteServeEnd() {
     this.checkFinish();
   }
   private checkFinish() {
-    if (this.#end >= 2) return;
-    this.emitDisable();
+    if (this.callerStatus >= 2) return;
+    this.emitCallEnd();
     this.#returnQueue.rejectSyncAll(new CpcFailRespondError());
     if (this.#returnQueue.asyncMap.size === 0) {
       this.emitFinish();
@@ -132,7 +128,10 @@ export class CallerCore implements CpCaller {
   private handleAwait(handle: WithPromise<any>, value: any, error?: boolean) {
     if (error) {
       if (value instanceof Error) {
-        let remoteError = new RemoteCallError(value.message, { cause: value.cause });
+        let remoteError = new RemoteCallError(value.message, {
+          //@ts-ignore
+          cause: value.cause,
+        });
         const code = Reflect.get(value, "code");
         if (code !== undefined) remoteError.code = code;
         value = remoteError;
@@ -141,12 +140,12 @@ export class CallerCore implements CpCaller {
     } else handle.resolve(value);
   }
   private emitFinish() {
-    this.#end = 3;
-    this.finishEvent.emit();
+    this.callerStatus = 3;
+    this.onCallFinish?.();
   }
-  private emitDisable() {
-    this.#end = 2;
-    this.disableEvent.emit();
+  private emitCallEnd() {
+    this.callerStatus = 2;
+    this.onRemoteServeEnd?.();
   }
 }
 

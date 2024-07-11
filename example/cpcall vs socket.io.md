@@ -27,10 +27,12 @@ socket.emit("update item", "1", { name: "updated" }, (response) => {
 server
 
 ```ts
-cpc.setFn("updateItem", (arg1, arg2) => {
-  console.log(arg1); // 1
-  console.log(arg2); // { name: "updated" }
-  return { status: "ok" };
+cpc.setObject({
+  updateItem: (arg1, arg2) => {
+    console.log(arg1); // 1
+    console.log(arg2); // { name: "updated" }
+    return { status: "ok" };
+  },
 });
 ```
 

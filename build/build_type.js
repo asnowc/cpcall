@@ -13,22 +13,13 @@ await clearDts(process.argv[2] === "true");
 
 async function buildType() {
   const typeConfig = defineConfig({
-    input: {
-      cpc: "dist/types/cpc/mod.d.ts",
-      node: "dist/types/node/mod.d.ts",
-      web: "dist/types/web/mod.d.ts",
-    },
+    input: { mod: "dist/types/mod.d.ts" },
     plugins: [
       dts({
         respectExternal: true,
         compilerOptions: {
           rootDir: "./dist",
           noEmit: false,
-          paths: {
-            "cpcall/node": ["./dist/types/node/mod.js"],
-            "cpcall/web": ["./dist/types/web/mod.js"],
-            cpcall: ["./dist/types/cpc/mod.js"],
-          },
         },
       }),
       plugins.nodeResolve(),
@@ -38,12 +29,7 @@ async function buildType() {
   const r = await rollup(typeConfig);
   await r.write({
     dir: "dist",
-    chunkFileNames: "internal/[name].ts",
     minifyInternalExports: false,
-    manualChunks(id, meta) {
-      if (id.startsWith(dist)) return;
-      else return "deps.d";
-    },
   });
 }
 /** @param {boolean} genRooType */

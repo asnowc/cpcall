@@ -1,8 +1,29 @@
 ## 0.x
 
+### 0.6.x
+
+#### 0.6.0
+
+Features:
+
+- 新增 ECMA 装饰器，用于定义远程对象
+
+BREAKING CHANGES:
+
+- 删除 `cpcall/web`、`cpcall/node` 模块，现在全部从 `cpcall` 模块导出
+
+- 移除 `CpCall.fromByteIterable`， 改为 `CpCall.fromJbodFrameSource`,
+- CpCall 实例重构
+- `FrameType.disable` 改为 `FrameTyp. endServe`
+- `FrameType.end` 改为 `FrameType.endCall`
+
+- `CpcUnregisteredCommandError` 改为 `UnregisteredMethodError`
+
+- RpcFrame 类型更改，有原来的数组改为对象类型
+
 ### 0.5.x
 
-### 0.5.2
+#### 0.5.2
 
 fix(core): 编码 string 类型编码时，遇到较大的 Unicode 时编码错误
 
@@ -50,7 +71,6 @@ feat: 远程调用如果抛出 Error 对象，将自动转为 RemoteCallError
 
 #### 0.4.0
 
-##### BREAKING CHANGE
-
+BREAKING CHANGES:
 `RpcFrameCtrl.dispose` 返回值不再允许返回 Promise
 `CpCall.dispose()` 返回 void

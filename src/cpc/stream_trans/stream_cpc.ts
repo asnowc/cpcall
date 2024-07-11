@@ -1,19 +1,18 @@
-import { FrameType } from "../const.ts";
-import { RpcFrame } from "../type.ts";
+import { FrameType } from "../core/const.ts";
+import { RpcFrame, Frame } from "../core/type.ts";
 import JBOD, { DataType, varints, UnsupportedDataTypeError, DataWriter } from "jbod";
-import { StepsByteParser, LengthByteParser, ByteParser } from "evlib/async";
+import { StepsByteParser, LengthByteParser, ByteParser } from "../../deps/evlib.ts";
 
 const U32DByteParser = varints.U32DByteParser;
-/** 收集二进制chunk, 拼接成完整的二进制帧
- * @internal
- */
+/** 收集二进制chunk, 拼接成完整的二进制帧 */
 export function createCpcFrameParser(): ByteParser<Uint8Array> {
   return new StepsByteParser<Uint8Array>({ first: new U32DByteParser() }, (len: number) => new LengthByteParser(len));
 }
 
-/** 解码二进制帧。输入应该是通过 packageCpcFrame 生成的二进制块，可以是经过流的碎片
- *  @internal */
-export async function* createFrameIterator(iter: AsyncIterable<Uint8Array>) {
+/** 解码二进制帧。输入应该是通过 packageCpcFrame 生成的二进制块，可以是经过流的碎片 */
+export async function* createFrameIterator(
+  iter: AsyncIterable<Uint8Array>
+): AsyncGenerator<RpcFrame, Uint8Array | undefined, unknown> {
   const parser = createCpcFrameParser();
   let chunk: Uint8Array | undefined;
   for await (chunk of iter) {
@@ -33,9 +32,8 @@ export async function* createFrameIterator(iter: AsyncIterable<Uint8Array>) {
   }
   return chunk;
 }
-/** 将多个 RpcFrame 打包多个成二进制帧 JBOD-CPC 帧
- * @internal */
-export function packCpcFrames(frames: RpcFrame[]) {
+/** 将多个 RpcFrame 打包多个成二进制帧 JBOD-CPC 帧 */
+export function packCpcFrames(frames: RpcFrame[]): Uint8Array {
   const encoderList: CpcFrameEncoder[] = new Array(frames.length);
   let len = 0;
   for (let i = 0; i < frames.length; i++) {
@@ -53,9 +51,8 @@ export function packCpcFrames(frames: RpcFrame[]) {
   }
   return u8Arr;
 }
-/** 解码由 packCpcFrames 生成的二进制帧
- * @internal */
-export function* unpackCpcFrames(buf: Uint8Array, offset: number) {
+/** 解码由 packCpcFrames 生成的二进制帧 */
+export function* unpackCpcFrames(buf: Uint8Array, offset: number): Generator<RpcFrame, void, void> {
   let decRes: ReturnType<typeof decodeCpcFrame>;
   do {
     let res = varints.decodeU32D(buf, offset);
@@ -68,45 +65,46 @@ export function* unpackCpcFrames(buf: Uint8Array, offset: number) {
   } while (offset < buf.byteLength);
 }
 
-/** 解码二进制 JBOD-CPC 帧
- * @internal */
+/* 单个帧 */
+
+/** 解码二进制 JBOD-CPC 帧 */
 export function decodeCpcFrame(buf: Uint8Array, offset = 0): { frame: RpcFrame; offset: number } {
   const type: FrameType = buf[offset++];
   let frame: RpcFrame;
 
   if (type === FrameType.call || type === FrameType.exec) {
     const res = JBOD.decode(buf, offset, DataType.anyArray);
-    frame = [type, res.data];
+    frame = { type, args: res.data } satisfies Frame.Call | Frame.Exec;
     offset = res.offset;
   } else if (type === FrameType.reject || type === FrameType.resolve) {
     const res = varints.decodeU32D(buf, offset);
     offset += res.byte;
     const value = JBOD.decode(buf, offset);
-    frame = [type, res.value, value.data];
+    frame = { type, id: res.value, value: value.data } satisfies Frame.Reject | Frame.Resolve;
     offset = value.offset;
   } else {
     switch (type) {
       case FrameType.return: {
         const res = JBOD.decode(buf, offset);
-        frame = [type, res.data];
+        frame = { type, value: res.data };
         offset = res.offset;
         return { frame, offset };
       }
       case FrameType.throw: {
         const res = JBOD.decode(buf, offset);
-        frame = [type, res.data];
+        frame = { type, value: res.data };
         offset = res.offset;
         return { frame, offset };
       }
       case FrameType.promise: {
         const res = varints.decodeU32D(buf, offset);
         offset += res.byte;
-        return { frame: [type, res.value], offset };
+        return { frame: { type, id: res.value }, offset };
       }
-      case FrameType.end:
-        return { frame: [FrameType.end], offset };
-      case FrameType.disable:
-        return { frame: [FrameType.disable], offset };
+      case FrameType.endCall:
+        return { frame: { type: FrameType.endCall }, offset };
+      case FrameType.endServe:
+        return { frame: { type: FrameType.endServe }, offset };
       default:
         throw new UnsupportedDataTypeError(type);
     }
@@ -114,28 +112,27 @@ export function decodeCpcFrame(buf: Uint8Array, offset = 0): { frame: RpcFrame; 
   return { frame, offset };
 }
 
-/** 编码二进制 JBOD-CPC 帧
- * @internal */
+/** 编码二进制 JBOD-CPC 帧 */
 export class CpcFrameEncoder {
   readonly type: FrameType;
   constructor(frame: RpcFrame) {
-    this.type = frame[0];
-    const type = this.type;
+    const type = frame.type;
+    this.type = type;
     if (type === FrameType.call || type === FrameType.exec) {
-      this.pre = JBOD.createContentWriter(frame[1]);
+      this.pre = JBOD.createContentWriter(frame.args);
       this.byteLength = this.pre.byteLength + 1;
     } else if (type === FrameType.reject || type === FrameType.resolve) {
-      const len2 = varints.calcU32DByte(frame[1]);
-      const pre = JBOD.createWriter(frame[2]);
+      const len2 = varints.calcU32DByte(frame.id);
+      const pre = JBOD.createWriter(frame.value);
       this.byteLength = 1 + pre.byteLength + len2;
-      this.pre = { id: frame[1], body: pre };
+      this.pre = { id: frame.id, body: pre };
     } else {
       if (type === FrameType.return || type === FrameType.throw) {
-        this.pre = JBOD.createWriter(frame[1]);
+        this.pre = JBOD.createWriter(frame.value);
         this.byteLength = this.pre.byteLength + 1;
       } else if (type === FrameType.promise) {
-        this.pre = frame[1];
-        this.byteLength = varints.calcU32DByte(frame[1]) + 1;
+        this.pre = frame.id;
+        this.byteLength = varints.calcU32DByte(frame.id) + 1;
       } else {
         this.byteLength = 1;
       }
@@ -166,13 +163,3 @@ export class CpcFrameEncoder {
     return buf;
   }
 }
-
-/** @internal */
-export default {
-  createFrameIterator,
-  createCpcFrameParser,
-  packCpcFrames,
-  decodeCpcFrame,
-  unpackCpcFrames,
-  CpcFrameEncoder,
-};

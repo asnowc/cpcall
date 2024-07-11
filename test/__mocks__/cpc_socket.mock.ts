@@ -1,5 +1,5 @@
 import { Duplex, Readable } from "node:stream";
-import { createSocketCpc } from "cpcall/node";
+import { createSocketCpc } from "cpcall";
 import { vi } from "vitest";
 import { CpCall } from "cpcall";
 import EventEmitter from "node:events";
@@ -10,7 +10,7 @@ export function getNoResponseCpc() {
 }
 export type InternalCpcall = CpCall & {
   name: string;
-  calleePromiseNum: number;
+  responsePromiseNum: number;
 };
 /** 模拟两个已连接的 CpcSocket */
 export function createConnectedCpc(clientFn?: object, serverFn?: object) {
