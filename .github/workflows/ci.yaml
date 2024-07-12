@@ -23,3 +23,10 @@ jobs:
           run_install: true
       - name: Test
         run: pnpm ci:test
+
+      - name: Build
+        if: ${{github.ref_name == 'main' && matrix.node-version == 22}}
+        run: pnpm run ci:build
+      - name: Check Api
+        if: ${{github.ref_name == 'main' && matrix.node-version == 22}}
+        run: pnpm run ci:check-api
