@@ -70,6 +70,7 @@ export type ServiceConfig = {
 };
 const RPC_SERVICE_META_MAP = new WeakMap<WeakKey, ServiceConfig>();
 export function getOrCreateRpcDecorateMeta(meta: object): ServiceConfig {
+  if (typeof meta !== "object") throw new Error("Unable to retrieve metadata");
   let rpcMeta = RPC_SERVICE_META_MAP.get(meta);
   if (!rpcMeta) {
     rpcMeta = { includes: {}, excludes: {} };

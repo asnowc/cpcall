@@ -31,7 +31,7 @@ export class CpCall extends CpCallBase {
    *
    * ```ts
    * const api= cpc.genCaller()
-   * CpCall.exec(api.a.b,"arg1","arg2") //这等价与 cpc.exec("api.a.b","arg1","arg2")
+   * CpCall.exec(api.a.b,"arg1","arg2") //这等价于 cpc.exec("api.a.b","arg1","arg2")
    *
    * ```
    */
@@ -86,7 +86,17 @@ export class CpCall extends CpCallBase {
   #separator = ".";
   #root: ServeObjectRoot = { object: {} };
 
-  /** 生成远程代理对象 */
+  /**
+   * 生成远程代理对象
+   * @example
+   * ```
+   * const proxy=cpc.genCaller()
+   * proxy.a.b(1, 2) //这等价于 cpc.call("a.b", 1, 2)
+   *
+   * const proxy=cpc.genCaller("base.api")
+   * proxy.a.b(1, 2) //这等价于 cpc.call("base.api.a.b", 1, 2)
+   * ```
+   */
   genCaller(opts?: GenCallerOpts): AnyCaller;
   genCaller(base: string, opts?: GenCallerOpts): AnyCaller;
   genCaller<R extends object>(base: string, opts?: GenCallerOpts): MakeCallers<R>;

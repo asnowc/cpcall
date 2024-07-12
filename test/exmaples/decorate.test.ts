@@ -7,6 +7,7 @@ import {
   UnregisteredMethodError,
   RpcInterceptCall,
   RpcInterceptReturn,
+  manualDecorateClass,
 } from "cpcall";
 import { cpcTest as test } from "../env/cpc.env.ts";
 test("装饰器", async function ({ cpcSuite }) {
@@ -48,7 +49,7 @@ test("装饰器", async function ({ cpcSuite }) {
 });
 describe("继承", function () {
   @RpcService()
-  class Service {
+  class Include {
     constructor() {}
     @RpcExposed()
     method1() {
@@ -93,10 +94,10 @@ describe("继承", function () {
   test("service 继承 service", async function ({ cpcSuite }) {
     const { cpc1, cpc2 } = cpcSuite;
     /**
-     * 普通类的方法只只有标注为暴露才会暴露，继承的方法中只有在父类别标记为暴露才会被暴露
+     * 父类和子类只有标注为暴露才会暴露
      */
     @RpcService()
-    class A extends Service {
+    class A extends Include {
       @rpcExclude //排除父类暴露的方法
       method2 = super.method2;
     }
@@ -158,7 +159,7 @@ describe("继承", function () {
      * 除非标记排除，否则所有方法包括父类的方法都会被暴露
      */
     @RpcService(ServiceDefineMode.exclude)
-    class A extends Service {
+    class A extends Include {
       method5() {
         return 5;
       }
@@ -176,4 +177,30 @@ describe("继承", function () {
     
       普通类继承 Service 或排除类。会顺带继承其装饰器
     */
+});
+
+test("manualDecorateClass", async function ({ cpcSuite }) {
+  class A {
+    method1() {
+      return 1;
+    }
+    method2() {
+      return 2;
+    }
+    method3() {
+      return 2;
+    }
+  }
+  manualDecorateClass(A, RpcService(), {
+    method1: [RpcExposed(), RpcInterceptReturn((res: number) => "InterceptReturn")],
+    method2: RpcExposed(),
+  });
+
+  const { cpc1, cpc2 } = cpcSuite;
+
+  cpc2.setObject(new A());
+  const a = cpc1.genCaller<A>();
+  await expect(a.method1()).resolves.toBe("InterceptReturn");
+  await expect(a.method2()).resolves.toBe(2);
+  await expect(a.method3(), "method3 没有被标记").rejects.toThrowError();
 });

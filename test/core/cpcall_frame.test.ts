@@ -1,5 +1,5 @@
 import { describe, expect, vi } from "vitest";
-import { FrameType, Frame, CallerStatus, ServerStatus } from "cpcall";
+import { FrameType, Frame, CallerStatus, ServiceStatus } from "cpcall";
 import { cpcTest as test } from "../env/cpc.env.ts";
 import { afterTime } from "evlib";
 
@@ -100,7 +100,7 @@ describe("状态更改", function () {
     cpc.endServe();
     const calls = source.sendFrame.mock.calls;
     expect(calls[0][0]).toMatchObject({ type: FrameType.endServe });
-    expect(cpc.serverStatus, "不存在返回队列自动结束").toBe(ServerStatus.finished);
+    expect(cpc.serviceStatus, "不存在返回队列自动结束").toBe(ServiceStatus.finished);
     expect(cpc.onServeEnd).resolves.toBeUndefined();
   });
 

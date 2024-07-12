@@ -13,7 +13,8 @@ export function RpcService(
   mode?: ServiceDefineMode
 ): (input: new (...args: any[]) => Object, context: { metadata: object }) => void {
   return (input, context) => {
-    const rpcDefineConfigMeta = getOrCreateRpcDecorateMeta(context.metadata!);
+    if (typeof input !== "function") throw new Error("input must be a class");
+    const rpcDefineConfigMeta = getOrCreateRpcDecorateMeta(context.metadata);
     rpcDefineConfigMeta.mode = mode;
 
     let prototype = Reflect.getPrototypeOf(input.prototype);
@@ -88,10 +89,17 @@ export function RpcInterceptReturn<T, R>(interceptor?: (result: R) => T): RpcDec
  * 不支持装饰器的情况可以通过该函数手动标注服务类
  * @public
  */
-export function manualDefineObject(
-  Class: new (...args: any[]) => any,
+export function manualDecorateClass<T extends object>(
+  Class: new (...args: any[]) => T,
   serviceDecorator: ReturnType<typeof RpcService>,
-  define?: Record<string, RpcDecorator[]>
+  define?: {
+    [key in keyof T as key extends string ? key : never]?: RpcDecorator[] | RpcDecorator;
+  }
+): void;
+export function manualDecorateClass(
+  Class: new (...args: any[]) => object,
+  serviceDecorator: ReturnType<typeof RpcService>,
+  define?: Record<string, RpcDecorator[] | RpcDecorator | undefined>
 ) {
   if (typeof Class !== "function") throw new Error("Class must be a function");
   let metadata = Reflect.get(Class, SymbolMetadata);
@@ -102,8 +110,14 @@ export function manualDefineObject(
   serviceDecorator(Class, { metadata });
   if (define) {
     for (const key of Object.keys(define)) {
-      for (const decorator of define[key]) {
-        decorator(undefined, { name: key, metadata });
+      let decorators = define[key];
+      if (typeof decorators === "function") {
+        decorators(undefined, { name: key, metadata });
+      } else if (decorators instanceof Array) {
+        for (const decorator of decorators) {
+          if (typeof decorator !== "function") throw new Error("Decorator should be a function");
+          decorator(undefined, { name: key, metadata });
+        }
       }
     }
   }

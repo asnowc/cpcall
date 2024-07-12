@@ -9,11 +9,7 @@ interface ClientApi {
 Deno.serve({ port: 8888 }, function (req, res): Response {
   const upgrade = req.headers.get("upgrade") || "";
   if (upgrade.toLowerCase() != "websocket") {
-    const jsFile = Deno.readTextFile(import.meta.dirname! + "/client.js");
-    return new Response(`
-<script type="module">${jsFile}</script>
-<body>hi</body>
-`);
+    return new Response("hi");
   }
 
   //协议升级为 WebSocket
