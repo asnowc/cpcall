@@ -238,7 +238,9 @@ export type MakeEmitter<T extends object, E extends object = {}> = E & {
 } & (T extends (...args: infer A) => any ? (...args: A) => void : {});
 
 // @public
-export function manualDefineObject(Class: new (...args: any[]) => any, serviceDecorator: ReturnType<typeof RpcService>, define?: Record<string, RpcDecorator[]>): void;
+export function manualDecorateClass<T extends object>(Class: new (...args: any[]) => T, serviceDecorator: ReturnType<typeof RpcService>, define?: {
+    [key in keyof T as key extends string ? key : never]?: RpcDecorator[] | RpcDecorator;
+}): void;
 
 // @public
 export class RemoteCallError extends Error {
@@ -303,8 +305,8 @@ export class UnregisteredMethodError extends Error {
 
 // Warnings were encountered during analysis:
 //
-// dist/mod.d.ts:439:5 - (ae-forgotten-export) The symbol "PruneReadableStream" needs to be exported by the entry point index.d.ts
-// dist/mod.d.ts:440:5 - (ae-forgotten-export) The symbol "PruneWritableStream" needs to be exported by the entry point index.d.ts
+// dist/mod.d.ts:451:5 - (ae-forgotten-export) The symbol "PruneReadableStream" needs to be exported by the entry point index.d.ts
+// dist/mod.d.ts:452:5 - (ae-forgotten-export) The symbol "PruneWritableStream" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
