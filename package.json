@@ -11,7 +11,7 @@
     "build": "pnpm rollup -c --environment DEV && pnpm gen-dts && pnpm api-extract",
     "api-extract": "pnpm run ci:check-api -l",
     "gen-dts": "node build/build_type.js",
-    "ci:build": "pnpm rollup -c && pnpm gen-dts true",
+    "ci:build": "pnpm rollup -c && pnpm gen-dts",
     "ci:test": "vitest run",
     "ci:check-api": "api-extractor run -c api-extractor.jsonc -v"
   },
@@ -46,7 +46,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/asnowc/cpcall"
+    "url": "git+https://github.com/asnowc/cpcall.git"
   },
   "license": "MIT",
   "author": {

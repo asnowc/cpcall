@@ -55,6 +55,9 @@ jobs:
           name: npm-package
       - name: Unpack
         run: tar -zxvf npm-package.tgz
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Publish
         run: npm publish
         working-directory: ./package

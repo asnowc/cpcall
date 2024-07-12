@@ -1,15 +1,13 @@
 // @ts-check
 import { rollup, plugins, defineConfig } from "@eavid/lib-dev/rollup";
-import * as path from "node:path";
 import { dts } from "rollup-plugin-dts";
 import fs from "node:fs/promises";
 import config from "../rollup.config.js";
 
-const dist = path.resolve("dist");
 console.log("build type...");
 await buildType();
 console.log("clear...");
-await clearDts(process.argv[2] === "true");
+await clearDts();
 
 async function buildType() {
   const typeConfig = defineConfig({
@@ -32,21 +30,6 @@ async function buildType() {
     minifyInternalExports: false,
   });
 }
-/** @param {boolean} genRooType */
-async function clearDts(genRooType) {
+async function clearDts() {
   await fs.rm("dist/types", { recursive: true });
-  if (genRooType) {
-    for (const item of ["node", "web"]) {
-      await createType(item + ".d.ts", "./dist/" + item + ".js");
-    }
-  }
-}
-/**
- * @param {string} path 描述
- * @param {string} dtsPath 描述
- *
- */
-function createType(path, dtsPath) {
-  const data = `export * from "${dtsPath}"`;
-  return fs.writeFile(path, data, { flag: "w+" });
 }
