@@ -1,5 +1,5 @@
 import { UniqueKeyMap } from "../../../deps/evlib.ts";
-import { FrameType, ServerStatus } from "../const.ts";
+import { FrameType, ServiceStatus } from "../const.ts";
 import type { Frame, CallerFrame, RpcFrame } from "../type.ts";
 import type { SendCtrl } from "./type.ts";
 
@@ -10,7 +10,7 @@ export class CalleeCore {
   /** 等待返回给对方的 Promise 队列 */
   readonly #sendingUniqueKey: UniqueKeyMap;
 
-  serverStatus: ServerStatus = ServerStatus.serving;
+  serverStatus: ServiceStatus = ServiceStatus.serving;
 
   get promiseNum() {
     return this.#sendingUniqueKey.size;
@@ -43,15 +43,15 @@ export class CalleeCore {
   }
   /** 向对方发送 endServe 帧 */
   endServe(): void {
-    if (this.serverStatus === ServerStatus.finished) return;
+    if (this.serverStatus === ServiceStatus.finished) return;
     this.onCpcRemoteCallEnd();
   }
   abortServe() {
-    this.serverStatus = ServerStatus.finished;
+    this.serverStatus = ServiceStatus.finished;
     this.onServeFinish?.();
   }
   dispose() {
-    if (this.serverStatus === ServerStatus.serving) {
+    if (this.serverStatus === ServiceStatus.serving) {
       this.onCpcRemoteCallEnd();
     }
     this.abortServe();

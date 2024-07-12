@@ -7,6 +7,7 @@ import { ServiceDefineMode, SymbolMetadata, getOrCreateRpcDecorateMeta, getClass
  * RpcDefineMode.exclude: 默认暴露对象的所有方法
  *
  * @public
+ * @category Decorator
  */
 export function RpcService(
   mode?: ServiceDefineMode
@@ -33,6 +34,7 @@ export function RpcService(
 }
 /**
  * @public
+ * @category Decorator
  */
 export function RpcExposed(): RpcDecorator {
   return function rpcFnDecorate(input, context) {
@@ -41,7 +43,10 @@ export function RpcExposed(): RpcDecorator {
     serviceConfig.includes[context.name] = {};
   };
 }
-/** @public */
+/**
+ * @public
+ * @category Decorator
+ */
 export const rpcExclude: RpcDecorator = function rpcExclude(input, context) {
   if (typeof context.name !== "string") throw new RpcDecorateError();
   const serviceConfig = getOrCreateRpcDecorateMeta(context.metadata);
@@ -51,6 +56,7 @@ export const rpcExclude: RpcDecorator = function rpcExclude(input, context) {
 /**
  * 调用拦截器
  * @public
+ * @category Decorator
  */
 export function RpcInterceptCall<T extends any[], A extends any[]>(interceptor: (args: T) => A): RpcDecorator<A> {
   if (typeof interceptor !== "function") throw new Error("interceptor must be a function");
@@ -65,6 +71,7 @@ export function RpcInterceptCall<T extends any[], A extends any[]>(interceptor: 
 /**
  * 返回拦截器
  * @public
+ * @category Decorator
  */
 export function RpcInterceptReturn<T, R>(interceptor?: (result: R) => T): RpcDecorator<any[], R> {
   if (typeof interceptor !== "function") throw new Error("interceptor must be a function");
@@ -107,7 +114,10 @@ class RpcDecorateError extends Error {
     super("Only string properties are supported");
   }
 }
-/** @public */
+/**
+ * @public
+ * @category Decorator
+ */
 export type RpcDecorator<A extends any[] = any[], R = any> = (
   input: unknown,
   context: { name: string | symbol; metadata: object }

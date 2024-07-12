@@ -1,6 +1,9 @@
 import type { FrameType } from "./const.ts";
 
-/** @public */
+/**
+ * @public
+ * @category Rpc
+ */
 export namespace Frame {
   export type Call = { type: FrameType.call; args: any[] };
   export type Exec = { type: FrameType.exec; args: any[] };
@@ -14,7 +17,10 @@ export namespace Frame {
   export type ResponseError = { type: FrameType.error; code: number };
 }
 
-/** @public */
+/**
+ * @public
+ * @category Rpc
+ */
 export type CalleeFrame =
   | Frame.Return
   | Frame.ReturnPromise
@@ -23,10 +29,17 @@ export type CalleeFrame =
   | Frame.Throw
   | Frame.EndServe;
 
-/** @public */
+/**
+ * @public
+ * @category Rpc
+ */
 export type CallerFrame = Frame.Call | Frame.Exec | Frame.EndCall;
 
-/** @public */
+/**
+ * CpCall 的数据帧
+ * @public
+ * @category Rpc
+ */
 export type RpcFrame =
   | Frame.Return
   | Frame.ReturnPromise

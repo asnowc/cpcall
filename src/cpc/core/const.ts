@@ -1,5 +1,8 @@
-/** CPC 数据帧类型
- * @public */
+/**
+ * CPC 数据帧类型
+ * @public
+ * @category Rpc
+ */
 export enum FrameType {
   call = 1,
   exec = 2,
@@ -16,7 +19,10 @@ export enum FrameType {
   endServe = 0xff,
 }
 
-/** @public */
+/**
+ * @public
+ * @category Rpc
+ */
 export enum CallerStatus {
   /** 当前可执行远程调用 */
   callable = 0,
@@ -27,8 +33,11 @@ export enum CallerStatus {
   /** 表示已调用 end() 或已收到 endServe 帧并且所有等待队列已清空 */
   finished = 3,
 }
-/** @public */
-export enum ServerStatus {
+/**
+ * @public
+ * @category Rpc
+ */
+export enum ServiceStatus {
   /** 服务中 */
   serving = 0,
   /** 已发送 endServe 帧 */
@@ -39,6 +48,7 @@ export enum ServerStatus {
 
 /** 远程调用抛出异常
  * @public
+ * @category Errors
  */
 export class RemoteCallError extends Error {
   constructor(message: string, option?: { cause?: any }) {
@@ -51,16 +61,18 @@ export class RemoteCallError extends Error {
 /**
  * Cpc 内部错误
  * @public
+ * @category Errors
  */
 export class CpcError extends Error {}
-/** 在返回前断开连接
+/**
+ * 在返回前断开连接抛出的异常
  * @public
+ * @category Errors
  */
-export class CpcFailRespondError extends Error {
-  constructor() {
-    super("CpcFailRespondError");
-  }
-}
-/** 已返回 AsyncId (命令已被执行), 但Promise结果在响应前断开连接
- *  @public */
+export class CpcFailRespondError extends Error {}
+/**
+ * 已返回 AsyncId (已确认被调用), 但 Promise 结果在返回前断开连接
+ * @public
+ * @category Errors
+ */
 export class CpcFailAsyncRespondError extends Error {}

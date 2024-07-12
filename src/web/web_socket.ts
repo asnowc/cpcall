@@ -2,7 +2,9 @@ import { CpCall, RpcFrame, CpcFrameSource, CpcController, CpCallOption } from ".
 import { unpackCpcFrames, packCpcFrames } from "../cpc/stream_trans/mod.ts";
 
 /** 创建一个基于 WebSocket 的 CpCall 实例。
- * @public */
+ * @public
+ * @category Rpc
+ */
 export function createWebsocketCpcOnOpen(websocket: WebSocket, option?: CpCallOption): Promise<CpCall> {
   return new Promise<CpCall>(function (resolve, reject) {
     if (websocket.readyState === websocket.OPEN) return resolve(createWebSocketCpc(websocket));
@@ -21,6 +23,7 @@ export function createWebsocketCpcOnOpen(websocket: WebSocket, option?: CpCallOp
 
 /** 创建一个基于 WebSocket 的 CpCall 实例。WebSocket 的状态必须是 open。 否则抛出异常
  * @public
+ * @category Rpc
  */
 export function createWebSocketCpc(websocket: WebSocket, option?: CpCallOption): CpCall {
   if (websocket.readyState !== websocket.OPEN) throw new Error("Websocket must be opened");

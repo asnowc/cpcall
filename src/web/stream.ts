@@ -1,10 +1,15 @@
-import { CpCall, CpcController, CpcFrameSource, createJbodStreamFrameSource } from "../cpc/mod.ts";
+import { CpCall, CpcController, CpcFrameSource, JbodStreamFrameSource } from "../cpc/mod.ts";
 
 /** 创建一个基于 WebStream 的 CpCall 实例。这可以是 Deno.Conn 对象
  * @public
+ * @category Rpc
  */
-export function createWebStreamCpc(stream: WebStreamSuite): CpCall {
-  return new CpCall(createJbodStreamFrameSource(new WebStreamSource(stream)));
+export function createWebStreamCpc(stream: {
+  readable: PruneReadableStream<Uint8Array>;
+  writable: PruneWritableStream<Uint8Array>;
+}): CpCall {
+  const source = new JbodStreamFrameSource(new WebStreamSource(stream));
+  return new CpCall(source);
 }
 class WebStreamSource implements CpcFrameSource<Uint8Array> {
   constructor(stream: WebStreamSuite) {
@@ -59,14 +64,10 @@ class WebStreamSource implements CpcFrameSource<Uint8Array> {
     this._writer.write(frame).catch(this.onWriterError);
   }
 }
-/** @public */
-export type WebStreamSuite = {
-  readable: ReadableStream<Uint8Array>;
-  writable: WritableStream<Uint8Array>;
-};
+type WebStreamSuite = Parameters<typeof createWebStreamCpc>[0];
 
 // ReadableStream 最小依赖
-interface ReadableStream<T> {
+interface PruneReadableStream<T> {
   getReader(): {
     read(): Promise<SameReadableStreamReadResult<T>>;
     closed: Promise<void>;
@@ -76,7 +77,7 @@ interface ReadableStream<T> {
 type SameReadableStreamReadResult<T> = { done: true } | { done?: false; value: T };
 
 // WritableStream 最小依赖
-interface WritableStream<T> {
+interface PruneWritableStream<T> {
   getWriter(): {
     write(data: T): Promise<void>;
     close(): Promise<void>;

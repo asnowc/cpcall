@@ -4,13 +4,13 @@
 
 ```ts
 
-// @public (undocumented)
+// @public
 export type AnyCaller = {
     (...args: any[]): Promise<any>;
     [key: string]: AnyCaller;
 };
 
-// @public (undocumented)
+// @public
 export type AnyEmitter = {
     (...args: any[]): void;
     [key: string]: AnyCaller;
@@ -30,7 +30,7 @@ export enum CallerStatus {
     finished = 3
 }
 
-// @public (undocumented)
+// @public
 export class CpCall extends CpCallBase {
     constructor(frameSource: CpcFrameSource<RpcFrame>, config?: CpCallOption);
     static call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T>;
@@ -63,7 +63,7 @@ export abstract class CpCallBase {
     readonly onServeEnd: Promise<void>;
     // (undocumented)
     protected get responsePromiseNum(): number;
-    get serverStatus(): ServerStatus;
+    get serviceStatus(): ServiceStatus;
 }
 
 // @public (undocumented)
@@ -102,7 +102,6 @@ export class CpcFailAsyncRespondError extends Error {
 
 // @public
 export class CpcFailRespondError extends Error {
-    constructor();
 }
 
 // @public
@@ -112,9 +111,6 @@ export type CpcFrameSource<T = RpcFrame> = {
     close(): void | Promise<void>;
     dispose(reason?: any): void;
 };
-
-// @public
-export function createJbodStreamFrameSource(ctrl: CpcFrameSource<Uint8Array>): CpcFrameSource<RpcFrame>;
 
 // Warning: (ae-forgotten-export) The symbol "Duplex" needs to be exported by the entry point index.d.ts
 //
@@ -130,7 +126,10 @@ export function createWebSocketCpc(websocket: WebSocket_2, option?: CpCallOption
 export function createWebsocketCpcOnOpen(websocket: WebSocket_2, option?: CpCallOption): Promise<CpCall>;
 
 // @public
-export function createWebStreamCpc(stream: WebStreamSuite): CpCall;
+export function createWebStreamCpc(stream: {
+    readable: PruneReadableStream<Uint8Array>;
+    writable: PruneWritableStream<Uint8Array>;
+}): CpCall;
 
 // @public (undocumented)
 export namespace Frame {
@@ -215,6 +214,19 @@ export type GenCallerOpts = {
     keepThen?: boolean;
 };
 
+// @public
+export class JbodStreamFrameSource implements CpcFrameSource<RpcFrame> {
+    constructor(ctrl: CpcFrameSource<Uint8Array>);
+    // (undocumented)
+    close(): void | Promise<void>;
+    // (undocumented)
+    dispose(reason?: any): void;
+    // (undocumented)
+    init({ endFrame, nextFrame }: CpcController): void;
+    // (undocumented)
+    sendFrame(frame: RpcFrame): void;
+}
+
 // @public (undocumented)
 export type MakeCallers<T extends object, E extends object = {}> = E & {
     [Key in keyof T as T[Key] extends object ? Key : never]: T[Key] extends object ? MakeCallers<T[Key], E> : never;
@@ -227,11 +239,6 @@ export type MakeEmitter<T extends object, E extends object = {}> = E & {
 
 // @public
 export function manualDefineObject(Class: new (...args: any[]) => any, serviceDecorator: ReturnType<typeof RpcService>, define?: Record<string, RpcDecorator[]>): void;
-
-// @public
-export type ParseObjectOption = {
-    cmd?: string;
-};
 
 // @public
 export class RemoteCallError extends Error {
@@ -254,7 +261,7 @@ export const rpcExclude: RpcDecorator;
 // @public (undocumented)
 export function RpcExposed(): RpcDecorator;
 
-// @public (undocumented)
+// @public
 export type RpcFrame = Frame.Return | Frame.ReturnPromise | Frame.Resolve | Frame.Reject | Frame.Throw | Frame.EndServe | Frame.Call | Frame.Exec | Frame.EndCall | Frame.ResponseError;
 
 // @public
@@ -275,13 +282,6 @@ export type ServeFnConfig = {
 };
 
 // @public (undocumented)
-export enum ServerStatus {
-    ended = 1,
-    finished = 2,
-    serving = 0
-}
-
-// @public (undocumented)
 export enum ServiceDefineMode {
     // (undocumented)
     exclude = 1,
@@ -289,21 +289,22 @@ export enum ServiceDefineMode {
     include = 0
 }
 
+// @public (undocumented)
+export enum ServiceStatus {
+    ended = 1,
+    finished = 2,
+    serving = 0
+}
+
 // @public
 export class UnregisteredMethodError extends Error {
     constructor(cmd: any);
 }
 
-// @public (undocumented)
-export type WebStreamSuite = {
-    readable: ReadableStream_2<Uint8Array>;
-    writable: WritableStream_2<Uint8Array>;
-};
-
 // Warnings were encountered during analysis:
 //
-// dist/mod.d.ts:369:5 - (ae-forgotten-export) The symbol "ReadableStream_2" needs to be exported by the entry point index.d.ts
-// dist/mod.d.ts:370:5 - (ae-forgotten-export) The symbol "WritableStream_2" needs to be exported by the entry point index.d.ts
+// dist/mod.d.ts:439:5 - (ae-forgotten-export) The symbol "PruneReadableStream" needs to be exported by the entry point index.d.ts
+// dist/mod.d.ts:440:5 - (ae-forgotten-export) The symbol "PruneWritableStream" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

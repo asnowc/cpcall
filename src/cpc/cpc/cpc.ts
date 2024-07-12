@@ -7,7 +7,9 @@ import { RpcFrame } from "../core/type.ts";
 export { ServiceDefineMode } from "./registrar.ts";
 export * from "./decorate.ts";
 /**
+ * RPC 调用与服务实例
  * @public
+ * @category Rpc
  */
 export class CpCall extends CpCallBase {
   constructor(frameSource: CpcFrameSource<RpcFrame>, config?: CpCallOption) {
@@ -76,7 +78,7 @@ export class CpCall extends CpCallBase {
   setObject(obj?: object): void;
   /** 设置可调用的服务 */
   setObject(obj: object): void;
-  setObject(obj: object = {}, option?: ParseObjectOption) {
+  setObject(obj: object = {}) {
     if (typeof obj !== "object" || obj === null) throw new Error("obj must be an object");
     this.#root = { object: obj };
   }
@@ -113,21 +115,19 @@ export class CpCall extends CpCallBase {
 }
 
 /** 调用未注册的命令
- * @public */
+ * @public
+ * @category Errors
+ */
 export class UnregisteredMethodError extends Error {
   constructor(cmd: any) {
     super("UnregisteredMethod: " + cmd);
   }
 }
-/**
- * 自动解析选项
- * @public
- */
-export type ParseObjectOption = {
-  cmd?: string;
-};
 
-/** @public  */
+/**
+ * @public
+ * @category Rpc
+ */
 export type GenCallerOpts = {
   /** 默认会添加 then 属性为 null，避免在异步函数中错误执行，如果为 true，则不添加 */
   keepThen?: boolean;
@@ -154,29 +154,46 @@ interface CallerProxy {
 type CallerProxyPrototype = {
   // [Symbol.asyncDispose](): Promise<void>;
 };
-/** @public */
+/**
+ * @public
+ * @category Rpc
+ */
 export interface CpCallOption {
   disableCall?: boolean;
   disableServe?: boolean;
   serveObject?: object;
 }
 
-/** @public */
+/**
+ * 远程调用代理
+ * @public
+ * @category Rpc
+ */
 export type AnyCaller = {
   (...args: any[]): Promise<any>;
   [key: string]: AnyCaller;
 };
-/** @public */
+/**
+ * 远程触发代理
+ * @public
+ * @category Rpc
+ */
 export type AnyEmitter = {
   (...args: any[]): void;
   [key: string]: AnyCaller;
 };
-/** @public */
+/**
+ * @public
+ * @category Rpc
+ */
 export type MakeCallers<T extends object, E extends object = {}> = E & {
   [Key in keyof T as T[Key] extends object ? Key : never]: T[Key] extends object ? MakeCallers<T[Key], E> : never;
 } & (T extends (...args: infer A) => infer R ? (...args: A) => Promise<Awaited<R>> : {});
 
-/** @public */
+/**
+ * @public
+ * @category Rpc
+ */
 export type MakeEmitter<T extends object, E extends object = {}> = E & {
   [Key in keyof T as T[Key] extends object ? Key : never]: T[Key] extends object ? MakeCallers<T[Key], E> : never;
 } & (T extends (...args: infer A) => any ? (...args: A) => void : {});

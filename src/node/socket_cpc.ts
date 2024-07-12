@@ -1,14 +1,15 @@
-import { CpCall, CpcController, createJbodStreamFrameSource, CpCallOption } from "../cpc/mod.ts";
+import { CpCall, CpcController, JbodStreamFrameSource, CpCallOption } from "../cpc/mod.ts";
 
 declare function setTimeout(fn: () => void, timeout: number): number;
 
 /** 创建一个基于 duplex 的 CpCall 实例
  * @public
+ * @category Rpc
  */
 export function createSocketCpc(duplex: Duplex, option?: CpCallOption): CpCall {
   if (!duplex.readable || !duplex.writable) throw createAbortedError();
 
-  const frameSource = createJbodStreamFrameSource({
+  const frameSource = new JbodStreamFrameSource({
     init(controller: CpcController<Uint8Array>): void {
       duplex.on("data", (chunk) => {
         controller.nextFrame(chunk);

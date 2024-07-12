@@ -1,10 +1,11 @@
-import { CalleeCore, CallerCore, RpcFrame, ServerStatus, CallerStatus } from "../core/mod.ts";
+import { CalleeCore, CallerCore, RpcFrame, ServiceStatus, CallerStatus } from "../core/mod.ts";
 import { WithPromise, withPromise } from "../../deps/evlib.ts";
 import { CpcFrameSource } from "./type.ts";
 
 /**
  * 提供最基础的命令调用.
  * @public
+ * @category Rpc
  */
 export abstract class CpCallBase {
   constructor(private readonly frameSource: CpcFrameSource<RpcFrame>, config: CpCallBaseOption) {
@@ -92,7 +93,7 @@ export abstract class CpCallBase {
   /** 当 结束服务时触发 (status 变为 1 时触发) 。这可以由 endServer() 触发，也可以是远程的 endCall() 触发 */
   readonly onServeEnd: Promise<void>;
   /** 服务状态 */
-  get serverStatus(): ServerStatus {
+  get serviceStatus(): ServiceStatus {
     return this.#callee.serverStatus;
   }
   protected get responsePromiseNum(): number {
@@ -158,7 +159,10 @@ export abstract class CpCallBase {
   readonly #caller: CallerCore;
 }
 
-/** @public */
+/**
+ * @public
+ * @category Rpc
+ */
 export interface CpCallBaseOption {
   disableCall?: boolean;
   disableServe?: boolean;
