@@ -1,6 +1,6 @@
 {
   "name": "cpcall",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "A protocol independent library designed for remote procedure call (RPC) in JavaScript",
   "type": "module",
   "scripts": {
@@ -30,7 +30,7 @@
     "typescript": "^5.5.3",
     "vitest": "^1.6.0"
   },
-  "types": "./dist/cpc.d.ts",
+  "types": "./dist/mod.d.ts",
   "exports": {
     ".": "./dist/mod.js"
   },

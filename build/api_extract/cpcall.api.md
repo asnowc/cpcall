@@ -35,6 +35,8 @@ export class CpCall extends CpCallBase {
     constructor(frameSource: CpcFrameSource<RpcFrame>, config?: CpCallOption);
     static call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T>;
     static exec<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): void;
+    exposeObject(obj?: object): void;
+    exposeObject(obj: object): void;
     genCaller(opts?: GenCallerOpts): AnyCaller;
     // (undocumented)
     genCaller(base: string, opts?: GenCallerOpts): AnyCaller;
@@ -42,14 +44,15 @@ export class CpCall extends CpCallBase {
     genCaller<R extends object>(base: string, opts?: GenCallerOpts): MakeCallers<R>;
     // (undocumented)
     genCaller<R extends object>(opts?: GenCallerOpts): MakeCallers<R>;
+    // @deprecated (undocumented)
     setObject(obj?: object): void;
-    setObject(obj: object): void;
 }
 
 // @public
 export abstract class CpCallBase {
     constructor(frameSource: CpcFrameSource<RpcFrame>, config: CpCallBaseOption);
     call(...args: any[]): Promise<any>;
+    get callable(): boolean;
     get callerStatus(): CallerStatus;
     close(): Promise<void>;
     // (undocumented)
@@ -123,7 +126,10 @@ export function createSocketCpc(duplex: Duplex, option?: CpCallOption): CpCall;
 export function createWebSocketCpc(websocket: WebSocket_2, option?: CpCallOption): CpCall;
 
 // @public
-export function createWebsocketCpcOnOpen(websocket: WebSocket_2, option?: CpCallOption): Promise<CpCall>;
+export function createWebSocketCpcOnOpen(websocket: WebSocket_2, option?: CpCallOption): Promise<CpCall>;
+
+// @public @deprecated
+export const createWebsocketCpcOnOpen: typeof createWebSocketCpcOnOpen;
 
 // @public
 export function createWebStreamCpc(stream: {
@@ -305,8 +311,8 @@ export class UnregisteredMethodError extends Error {
 
 // Warnings were encountered during analysis:
 //
-// dist/mod.d.ts:451:5 - (ae-forgotten-export) The symbol "PruneReadableStream" needs to be exported by the entry point index.d.ts
-// dist/mod.d.ts:452:5 - (ae-forgotten-export) The symbol "PruneWritableStream" needs to be exported by the entry point index.d.ts
+// dist/mod.d.ts:463:5 - (ae-forgotten-export) The symbol "PruneReadableStream" needs to be exported by the entry point index.d.ts
+// dist/mod.d.ts:464:5 - (ae-forgotten-export) The symbol "PruneWritableStream" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

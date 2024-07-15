@@ -2,6 +2,14 @@
 
 ### 0.6.x
 
+#### 0.6.1
+
+Features
+
+- 废弃 createWebsocketCpcOnOpen 改为 createWebSocketCpcOnOpen
+- 废弃 `CpCall.setObject`, 改为 `CpCall.exposeObject`
+- 新增 CpCall.callable，
+
 #### 0.6.0
 
 Features:
