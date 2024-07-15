@@ -19,7 +19,7 @@ test("普通对象", async function ({ cpcSuite }) {
     },
   };
 
-  cpc2.setObject(obj);
+  cpc2.exposeObject(obj);
 
   await expect(cpc1.call("methodAtt"), "method").resolves.toBe(9);
   await expect(cpc1.call("getterAtt"), "getter").resolves.toBe(10);
@@ -37,7 +37,7 @@ test("循环引用", async function ({ cpcSuite }) {
   };
   root.sub = root;
 
-  cpc2.setObject(root);
+  cpc2.exposeObject(root);
 
   await expect(cpc1.call("sub.sub.sub.sub2.a")).resolves.toBe(1);
 });
@@ -77,7 +77,7 @@ test("子服务", async function ({ cpcSuite }) {
     }
   }
 
-  cpc2.setObject(new Service1());
+  cpc2.exposeObject(new Service1());
   const service = cpc1.genCaller<Service1>();
 
   await expect(service.obj2.method()).resolves.toBe(1);
@@ -95,7 +95,7 @@ test("子服务", async function ({ cpcSuite }) {
 });
 test("调用非函数", async function ({ cpcSuite }) {
   const { cpc1, cpc2 } = cpcSuite;
-  cpc2.setObject({ att1: 8, att2: null, att3: "string" });
+  cpc2.exposeObject({ att1: 8, att2: null, att3: "string" });
   await expect(cpc1.call("att1")).rejects.toThrowError(new UnregisteredMethodError("att1"));
   await expect(cpc1.call("att2")).rejects.toThrowError(new UnregisteredMethodError("att2"));
   await expect(cpc1.call("att3")).rejects.toThrowError(new UnregisteredMethodError("att3"));

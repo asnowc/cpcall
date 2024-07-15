@@ -9,6 +9,6 @@ describe.todo(function () {
       m1() {}
     }
 
-    cpc1.setObject(new Service());
+    cpc1.exposeObject(new Service());
   });
 });

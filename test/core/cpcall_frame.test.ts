@@ -10,7 +10,7 @@ import { afterTime } from "evlib";
 describe("call-response", function () {
   test("call-return", async function ({ cpcSuite }) {
     const { cpc1, cpc1Src, cpc2, cpc2Src } = cpcSuite;
-    cpc2.setObject({ cmd: (...args: any[]) => args });
+    cpc2.exposeObject({ cmd: (...args: any[]) => args });
 
     const args = ["cmd", 12, null, "str"];
 
@@ -29,7 +29,7 @@ describe("call-response", function () {
   test("call-throw", async function ({ cpcSuite }) {
     const { cpc1, cpc1Src, cpc2, cpc2Src } = cpcSuite;
 
-    cpc2.setObject({
+    cpc2.exposeObject({
       cmd: (...args: any[]) => {
         throw new Error("hhh");
       },
@@ -42,7 +42,7 @@ describe("call-response", function () {
   });
   test("call-resolve", async function ({ cpcSuite }) {
     const { cpc1, cpc1Src, cpc2, cpc2Src } = cpcSuite;
-    cpc2.setObject({
+    cpc2.exposeObject({
       cmd: async (...args: any) => {
         return "ok";
       },
@@ -57,7 +57,7 @@ describe("call-response", function () {
   test("call-reject", async function ({ cpcSuite }) {
     const { cpc1, cpc1Src, cpc2, cpc2Src } = cpcSuite;
 
-    cpc2.setObject({
+    cpc2.exposeObject({
       cmd: async (...args: any) => {
         throw "err";
       },

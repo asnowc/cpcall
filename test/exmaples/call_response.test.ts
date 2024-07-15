@@ -29,7 +29,7 @@ class Service {
 }
 
 test("调用", async function ({ cpcSuite: { cpc1, cpc2 } }) {
-  cpc2.setObject(new Service());
+  cpc2.exposeObject(new Service());
 
   await expect(cpc1.call("add", 1, 2)).resolves.toBe(3);
   await expect(cpc1.exec("add", 1, 2)).toBe(undefined); // 不需要获取返回值

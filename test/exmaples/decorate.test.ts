@@ -38,7 +38,7 @@ test("装饰器", async function ({ cpcSuite }) {
     }
   }
 
-  cpc2.setObject(new Service1());
+  cpc2.exposeObject(new Service1());
 
   const service1 = cpc1.genCaller<Service1>();
 
@@ -102,7 +102,7 @@ describe("继承", function () {
       method2 = super.method2;
     }
 
-    cpc2.setObject(new A());
+    cpc2.exposeObject(new A());
     const a = cpc1.genCaller<A>();
 
     await expect(a.method1(), "调用继承方法，继承方法已经标记暴露").resolves.toBe(1);
@@ -116,7 +116,7 @@ describe("继承", function () {
     @RpcService()
     class A extends Common {}
 
-    cpc2.setObject(new A());
+    cpc2.exposeObject(new A());
     const a = cpc1.genCaller<A>();
 
     await expect(a.method1(), "method1 没有在子类或父类标注，应抛出异常").rejects.toThrowError(
@@ -129,7 +129,7 @@ describe("继承", function () {
     @RpcService()
     class A extends Exclude {}
 
-    cpc2.setObject(new A());
+    cpc2.exposeObject(new A());
     const a = cpc1.genCaller<A>();
 
     await expect(a.method1(), "method1 没有标注").rejects.toThrowError();
@@ -145,7 +145,7 @@ describe("继承", function () {
       }
     }
 
-    cpc2.setObject(new A());
+    cpc2.exposeObject(new A());
     const a = cpc1.genCaller<A>();
 
     await expect(a.method5(), "子类方法 method5 没有标记").resolves.toBe(5);
@@ -165,7 +165,7 @@ describe("继承", function () {
       }
     }
 
-    cpc2.setObject(new A());
+    cpc2.exposeObject(new A());
     const a = cpc1.genCaller<A>();
 
     await expect(a.method5(), "method2 在父类中标记暴露").resolves.toBe(5);
@@ -198,7 +198,7 @@ test("manualDecorateClass", async function ({ cpcSuite }) {
 
   const { cpc1, cpc2 } = cpcSuite;
 
-  cpc2.setObject(new A());
+  cpc2.exposeObject(new A());
   const a = cpc1.genCaller<A>();
   await expect(a.method1()).resolves.toBe("InterceptReturn");
   await expect(a.method2()).resolves.toBe(2);

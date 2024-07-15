@@ -21,7 +21,7 @@ export class CpCall extends CpCallBase {
     });
     if (config) {
       if (config.serveObject) {
-        this.setObject(config.serveObject);
+        this.exposeObject(config.serveObject);
       }
     }
   }
@@ -75,12 +75,16 @@ export class CpCall extends CpCallBase {
   }
 
   /** 删除设置的可调用服务 */
-  setObject(obj?: object): void;
+  exposeObject(obj?: object): void;
   /** 设置可调用的服务 */
-  setObject(obj: object): void;
-  setObject(obj: object = {}) {
+  exposeObject(obj: object): void;
+  exposeObject(obj: object = {}) {
     if (typeof obj !== "object" || obj === null) throw new Error("obj must be an object");
     this.#root = { object: obj };
+  }
+  /** @deprecated 改用 exposeObject */
+  setObject(obj: object = {}) {
+    return this.exposeObject(obj);
   }
 
   #separator = ".";

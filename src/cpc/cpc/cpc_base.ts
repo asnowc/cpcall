@@ -83,6 +83,10 @@ export abstract class CpCallBase {
   get callerStatus(): CallerStatus {
     return this.#caller.callerStatus;
   }
+  /** 是否可调用 */
+  get callable() {
+    return this.#caller.callerStatus !== CallerStatus.callable;
+  }
   readonly #resolveCallEnd: () => void;
   /** ended 变为 2 时触发 */
   readonly onCallEnd: Promise<void>;

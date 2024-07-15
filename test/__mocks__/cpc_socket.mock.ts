@@ -18,8 +18,8 @@ export function createConnectedCpc(clientFn?: object, serverFn?: object) {
   const serverCpc = createSocketCpc(serverSocket) as InternalCpcall;
   const clientCpc = createSocketCpc(clientSocket) as InternalCpcall;
 
-  if (clientFn) clientCpc.setObject(clientFn);
-  if (serverFn) serverCpc.setObject(serverFn);
+  if (clientFn) clientCpc.exposeObject(clientFn);
+  if (serverFn) serverCpc.exposeObject(serverFn);
   clientCpc.name = "client";
   serverCpc.name = "server";
 

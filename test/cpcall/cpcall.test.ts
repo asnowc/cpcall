@@ -15,7 +15,7 @@ import { cpcTest as test } from "../env/cpc.env.ts";
 
 /** 测试返回顺序 */
 test("连续调用", async function ({ cpcSuite: { cpc1, cpc2 } }) {
-  cpc2.setObject({ fn: vi.fn((...args) => args[0]) });
+  cpc2.exposeObject({ fn: vi.fn((...args) => args[0]) });
   const dataList = [null, true, false];
   const pmsList: Promise<any>[] = dataList.map((arg) => cpc1.call("fn", arg));
   const res = await Promise.all(pmsList);
@@ -23,7 +23,7 @@ test("连续调用", async function ({ cpcSuite: { cpc1, cpc2 } }) {
 });
 test("内联调用", async function ({ cpcSuite: { cpc1, cpc2 } }) {
   let pms: Promise<any>;
-  cpc2.setObject({
+  cpc2.exposeObject({
     clientFn: () => 1,
     serverFn: () => {
       pms = cpc1.call("clientFn", true);
@@ -39,7 +39,7 @@ describe("返回值", function () {
   const cmd = "fn";
   beforeEach(() => {
     mock = mocks.createConnectedCpc();
-    mock.serverCpc.setObject({ [cmd]: fn });
+    mock.serverCpc.exposeObject({ [cmd]: fn });
     fn.mockRestore();
   });
 
@@ -107,7 +107,7 @@ describe("状态更改", function () {
     serverCpc.onClose.catch(() => {});
     clientCpc.onClose.catch(() => {});
 
-    serverCpc.setObject({
+    serverCpc.exposeObject({
       cmd: function () {
         return new Promise(function (resolve) {
           setTimeout(resolve, 500);

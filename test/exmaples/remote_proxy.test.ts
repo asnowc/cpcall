@@ -20,7 +20,7 @@ test("空调用", async function ({ cpcSuite: { cpc1, cpc2 } }) {
 });
 
 test("链式远程调用", async function ({ cpcSuite: { cpc1, cpc2 } }) {
-  cpc2.setObject({ cd: (...args: any[]) => args, sub: { ef: (...args: any[]) => args } });
+  cpc2.exposeObject({ cd: (...args: any[]) => args, sub: { ef: (...args: any[]) => args } });
   const caller = cpc1.genCaller<TopCall>();
   await expect(caller.cd("a", true)).resolves.toEqual(["a", true]);
   await expect(caller.sub.ef()).resolves.toEqual([]);
@@ -33,7 +33,7 @@ test("异步函数中传递", async function ({ cpcSuite: { cpc1, cpc2 } }) {
 });
 test("exec", async function ({ cpcSuite: { cpc1, cpc2 } }) {
   const fn = vi.fn();
-  cpc2.setObject({ cd: fn });
+  cpc2.exposeObject({ cd: fn });
   const remote = cpc1.genCaller<TopCall>();
   CpCall.exec(remote.cd, "s");
   await afterTime(100);
