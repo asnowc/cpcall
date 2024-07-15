@@ -1,4 +1,4 @@
-import { createWebSocketCpcOnOpen } from "https://esm.sh/cpcall@0.6.0";
+import { createWebSocketCpcOnOpen } from "https://esm.sh/cpcall";
 
 async function connectWsCpc() {
   const ws = new WebSocket("ws://127.0.0.1:8887");

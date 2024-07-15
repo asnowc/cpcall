@@ -21,28 +21,27 @@
 A protocol independent library designed for remote procedure call (RPC) in JavaScript\
 与协议无关的，为 JavaScript 设计的远程过程调用（RPC）的库
 
-**目前版本不稳定，不遵循 semver 语义，可能会有较大的破坏性变更**\
-**The current version is unstable and does not follow Semver semantics, which may result in significant destructive changes**
-
-[API](https://jsr.io/@asn/cpcall/doc)
-[Examples](#examples)
+[中文](https://github.com/asnow/cpcall/README.zh.md) | [API](https://jsr.io/@asn/cpcall/doc) | [Examples](#examples)
 
 ## Features
 
-- 远程调用可操作[远程代理对象](#expose-object)，与原生 JavaScript 调用语法几乎无差别
-- 可使用 [ECMA 装饰器](https://github.com/tc39/proposal-decorators)定义服务。 [查看装饰器的使用](./docs/use_decorator.md)
-- 与协议无关，可用于基于 TCP、IPC、WebSocket 等
-- 双向远程调用，客户端可以调用服务端的方法，服务端可以调用客户端的方法
-- 数据传输默认采用 [JBOD](https://github.com/asnowc/jbod) **二进制**编码。相比 JSON，有如下优势：
-  - 更多的数据类型。如 bigint、Set、Map、RegExp、Error、UInt8Array 等（查看[支持的数据类型](https://github.com/asnowc/jbod)），这意味着在调用远程方法时，你可以直接传递这些参数，而无需进行转换
-  - 更小的数据大小。对于常见场景，编码后大小 大概是 JSON 的 70%，
-- 无需定义数据结构，非常适合动态类型语言
+- A remote call manipulates the [remote proxy object](#expose-object) with almost the same syntax as a native JavaScript call
+- Services can be defined using [ECMA Script decorators](https://github.com/tc39/proposal-decorators). [See the use of decorators](./docs/use_decorator.md)
+- It is protocol independent and can be used over TCP, IPC, WebSocket, etc
+- Two-way remote call
+- By default, [JBOD](https://github.com/asnowc/jbod) binary encoding is used for data transfer. Compared to JSON, it has the following advantages:
+
+  - More data types Examples include bigint, Set, Map, RegExp, Error, UInt8Array, etc. (see [supported data types](https://github.com/asnowc/jbod)), which means that when calling remote methods, you can pass these arguments directly without conversion
+  - Smaller data size. For common use cases, the encoded size is about 70% of JSON,
+    No need to define data structures, ideal for dynamically typed languages
+
+- No need to define data structures, ideal for dynamically typed languages
 
 ## Usage
 
 ### Expose globalThis
 
-下面的示例中，我们将在两端暴露全局对象，并在客户端调用服务端的 `console.log()` 方法后关闭连接
+In the example below, we'll expose the global object on both sides and close the connection after the client calls the server's `console.log()` method
 
 #### Node
 
@@ -141,7 +140,7 @@ await cpc.close();
 #### Browser
 
 ```ts
-import { createWebSocketCpcOnOpen } from "https://esm.sh/cpcall@0.6.0";
+import { createWebSocketCpcOnOpen } from "https://esm.sh/cpcall";
 
 const ws = new WebSocket("ws://127.0.0.1:8887");
 const cpc = await createWebSocketCpcOnOpen(ws);
@@ -154,7 +153,7 @@ await cpc.close();
 
 ### Expose object
 
-下面的示例中，展示了代理对象的调用
+The following example shows the invocation of the proxy object
 
 server.ts
 
@@ -229,32 +228,33 @@ await service.obj.method0();
 await service.obj.lv1.lv2.method2(); // Deep call
 ```
 
-### 更多示例
+### More Examples
 
-[装饰器的使用](https://github.com/asnowc/cpcall/blob/main//docs/use_decorator.md)\
-自定义数据帧序列化（文档待补充）\
-通过 CpCall 类 实现一个基于 http 的 CpCall（文档待补充）\
-[更多示例](https://github.com/asnowc/cpcall/blob/main/example/README.md)
+[The use of decorators](https://github.com/asnowc/cpcall/blob/main//docs/use_decorator.md)\
+Custom datagram serialization (documentation to be supplemented)\
+Implementing a CpCall over http via the CpCall class (documentation to be supplemented)\
+[More Examples](https://github.com/asnowc/cpcall/blob/main/example/README.md)
 
-## 概念
+## Concepts
 
-### 远程过程调用（RPC）
+### Remote Procedure Call (RPC)
 
 <img src="https://github.com/asnowc/cpcall/raw/main/docs/img/rpc_flowsheet.png">
 
-### 与 [tRpc](https://trpc.io/)、[gRpc](https://grpc.io/)、[socket.io](https://socket.io/) 的区别
+### Differences with [tRpc](https://trpc.io/)、[gRpc](https://grpc.io/)、[socket.io](https://socket.io/)
 
-与 tRpc、gRpc 最直接的一个区别是，tRpc、gRpc 都是通过客户端主动发起请求(调用)，服务端进行响应，的模式，他们只能单向发起调用。而 cpcall，可以进行双向相互调用
+One of the most direct differences between tRpc and gRpc is that tRpc and gRpc are both modeled as a client initiating requests (calls) and the server responding, which means they can only initiate requests in one direction. However, cpcall can initiate calls in both directions.
 
-| 名称   | 基于协议             | 调用方向 |
-| ------ | -------------------- | -------- |
-| tRpc   | http                 | 单向调用 |
-| gRpc   | http2                | 单向调用 |
-| cpcall | 双向流（与协议无关） | 双向调用 |
+| Name   | Protocol based                             | Direction of call |
+| ------ | ------------------------------------------ | ----------------- |
+| tRpc   | http                                       | One-way call      |
+| gRpc   | http2                                      | One-way call      |
+| cpcall | Two-way streaming (protocol independent)） | Two-way call      |
 
-socket.io 是一个基于 WebSocket 的库，可实现双端之间的双向实时通信，它提供了单播、多播等行为。使用它主要用到发布订阅模式。
-而 cpcall，是一个端到端双向调用的 RPC 库。cpcall 与 socket.io 本质上不属于同一类型的库，但在 WebSocket 协议下，他们都能达到相似的行为。
+Socket.io is a WebSocket-based library that enables bidirectional real-time communication between two ends. It provides behaviors such as unicast and multicast. The publish-subscribe pattern is mainly used when working with it.
 
-## 其他
+While cpCall is an end-to-end bidirectional calling RPC library. Essentially, cpCall and socket.io are not libraries of the same type, but under the WebSocket protocol, they can both achieve similar behaviors.
 
-[CPCALL 数据帧协议](https://github.com/asnowc/cpcall/blob/main/docs/frame_type.md)
+## Others
+
+[CPCALL Data frame protocol](https://github.com/asnowc/cpcall/blob/main/docs/frame_type.md)
