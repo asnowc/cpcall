@@ -40,11 +40,11 @@ describe("response", function () {
   });
 });
 describe("action", function () {
-  test("fin", async function () {
+  test("endCall", async function () {
     const hex = encodeCpcFrameHex({ type: FrameType.endCall });
     expect(hex).toMatchSnapshot();
   });
-  test("disable", async function () {
+  test("endServe", async function () {
     const hex = encodeCpcFrameHex({ type: FrameType.endServe });
     expect(hex).toMatchSnapshot();
   });
