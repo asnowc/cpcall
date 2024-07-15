@@ -21,7 +21,7 @@
 A protocol independent library designed for remote procedure call (RPC) in JavaScript\
 与协议无关的，为 JavaScript 设计的远程过程调用（RPC）的库
 
-[中文](https://github.com/asnow/cpcall/README.zh.md) | [API](https://jsr.io/@asn/cpcall/doc) | [Examples](#examples)
+[中文](https://github.com/asnowc/cpcall/README.zh.md) | [API](https://jsr.io/@asn/cpcall/doc) | [Examples](#examples)
 
 ## Features
 
