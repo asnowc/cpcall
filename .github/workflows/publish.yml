@@ -44,6 +44,7 @@ jobs:
           name: npm-package
           path: |
             npm-package.tgz
+          retention-days: 3
 
   publish-npm:
     needs: check

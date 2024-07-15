@@ -84,7 +84,7 @@ export abstract class CpCallBase {
     return this.#caller.callerStatus;
   }
   /** 是否可调用 */
-  get callable() {
+  get callable(): boolean {
     return this.#caller.callerStatus !== CallerStatus.callable;
   }
   readonly #resolveCallEnd: () => void;

@@ -83,7 +83,7 @@ export class CpCall extends CpCallBase {
     this.#root = { object: obj };
   }
   /** @deprecated 改用 exposeObject */
-  setObject(obj: object = {}) {
+  setObject(obj: object = {}): void {
     return this.exposeObject(obj);
   }
 
