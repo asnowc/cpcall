@@ -1,5 +1,13 @@
 import { describe, expect, vi, beforeEach } from "vitest";
-import { CallerStatus, CpCall, RemoteCallError, CpcFailRespondError, CpcFailAsyncRespondError } from "cpcall";
+import {
+  CallerStatus,
+  CpCall,
+  RemoteCallError,
+  CpcFailRespondError,
+  CpcFailAsyncRespondError,
+  CpcController,
+  FrameType,
+} from "cpcall";
 import { afterTime } from "evlib";
 import * as mocks from "../__mocks__/cpc_socket.mock.ts";
 import { MockCpcFrameSource } from "../__mocks__/CpcMockControl.ts";
@@ -123,6 +131,28 @@ describe("状态更改", function () {
 
     await expect(cpcall.onClose).rejects.toBe(err);
     expect(ctrl.sendFrame).not.toBeCalled();
+  });
+  test("close 异常", async function () {
+    const onClose = vi.fn(() => {
+      throw new Error("err");
+    });
+    const onDispose = vi.fn();
+    let ctrl: CpcController;
+    const cpc = new CpCall({
+      dispose: onDispose,
+      close: onClose,
+      init(controller) {
+        ctrl = controller;
+      },
+      sendFrame(frame) {},
+    });
+
+    ctrl!.nextFrame({ type: FrameType.endCall });
+    ctrl!.nextFrame({ type: FrameType.endServe });
+
+    await expect(cpc.onClose).rejects.toThrowError("err");
+    expect(onClose).toBeCalledTimes(1);
+    expect(onDispose, "close 无法正常关闭，应调用 dispose").toBeCalledTimes(1);
   });
 
   test("双方 endCall()", async function ({ cpcSuite }) {

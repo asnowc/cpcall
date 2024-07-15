@@ -22,7 +22,7 @@ export abstract class CpCallBase {
     this.#onCallFinish = withPromise<void>();
     caller.onCallFinish = () => {
       this.#onCallFinish.resolve();
-      this.#onClose();
+      this.#checkClose();
     };
 
     /* callee */
@@ -37,7 +37,7 @@ export abstract class CpCallBase {
     this.#onServeFinish = withPromise<void>();
     callee.onServeFinish = () => {
       this.#onServeFinish.resolve();
-      this.#onClose();
+      this.#checkClose();
     };
 
     callee.onCall = config.onCall;
@@ -83,16 +83,17 @@ export abstract class CpCallBase {
   get callerStatus(): CallerStatus {
     return this.#caller.callerStatus;
   }
-
   readonly #resolveCallEnd: () => void;
   /** ended 变为 2 时触发 */
   readonly onCallEnd: Promise<void>;
 
   /* --------- callee ------------- */
 
-  /** 当 结束服务时触发 (status 变为 1 时触发) 。这可以由 endServer() 触发，也可以是远程的 endCall() 触发 */
+  /** 当 结束服务时触发 (serverStatus 变为 1 时触发) 。这可以由 endServer() 触发，也可以是远程的 endCall() 触发 */
   readonly onServeEnd: Promise<void>;
-  /** 服务状态 */
+  /**
+   * 服务状态
+   */
   get serviceStatus(): ServiceStatus {
     return this.#callee.serverStatus;
   }
@@ -129,26 +130,23 @@ export abstract class CpCallBase {
     this.#errored = reason;
     this.#callee.dispose();
     this.#caller.dispose(reason);
-    if (this.frameSource.dispose) {
-      try {
-        this.frameSource.dispose(reason);
-      } catch (error) {}
-    }
     this.#closeEvent.reject(reason);
+    this.frameSource.dispose?.(reason);
   }
   /** 关闭 CpCall, 相当于同时调用 endServe() 和 endCall()*/
   async close(): Promise<void> {
     await Promise.all([this.#callee.endServe(), this.#caller.endCall()]);
   }
-  async #onClose() {
+  async #checkClose() {
     if (this.#errored !== undefined) return; //已经发生异常或已关闭
-    if (!this.closed) return;
+    this.#errored = null;
     try {
       await this.frameSource.close();
-      this.#errored = null;
       this.#closeEvent.resolve();
     } catch (error) {
-      this.dispose(error);
+      this.#errored = error;
+      this.#closeEvent.reject(error);
+      this.frameSource.dispose?.(error);
       return;
     }
   }
