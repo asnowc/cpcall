@@ -1,8 +1,8 @@
 # 使用装饰器
 
-[ECMA 装饰器](https://github.com/tc39/proposal-decorators) 目前处于 Stage 3。 如果使用，至少需要在 TypeScript 5.2
+[ECMA Script 装饰器](https://github.com/tc39/proposal-decorators) 目前处于 Stage 3。 如果使用，至少需要在 TypeScript 5.2
 
-如果你的运行环境不支持 ECMA 装饰器，可以使用 [manualDecorateClass](#manualDecorateClass) 方法手动装饰类
+如果你的运行环境不支持 ECMA Script 装饰器，可以使用 [manualDecorateClass](#manualDecorateClass) 方法手动装饰类
 
 下面的实例中 cpc1 和 cpc2 时一对互相连接的 CpCall 实例
 
@@ -34,7 +34,7 @@ class Service1 {
   }
 }
 
-cpc2.setObject(new Service1());
+cpc2.exposeObject(new Service1());
 
 const service1 = cpc1.genCaller<Service1>();
 
@@ -105,7 +105,7 @@ class A extends Include {
   method2 = super.method2;
 }
 
-cpc2.setObject(new A());
+cpc2.exposeObject(new A());
 const a = cpc1.genCaller<A>();
 
 await expect(a.method1(), "调用继承方法，继承方法已经标记暴露").resolves.toBe(1);
@@ -118,7 +118,7 @@ await expect(a.method4(), "method4 在父类标记了排除").rejects.toThrowErr
 @RpcService()
 class A extends Exclude {}
 
-cpc2.setObject(new A());
+cpc2.exposeObject(new A());
 const a = cpc1.genCaller<A>();
 
 await expect(a.method1(), "method1 没有标注").rejects.toThrowError();
@@ -135,7 +135,7 @@ class A extends Include {
   }
 }
 
-cpc2.setObject(new A());
+cpc2.exposeObject(new A());
 const a = cpc1.genCaller<A>();
 
 await expect(a.method5(), "method2 在父类中标记暴露").resolves.toBe(5);
@@ -165,7 +165,7 @@ manualDecorateClass(A, RpcService(), {
   method2: RpcExposed(),
 });
 
-cpc2.setObject(new A());
+cpc2.exposeObject(new A());
 const a = cpc1.genCaller<A>();
 await expect(a.method1()).resolves.toBe("InterceptReturn");
 await expect(a.method2()).resolves.toBe(2);

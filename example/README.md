@@ -1,8 +1,10 @@
-## 调用-返回
+# 更多示例
 
-### socket.io
+### cpcall 与 socket.io 的用法比较
 
 这是 Socket.io 官网的一个示例. [查看示例](https://socket.io/docs/v4/emitting-events/#acknowledgements)
+
+#### socket.io
 
 server
 
@@ -22,12 +24,12 @@ socket.emit("update item", "1", { name: "updated" }, (response) => {
 });
 ```
 
-### cpcall
+#### cpcall
 
 server
 
 ```ts
-cpc.setObject({
+cpc.exposeObject({
   updateItem: (arg1, arg2) => {
     console.log(arg1); // 1
     console.log(arg2); // { name: "updated" }

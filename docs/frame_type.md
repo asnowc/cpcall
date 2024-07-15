@@ -40,7 +40,7 @@
 
 对方的响应帧，必定是按顺序发回。也就是说，如果调用方发起了两个 call 帧（c1、和 c2，c1 先发送，然后发送 c2），那么调用方收到的第一个响应帧(r1)，将会与 c1 对应, 第二个响应帧 (r2) 会与 c2 对应
 
-#### exec
+##### exec
 
 与 call 帧类型，不同的是它不会有返回值。
 当被调用方收到 exec 帧时，会执行响应的调用。但会忽略响应。
@@ -64,23 +64,6 @@
    asyncId
 ```
 
-当调用是非常耗时的过程时，为了不阻塞其他响应帧，可以回复 Promise 帧，在过程完成处理后，将响应（resolve 帧或 reject 帧）发回。
-promise 帧会携带一个 id，id 为 varints 类型。id 由被调用方生成。 resolve 帧或 reject 帧的 id 也是这个 id
-
-#### 状态帧
-
-##### endCall
-
-endCall 帧可以主动发送，也可以被动发送，但只能发送一次
-主动发送发生于调用方主动 结束调用时，此时会向对方发送一个 endCall 帧，对方收到 endCall 帧后应立即回复一个 endServe 帧
-被动发送发生于收到对方发送的 endServe 帧，此时应立即回复一个 endCall 帧
-
-##### endServe
-
-disable 帧可以主动发送，也可以被动发送，但只能发送一次
-主动发送发生于被调用方主动关闭可调用功能，此时会向对方发送一个 endServe 帧，对方收到 endServe 帧后应立即回复一个 endCall 帧
-被动发送发生于收到对方发送的 endCall 帧，此时应立即回复一个 endServe 帧
-
 ##### resolve
 
 ```
@@ -94,3 +77,19 @@ disable 帧可以主动发送，也可以被动发送，但只能发送一次
 |--varints--| |----JBOD----|
    asyncId      reject arg
 ```
+
+当调用是非常耗时的过程时，为了不阻塞其他响应帧，可以回复 Promise 帧，在过程完成处理后，将响应（resolve 帧或 reject 帧）发回。
+promise 帧会携带一个 id，id 为 varints 类型。id 由被调用方生成。 resolve 帧或 reject 帧的 id 也是这个 id
+
+#### 状态帧
+
+##### endCall 和 endServe
+
+当一方收到 endCall 帧时，如果之前没有发送过 endServe 帧， 应立即回复一个 endServe 帧
+当一方后到 endServe 帧时，如果之前没有发送过 endCall 帧，应立即回复一个 endCall 帧
+在一次完整的双向调用连接中，每方都会发送一次且只能发送一次 endCall 和 endServe 帧。
+
+例如，现在有一个 client 和 server 的连接
+
+情况 1：现在 client 调用了 `CpCall.endCall()`，会立即发送一个 endCall 帧给 server, server 收到后，立即回复一个 endServe 帧，这时候， client 不能再发起任何调用
+情况 2： server 先调用了 `CpCall.endServe()`，会立即发送一个 endServe 帧给 client, client 收到后
