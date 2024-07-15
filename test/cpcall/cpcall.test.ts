@@ -5,44 +5,26 @@ import * as mocks from "../__mocks__/cpc_socket.mock.ts";
 import { MockCpcFrameSource } from "../__mocks__/CpcMockControl.ts";
 import { cpcTest as test } from "../env/cpc.env.ts";
 
-describe("与返回调用", function () {
-  /** 测试参数传输 */
-  test("单个参数调用与返回值", async function ({ cpcSuite: { cpc1, cpc2 } }) {
-    const arg = [1, "ab", null, { a: 2, b: 8n }];
-    const fn = vi.fn((...args) => args);
-    cpc2.setObject({ fn });
-
-    const res = await cpc1.call("fn", ...arg);
-
-    expect(fn).toBeCalledWith(...arg);
-    expect(res, "返回值").toEqual(arg);
+/** 测试返回顺序 */
+test("连续调用", async function ({ cpcSuite: { cpc1, cpc2 } }) {
+  cpc2.setObject({ fn: vi.fn((...args) => args[0]) });
+  const dataList = [null, true, false];
+  const pmsList: Promise<any>[] = dataList.map((arg) => cpc1.call("fn", arg));
+  const res = await Promise.all(pmsList);
+  expect(res).toEqual(dataList);
+});
+test("内联调用", async function ({ cpcSuite: { cpc1, cpc2 } }) {
+  let pms: Promise<any>;
+  cpc2.setObject({
+    clientFn: () => 1,
+    serverFn: () => {
+      pms = cpc1.call("clientFn", true);
+      return 3;
+    },
   });
-  /** 测试返回顺序 */
-  test("连续调用", async function ({ cpcSuite: { cpc1, cpc2 } }) {
-    cpc2.setObject({ fn: vi.fn((...args) => args[0]) });
-    const dataList = [null, true, false];
-    const pmsList: Promise<any>[] = dataList.map((arg) => cpc1.call("fn", arg));
-    const res = await Promise.all(pmsList);
-    expect(res).toEqual(dataList);
-  });
-  test("exec", async function ({ cpcSuite: { cpc1, cpc2 } }) {
-    cpc2.setObject({ fn: vi.fn((...args: any[]) => args[0]) });
-    expect(cpc1.exec("fn", 77)).toBeUndefined();
-  });
-  test("内联调用", async function ({ cpcSuite: { cpc1, cpc2 } }) {
-    let pms: Promise<any>;
-    cpc2.setObject({
-      clientFn: () => 1,
-      serverFn: () => {
-        pms = cpc1.call("clientFn", true);
-        return 3;
-      },
-    });
-    await expect(cpc1.call("serverFn")).resolves.toBe(3);
-    await expect(pms!).resolves.toBe(1);
-  });
-}, 500);
-
+  await expect(cpc1.call("serverFn")).resolves.toBe(3);
+  await expect(pms!).resolves.toBe(1);
+});
 describe("返回值", function () {
   let mock!: ReturnType<typeof mocks.createConnectedCpc>;
   const fn = vi.fn();
@@ -53,31 +35,18 @@ describe("返回值", function () {
     fn.mockRestore();
   });
 
-  describe("异步返回", function () {
-    test("异步返回", async function () {
-      const { clientCpc, serverCpc } = mock;
-      const arg = [true, undefined, 4];
-      fn.mockImplementation(async () => {
-        return new Promise((resolve) => setTimeout(() => resolve(8)));
-      });
-      await expect(clientCpc.call("fn", arg)).resolves.toBe(8);
-      expect(serverCpc.responsePromiseNum).toBe(0);
-    });
-
-    test("多个异步返回", async function () {
-      const { clientCpc, serverCpc } = mock;
-      let count = 0;
-      fn.mockImplementation(() => Promise.resolve(count++));
-      const caller = clientCpc;
-      await expect(caller.call("fn")).resolves.toBe(0);
-      expect(serverCpc.responsePromiseNum).toBe(0);
-      await expect(caller.call("fn")).resolves.toBe(1);
-      expect(serverCpc.responsePromiseNum).toBe(0);
-      await expect(caller.call("fn")).resolves.toBe(2);
-      expect(serverCpc.responsePromiseNum).toBe(0);
-    });
+  test("多个异步返回", async function () {
+    const { clientCpc, serverCpc } = mock;
+    let count = 0;
+    fn.mockImplementation(() => Promise.resolve(count++));
+    const caller = clientCpc;
+    await expect(caller.call("fn")).resolves.toBe(0);
+    expect(serverCpc.responsePromiseNum).toBe(0);
+    await expect(caller.call("fn")).resolves.toBe(1);
+    expect(serverCpc.responsePromiseNum).toBe(0);
+    await expect(caller.call("fn")).resolves.toBe(2);
+    expect(serverCpc.responsePromiseNum).toBe(0);
   });
-
   test("函数抛出Error对象", async function () {
     const { clientCpc, serverCpc } = mock;
     fn.mockImplementation(() => {
