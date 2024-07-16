@@ -9,6 +9,8 @@ function tcpServer() {
     const cpc = createSocketCpc(socket);
     cpc.exposeObject(globalThis);
     cpc.onClose.catch(console.error);
+    const remote = cpc.genCaller();
+    remote.console.log("Hi, I am Server");
   });
   server.listen(8888);
 }
@@ -19,6 +21,8 @@ function wsServer() {
     const cpc = await createWebSocketCpcOnOpen(ws);
     cpc.exposeObject(globalThis);
     cpc.onClose.catch(console.error);
+    const remote = cpc.genCaller();
+    remote.console.log("Hi, I am Server");
   });
   server.listen(8887);
 }

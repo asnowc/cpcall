@@ -21,13 +21,14 @@
 A protocol independent library designed for remote procedure call (RPC) in JavaScript\
 与协议无关的，为 JavaScript 设计的远程过程调用（RPC）的库
 
-[中文](https://github.com/asnowc/cpcall/README.zh.md) | [API](https://jsr.io/@asn/cpcall/doc) | [Examples](#examples)
+[中文](./README.zh.md) | [API](https://jsr.io/@asn/cpcall/doc) | [Examples](#examples)
 
 ## Features
 
 - A remote call manipulates the [remote proxy object](#expose-object) with almost the same syntax as a native JavaScript call
 - Services can be defined using [ECMA Script decorators](https://github.com/tc39/proposal-decorators). [See the use of decorators](./docs/use_decorator.md)
 - It is protocol independent and can be used over TCP, IPC, WebSocket, etc
+- Type safety
 - Two-way remote call
 - By default, [JBOD](https://github.com/asnowc/jbod) binary encoding is used for data transfer. Compared to JSON, it has the following advantages:
 
@@ -54,6 +55,8 @@ const server = new net.Server(async function (socket) {
   const cpc = createSocketCpc(socket);
   cpc.exposeObject(globalThis);
   cpc.onClose.catch(console.error);
+  const remote = cpc.genCaller();
+  remote.console.log("Hi, I am Server");
 });
 server.listen(8888);
 ```
@@ -61,7 +64,7 @@ server.listen(8888);
 websocket server
 
 ```ts
-import { WebSocketServer } from "npm:ws";
+import { WebSocketServer } from "ws";
 import http from "node:http";
 import { createWebSocketCpcOnOpen } from "cpcall";
 const server = new http.Server();
@@ -70,6 +73,8 @@ wsServer.on("connection", async (ws) => {
   const cpc = await createWebSocketCpcOnOpen(ws);
   cpc.exposeObject(globalThis);
   cpc.onClose.catch(console.error);
+  const remote = cpc.genCaller();
+  remote.console.log("Hi, I am Server");
 });
 server.listen(8887);
 ```
@@ -84,7 +89,7 @@ const socket = connect(8888);
 socket.on("connect", async () => {
   const cpc = createSocketCpc(socket);
   const remote = cpc.genCaller<typeof globalThis>();
-  await remote.console.log("ha ha");
+  await remote.console.log("Hello, I am Client");
   await cpc.close();
 });
 ```
@@ -101,6 +106,8 @@ for await (const conn of server) {
   const cpc = createWebStreamCpc(conn);
   cpc.exposeObject(globalThis);
   cpc.onClose.catch(console.error);
+  const remote = cpc.genCaller();
+  remote.console.log("Hi, I am Server");
 }
 ```
 
@@ -118,6 +125,8 @@ Deno.serve({ port: 8887 }, function (req, res): Response {
   createWebSocketCpcOnOpen(socket).then((cpc): void => {
     cpc.exposeObject(globalThis);
     cpc.onClose.catch(console.error);
+    const remote = cpc.genCaller();
+    remote.console.log("Hi, I am Server");
   }, console.error);
   return response;
 });
@@ -133,7 +142,7 @@ const cpc = createWebStreamCpc(conn);
 cpc.exposeObject(globalThis);
 
 const remote = cpc.genCaller<typeof globalThis>();
-await remote.console.log("ha ha");
+await remote.console.log("Hello, I am Client");
 await cpc.close();
 ```
 
@@ -146,7 +155,7 @@ const ws = new WebSocket("ws://127.0.0.1:8887");
 const cpc = await createWebSocketCpcOnOpen(ws);
 cpc.exposeObject(globalThis);
 const remote = cpc.genCaller<typeof globalThis>();
-await remote.console.log("ha ha");
+await remote.console.log("Hello, I am Client");
 
 await cpc.close();
 ```
@@ -165,7 +174,7 @@ class Service {
   multiType(...args: any[]) {
     return args.length;
   }
-  getPromise(time: number): Promise<number> {
+  async getPromise(time: number): Promise<number> {
     return new Promise<number>((resolve) => setTimeout(() => resolve(time), time));
   }
   throwError() {
@@ -195,7 +204,7 @@ client.ts
 ```ts
 import type { Service } from "./server.ts";
 
-await cpc1.call("add", 1, 2);
+const res = await cpc1.call("add", 1, 2); // res === 3
 cpc1.exec("add", 1, 2); // No need to retrieve the return value
 
 const service = cpc1.genCaller<Service>(); // Use proxy objects to obtain complete type prompts

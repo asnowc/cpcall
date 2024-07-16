@@ -1,6 +1,6 @@
 {
   "name": "cpcall",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "A protocol independent library designed for remote procedure call (RPC) in JavaScript",
   "type": "module",
   "scripts": {
@@ -53,6 +53,10 @@
     "name": "Eavid",
     "url": "https://github.com/eavidy"
   },
+  "keywords": [
+    "rpc",
+    "remote call"
+  ],
   "engines": {
     "node": ">=18"
   }

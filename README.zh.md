@@ -3,6 +3,7 @@
 - 远程调用可操作[远程代理对象](#expose-object)，与原生 JavaScript 调用语法几乎无差别
 - 可使用 [ECMA 装饰器](https://github.com/tc39/proposal-decorators)定义服务。 [查看装饰器的使用](./docs/use_decorator.md)
 - 与协议无关，可用于基于 TCP、IPC、WebSocket 等
+- 类型安全
 - 双端远程调用
 - 数据传输默认采用 [JBOD](https://github.com/asnowc/jbod) **二进制**编码。相比 JSON，有如下优势：
   - 更多的数据类型。如 bigint、Set、Map、RegExp、Error、UInt8Array 等（查看[支持的数据类型](https://github.com/asnowc/jbod)），这意味着在调用远程方法时，你可以直接传递这些参数，而无需进行转换
@@ -26,6 +27,8 @@ const server = new net.Server(async function (socket) {
   const cpc = createSocketCpc(socket);
   cpc.exposeObject(globalThis);
   cpc.onClose.catch(console.error);
+  const remote = cpc.genCaller();
+  remote.console.log("Hi, I am Server");
 });
 server.listen(8888);
 ```
@@ -33,7 +36,7 @@ server.listen(8888);
 websocket server
 
 ```ts
-import { WebSocketServer } from "npm:ws";
+import { WebSocketServer } from "ws";
 import http from "node:http";
 import { createWebSocketCpcOnOpen } from "cpcall";
 const server = new http.Server();
@@ -42,6 +45,8 @@ wsServer.on("connection", async (ws) => {
   const cpc = await createWebSocketCpcOnOpen(ws);
   cpc.exposeObject(globalThis);
   cpc.onClose.catch(console.error);
+  const remote = cpc.genCaller();
+  remote.console.log("Hi, I am Server");
 });
 server.listen(8887);
 ```
@@ -56,7 +61,7 @@ const socket = connect(8888);
 socket.on("connect", async () => {
   const cpc = createSocketCpc(socket);
   const remote = cpc.genCaller<typeof globalThis>();
-  await remote.console.log("ha ha");
+  remote.console.log("Hi, I am Server");
   await cpc.close();
 });
 ```
@@ -73,6 +78,8 @@ for await (const conn of server) {
   const cpc = createWebStreamCpc(conn);
   cpc.exposeObject(globalThis);
   cpc.onClose.catch(console.error);
+  const remote = cpc.genCaller();
+  remote.console.log("Hi, I am Server");
 }
 ```
 
@@ -90,6 +97,8 @@ Deno.serve({ port: 8887 }, function (req, res): Response {
   createWebSocketCpcOnOpen(socket).then((cpc): void => {
     cpc.exposeObject(globalThis);
     cpc.onClose.catch(console.error);
+    const remote = cpc.genCaller();
+    remote.console.log("Hi, I am Server");
   }, console.error);
   return response;
 });
@@ -105,7 +114,7 @@ const cpc = createWebStreamCpc(conn);
 cpc.exposeObject(globalThis);
 
 const remote = cpc.genCaller<typeof globalThis>();
-await remote.console.log("ha ha");
+remote.console.log("Hi, I am Server");
 await cpc.close();
 ```
 
@@ -118,7 +127,7 @@ const ws = new WebSocket("ws://127.0.0.1:8887");
 const cpc = await createWebSocketCpcOnOpen(ws);
 cpc.exposeObject(globalThis);
 const remote = cpc.genCaller<typeof globalThis>();
-await remote.console.log("ha ha");
+remote.console.log("Hi, I am Server");
 
 await cpc.close();
 ```

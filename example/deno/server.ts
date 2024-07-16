@@ -7,6 +7,8 @@ async function tcpServer() {
     const cpc = createWebStreamCpc(conn);
     cpc.exposeObject(globalThis);
     cpc.onClose.catch(console.error);
+    const remote = cpc.genCaller();
+    remote.console.log("Hi, I am Server");
   }
 }
 function httpServer() {
@@ -19,6 +21,8 @@ function httpServer() {
     createWebSocketCpcOnOpen(socket).then((cpc): void => {
       cpc.exposeObject(globalThis);
       cpc.onClose.catch(console.error);
+      const remote = cpc.genCaller();
+      remote.console.log("Hi, I am Server");
     }, console.error);
     return response;
   });

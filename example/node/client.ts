@@ -6,7 +6,7 @@ socket.on("connect", async () => {
   const cpc = createSocketCpc(socket);
   const remote = cpc.genCaller<typeof globalThis>();
 
-  await remote.console.log("ha ha");
+  await remote.console.log("Hello, I am Client");
 
   await cpc.close();
 });
