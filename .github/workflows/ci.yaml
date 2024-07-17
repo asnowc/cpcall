@@ -23,7 +23,8 @@ jobs:
           run_install: true
       - name: Test
         run: pnpm ci:test
-
+      - name: Check type
+        run: pnpm ci:check-type
       - name: Build
         if: ${{github.ref_name == 'main' && matrix.node-version == 22}}
         run: pnpm run ci:build
