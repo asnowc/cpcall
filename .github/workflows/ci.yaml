@@ -24,6 +24,7 @@ jobs:
       - name: Test
         run: pnpm ci:test
       - name: Check type
+        if: ${{matrix.node-version == 22}}
         run: pnpm ci:check-type
       - name: Build
         if: ${{github.ref_name == 'main' && matrix.node-version == 22}}
