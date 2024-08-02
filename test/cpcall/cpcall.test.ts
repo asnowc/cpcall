@@ -7,6 +7,7 @@ import {
   CpcFailAsyncRespondError,
   CpcController,
   FrameType,
+  ServiceStatus,
 } from "cpcall";
 import { afterTime } from "evlib";
 import * as mocks from "../__mocks__/cpc_socket.mock.ts";
@@ -132,7 +133,7 @@ describe("状态更改", function () {
     await expect(cpcall.onClose).rejects.toBe(err);
     expect(ctrl.sendFrame).not.toBeCalled();
   });
-  test("close 异常", async function () {
+  test("source close 异常", async function () {
     const onClose = vi.fn(() => {
       throw new Error("err");
     });
@@ -155,42 +156,78 @@ describe("状态更改", function () {
     expect(onDispose, "close 无法正常关闭，应调用 dispose").toBeCalledTimes(1);
   });
 
+  test("endServe()", async function ({ cpcSuite }) {
+    const { cpc1, cpc2, cpc1Src, cpc2Src } = cpcSuite;
+
+    cpc1.exposeObject({ cmd: () => 1 });
+    cpc2.exposeObject({ cmd: () => 2 });
+    await cpc1.endServe();
+
+    expect(cpc1Src.close).not.toBeCalled();
+    expect(cpc2Src.close).not.toBeCalled();
+
+    expect(cpc1.callable).toBeTruthy();
+    expect(cpc2.callable).toBeFalsy();
+    await expect(cpc2.call("cmd")).rejects.toThrowError();
+    await expect(cpc1.call("cmd")).resolves.toBe(2);
+
+    expect(cpc2.serviceStatus).toBe(ServiceStatus.serving);
+  });
+  test("endCall()", async function ({ cpcSuite }) {
+    const { cpc1, cpc2, cpc1Src, cpc2Src } = cpcSuite;
+
+    cpc1.exposeObject({ cmd: () => 1 });
+    cpc2.exposeObject({ cmd: () => 2 });
+
+    await cpc2.endCall();
+
+    expect(cpc1Src.close).not.toBeCalled();
+    expect(cpc2Src.close).not.toBeCalled();
+
+    expect(cpc2.callable).toBeFalsy();
+    expect(cpc1.callable).toBeTruthy();
+
+    await expect(cpc2.call("cmd")).rejects.toThrowError();
+    await expect(cpc1.call("cmd")).resolves.toBe(2);
+
+    expect(cpc2.serviceStatus).toBe(ServiceStatus.serving);
+  });
   test("双方 endCall()", async function ({ cpcSuite }) {
-    const { cpc1, cpc2 } = cpcSuite;
+    const { cpc1, cpc2, cpc1Src, cpc2Src } = cpcSuite;
 
     const clientFinish = cpc1.endCall();
     const serverFinish = cpc2.endCall();
 
     await expect(cpc1.onClose).resolves.toBeUndefined();
     await expect(cpc2.onClose).resolves.toBeUndefined();
+
+    expect(cpc1Src.close).toBeCalledTimes(1);
+    expect(cpc2Src.close).toBeCalledTimes(1);
   });
   test("双方 endServe()", async function ({ cpcSuite }) {
-    const { cpc1, cpc2 } = cpcSuite;
+    const { cpc1, cpc2, cpc1Src, cpc2Src } = cpcSuite;
     const serverFinish = cpc2.endServe();
     const clientFinish = cpc1.endServe();
 
     await expect(cpc1.onClose).resolves.toBeUndefined();
     await expect(cpc2.onClose).resolves.toBeUndefined();
+    expect(cpc1Src.close).toBeCalledTimes(1);
+    expect(cpc2Src.close).toBeCalledTimes(1);
   });
-  test("单方中断", async function ({ cpcSuite }) {
-    const { cpc1, cpc2 } = cpcSuite;
-    const c1 = cpc1.onClose;
-    const s1 = cpc2.onClose;
-    cpc1.close();
-    await expect(c1).resolves.toBeUndefined();
-    await expect(s1).resolves.toBeUndefined();
-  });
+
   test("单方 close()", async function ({ cpcSuite }) {
-    const { cpc1, cpc2 } = cpcSuite;
+    const { cpc1, cpc2, cpc1Src, cpc2Src } = cpcSuite;
     await cpc1.close();
     expect(cpc1.closed).toBeTruthy();
     expect(cpc1.onClose).resolves.toBeUndefined();
 
     expect(cpc2.closed).toBeTruthy();
     expect(cpc2.onClose).resolves.toBeUndefined();
+    expect(cpc1Src.close).toBeCalledTimes(1);
+    expect(cpc2Src.close).toBeCalledTimes(1);
   });
   test("单方 dispose()", async function ({ cpcSuite }) {
-    const { cpc1, cpc2 } = cpcSuite;
+    const { cpc1, cpc2, cpc1Src, cpc2Src } = cpcSuite;
     const error = new Error("主动dispose");
     cpc1.dispose(error);
 
@@ -199,5 +236,10 @@ describe("状态更改", function () {
     await e1;
     await e2;
     expect(cpc1.closed).toBeTruthy();
+
+    expect(cpc1Src.close).not.toBeCalled();
+    expect(cpc2Src.close).not.toBeCalled();
+    expect(cpc1Src.dispose).toBeCalledTimes(1);
+    expect(cpc2Src.dispose).toBeCalledTimes(1);
   });
 }, 500);

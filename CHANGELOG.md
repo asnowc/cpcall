@@ -2,6 +2,10 @@
 
 ### 0.6.x
 
+#### 0.6.3
+
+fix: `CpCall.endServe()` 和 `CpCall.endCall()` 触发调用数据源的 `close()`
+
 #### 0.6.2
 
 #### 0.6.1

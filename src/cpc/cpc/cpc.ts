@@ -173,7 +173,9 @@ type CallerProxyPrototype = {
  * @category Rpc
  */
 export interface CpCallOption {
+  /** 禁用调用。如果为 true, 对方构造实例时 disableServe 必须为 true, 否则无法正常断开连接并触发 onClose */
   disableCall?: boolean;
+  /** 禁用服务。如果为 true, 对方构造实例时 disableCall 必须为 true, 否则无法正常断开连接并触发 onClose */
   disableServe?: boolean;
   serveObject?: object;
 }

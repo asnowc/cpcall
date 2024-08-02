@@ -1,4 +1,4 @@
-import { WithPromise } from "../../../deps/evlib.ts"
+import { WithPromise } from "../../../deps/evlib.ts";
 import { ReturnQueue } from "./promise_queue.ts";
 import {
   FrameType,
@@ -140,11 +140,11 @@ export class CallerCore {
     } else handle.resolve(value);
   }
   private emitFinish() {
-    this.callerStatus = 3;
+    this.callerStatus = CallerStatus.finished;
     this.onCallFinish?.();
   }
   private emitCallEnd() {
-    this.callerStatus = 2;
+    this.callerStatus = CallerStatus.ended;
     this.onRemoteServeEnd?.();
   }
 }

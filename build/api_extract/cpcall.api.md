@@ -81,9 +81,7 @@ export interface CpCallBaseOption {
 
 // @public (undocumented)
 export interface CpCallOption {
-    // (undocumented)
     disableCall?: boolean;
-    // (undocumented)
     disableServe?: boolean;
     // (undocumented)
     serveObject?: object;
@@ -311,8 +309,8 @@ export class UnregisteredMethodError extends Error {
 
 // Warnings were encountered during analysis:
 //
-// dist/mod.d.ts:463:5 - (ae-forgotten-export) The symbol "PruneReadableStream" needs to be exported by the entry point index.d.ts
-// dist/mod.d.ts:464:5 - (ae-forgotten-export) The symbol "PruneWritableStream" needs to be exported by the entry point index.d.ts
+// dist/mod.d.ts:465:5 - (ae-forgotten-export) The symbol "PruneReadableStream" needs to be exported by the entry point index.d.ts
+// dist/mod.d.ts:466:5 - (ae-forgotten-export) The symbol "PruneWritableStream" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

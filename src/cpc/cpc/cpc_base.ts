@@ -85,7 +85,7 @@ export abstract class CpCallBase {
   }
   /** 是否可调用 */
   get callable(): boolean {
-    return this.#caller.callerStatus !== CallerStatus.callable;
+    return this.#caller.callerStatus === CallerStatus.callable;
   }
   readonly #resolveCallEnd: () => void;
   /** ended 变为 2 时触发 */
@@ -143,6 +143,7 @@ export abstract class CpCallBase {
   }
   async #checkClose() {
     if (this.#errored !== undefined) return; //已经发生异常或已关闭
+    if (!this.closed) return;
     this.#errored = null;
     try {
       await this.frameSource.close();

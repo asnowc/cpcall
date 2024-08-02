@@ -7,7 +7,7 @@ function mockConnectedCpc() {
   let c2Controller: CpcController<RpcFrame>;
   const cpc1Src = {
     close: vi.fn(() => {
-      Promise.resolve(() => {
+      Promise.resolve().then(() => {
         c2Controller.endFrame();
       });
     }),
