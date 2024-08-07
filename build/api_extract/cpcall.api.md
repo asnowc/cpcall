@@ -38,12 +38,13 @@ export class CpCall extends CpCallBase {
     exposeObject(obj?: object): void;
     exposeObject(obj: object): void;
     genCaller(opts?: GenCallerOpts): AnyCaller;
-    // (undocumented)
     genCaller(base: string, opts?: GenCallerOpts): AnyCaller;
-    // (undocumented)
     genCaller<R extends object>(base: string, opts?: GenCallerOpts): MakeCallers<R>;
-    // (undocumented)
     genCaller<R extends object>(opts?: GenCallerOpts): MakeCallers<R>;
+    getEmitter(opts?: GenCallerOpts): AnyEmitter;
+    getEmitter(base: string, opts?: GenCallerOpts): AnyEmitter;
+    getEmitter<T extends object>(base: string, opts?: GenCallerOpts): MakeEmitter<T>;
+    getEmitter<T extends object>(opts?: GenCallerOpts): MakeEmitter<T>;
     // @deprecated (undocumented)
     setObject(obj?: object): void;
 }
@@ -133,7 +134,7 @@ export const createWebsocketCpcOnOpen: typeof createWebSocketCpcOnOpen;
 export function createWebStreamCpc(stream: {
     readable: PruneReadableStream<Uint8Array>;
     writable: PruneWritableStream<Uint8Array>;
-}): CpCall;
+}, option?: CpCallOption): CpCall;
 
 // @public (undocumented)
 export namespace Frame {
@@ -309,8 +310,8 @@ export class UnregisteredMethodError extends Error {
 
 // Warnings were encountered during analysis:
 //
-// dist/mod.d.ts:465:5 - (ae-forgotten-export) The symbol "PruneReadableStream" needs to be exported by the entry point index.d.ts
-// dist/mod.d.ts:466:5 - (ae-forgotten-export) The symbol "PruneWritableStream" needs to be exported by the entry point index.d.ts
+// dist/mod.d.ts:488:5 - (ae-forgotten-export) The symbol "PruneReadableStream" needs to be exported by the entry point index.d.ts
+// dist/mod.d.ts:489:5 - (ae-forgotten-export) The symbol "PruneWritableStream" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

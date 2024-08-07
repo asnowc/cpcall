@@ -31,11 +31,20 @@ test("异步函数中传递", async function ({ cpcSuite: { cpc1, cpc2 } }) {
   expect(cpc1.genCaller().then).not.toBeTypeOf("function");
   expect(cpc1.genCaller().sub.then).not.toBeTypeOf("function");
 });
-test("exec", async function ({ cpcSuite: { cpc1, cpc2 } }) {
+test("CpCall.exec", async function ({ cpcSuite: { cpc1, cpc2 } }) {
   const fn = vi.fn();
   cpc2.exposeObject({ cd: fn });
   const remote = cpc1.genCaller<TopCall>();
   CpCall.exec(remote.cd, "s");
+  await afterTime(100);
+  expect(fn).toBeCalled();
+});
+
+test("exec", async function ({ cpcSuite: { cpc1, cpc2 } }) {
+  const fn = vi.fn();
+  cpc2.exposeObject({ cd: fn });
+  const remote = cpc1.getEmitter<TopCall>();
+  expect(remote.cd("s")).toBeUndefined();
   await afterTime(100);
   expect(fn).toBeCalled();
 });

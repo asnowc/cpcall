@@ -91,7 +91,7 @@ export class CpCall extends CpCallBase {
   #root: ServeObjectRoot = { object: {} };
 
   /**
-   * 生成远程代理对象
+   * 生成代理调用对象
    * @example
    * ```
    * const proxy=cpc.genCaller()
@@ -102,21 +102,22 @@ export class CpCall extends CpCallBase {
    * ```
    */
   genCaller(opts?: GenCallerOpts): AnyCaller;
+  /**
+   * 生成代理调用对象
+   * @param base - 前缀
+   */
   genCaller(base: string, opts?: GenCallerOpts): AnyCaller;
+  /**
+   * 生成代理调用对象
+   * @param base - 前缀
+   */
   genCaller<R extends object>(base: string, opts?: GenCallerOpts): MakeCallers<R>;
+  /**  生成代理调用对象 */
   genCaller<R extends object>(opts?: GenCallerOpts): MakeCallers<R>;
   genCaller(base_opts?: string | GenCallerOpts, opts?: GenCallerOpts): object {
-    let base: string;
-    if (typeof base_opts === "string") {
-      base = base_opts;
-      if (!opts) opts = {};
-    } else {
-      base = "";
-      opts = base_opts ?? {};
-    }
-    const keepThen = opts.keepThen;
-
-    return createObjectChain(base, undefined, () => {
+    const param = initParam(base_opts, opts);
+    const keepThen = param.opts.keepThen;
+    return createObjectChain(param.base, undefined, () => {
       function src(args: any[], thisArg: any, target: (...args: any[]) => any) {
         return CpCall.call(target, ...args);
       }
@@ -126,6 +127,46 @@ export class CpCall extends CpCallBase {
       return src;
     });
   }
+
+  /** 生成代理执行对象， 与 genCaller 类似，只不过执行的是 cpc.exec() */
+  getEmitter(opts?: GenCallerOpts): AnyEmitter;
+  /**
+   * 生成代理执行对象， 与 genCaller 类似，只不过执行的是 cpc.exec()
+   * @param base - 前缀
+   */
+  getEmitter(base: string, opts?: GenCallerOpts): AnyEmitter;
+  /**
+   * 生成代理执行对象， 与 genCaller 类似，只不过执行的是 cpc.exec()
+   * @param base - 前缀
+   */
+  getEmitter<T extends object>(base: string, opts?: GenCallerOpts): MakeEmitter<T>;
+  /** 生成代理执行对象， 与 genCaller 类似，只不过执行的是 cpc.exec() */
+  getEmitter<T extends object>(opts?: GenCallerOpts): MakeEmitter<T>;
+  getEmitter(base_opts?: string | GenCallerOpts, opts?: GenCallerOpts) {
+    const param = initParam(base_opts, opts);
+    const keepThen = param.opts.keepThen;
+
+    return createObjectChain(param.base, undefined, () => {
+      function src(args: any[], thisArg: any, target: (...args: any[]) => any) {
+        return CpCall.exec(target, ...args);
+      }
+      if (!keepThen) Reflect.set(src, "then", null);
+      Reflect.set(src, CPC_SRC, this);
+      Reflect.setPrototypeOf(src, callerProxyPrototype);
+      return src;
+    });
+  }
+}
+function initParam(base_opts?: string | GenCallerOpts, opts?: GenCallerOpts) {
+  let base: string;
+  if (typeof base_opts === "string") {
+    base = base_opts;
+    if (!opts) opts = {};
+  } else {
+    base = "";
+    opts = base_opts ?? {};
+  }
+  return { base, opts };
 }
 
 /** 调用未注册的命令
