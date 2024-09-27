@@ -47,8 +47,9 @@ jobs:
           retention-days: 3
 
   publish-npm:
-    needs: check
     runs-on: ubuntu-latest
+    needs: check
+    if: ${{github.repository_owner=='asnowc'}}
     steps:
       - name: download
         uses: actions/download-artifact@v4
@@ -68,6 +69,7 @@ jobs:
 
   publish-jsr:
     runs-on: ubuntu-latest
+    if: ${{github.repository_owner=='asnowc'}}
     needs: check
     steps:
       - name: Checkout
