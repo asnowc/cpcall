@@ -2,7 +2,7 @@
 import { rollup, plugins, defineConfig } from "@eavid/lib-dev/rollup";
 import { dts } from "rollup-plugin-dts";
 import fs from "node:fs/promises";
-import config from "../rollup.config.js";
+import config from "./rollup.config.js";
 
 console.log("build type...");
 await buildType();

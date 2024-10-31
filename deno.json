@@ -15,6 +15,6 @@
   "publish": {
     "include": ["README.md", "LICENSE", "src/**/*.ts"]
   },
-  "nodeModulesDir": false,
+  "nodeModulesDir": "manual",
   "lock": false
 }

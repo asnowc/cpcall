@@ -4,7 +4,7 @@ import { defineEvConfig } from "@eavid/lib-dev/rollup";
 import * as path from "node:path";
 import { isBuiltin } from "node:module";
 // @ts-ignore
-import packageJson from "./package.json" with { type: "json" };
+import packageJson from "../package.json" with { type: "json" };
 
 const { deps } = getDeps();
 const src = path.resolve("src");

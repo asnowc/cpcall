@@ -7,27 +7,27 @@
     "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage --ui",
-    "build": "pnpm rollup -c --environment DEV && pnpm gen-dts && pnpm api-extract",
+    "build": "pnpm rollup -c build/rollup.config.js --environment DEV && pnpm gen-dts && pnpm api-extract",
     "api-extract": "pnpm run ci:check-api -l",
     "gen-dts": "node build/build_type.js",
     "ci:check-type": "tsc --noEmit -p tsconfig.build.json",
     "ci:build": "pnpm rollup -c && pnpm gen-dts",
     "ci:test": "vitest run",
-    "ci:check-api": "api-extractor run -c api-extractor.jsonc -v"
+    "ci:check-api": "api-extractor run -c build/api-extractor.jsonc -v"
   },
   "dependencies": {
     "jbod": "^0.5.0"
   },
   "devDependencies": {
     "@eavid/lib-dev": "^0.0.3",
-    "@microsoft/api-extractor": "^7.47.0",
-    "@types/node": "^20.14.10",
+    "@microsoft/api-extractor": "^7.47.11",
+    "@types/node": "^20.17.4",
     "@vitest/coverage-v8": "^1.6.0",
     "@vitest/ui": "^1.6.0",
-    "evlib": "^2.6.1",
+    "evlib": "^2.10.1",
     "rollup-plugin-dts": "^6.1.1",
-    "tslib": "^2.6.3",
-    "typescript": "^5.5.3",
+    "tslib": "^2.8.0",
+    "typescript": "^5.6.3",
     "vitest": "^1.6.0"
   },
   "types": "./dist/mod.d.ts",
@@ -50,7 +50,7 @@
   },
   "license": "MIT",
   "author": {
-    "name": "Eavid",
+    "name": "Eaviyi",
     "url": "https://github.com/eavidy"
   },
   "keywords": [
