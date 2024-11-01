@@ -11,7 +11,7 @@
     "api-extract": "pnpm run ci:check-api -l",
     "gen-dts": "node build/build_type.js",
     "ci:check-type": "tsc --noEmit -p tsconfig.build.json",
-    "ci:build": "pnpm rollup -c && pnpm gen-dts",
+    "ci:build": "pnpm rollup -c build/rollup.config.js && pnpm gen-dts",
     "ci:test": "vitest run",
     "ci:check-api": "api-extractor run -c build/api-extractor.jsonc -v"
   },
