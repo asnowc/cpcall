@@ -6,7 +6,6 @@ async function tcpServer() {
   for await (const conn of server) {
     const cpc = createWebStreamCpc(conn);
     cpc.exposeObject(globalThis);
-    cpc.onClose.catch(console.error);
     const remote = cpc.genCaller();
     remote.console.log("Hi, I am Server");
   }
@@ -20,7 +19,6 @@ function httpServer() {
     const { response, socket } = Deno.upgradeWebSocket(req);
     createWebSocketCpcOnOpen(socket).then((cpc): void => {
       cpc.exposeObject(globalThis);
-      cpc.onClose.catch(console.error);
       const remote = cpc.genCaller();
       remote.console.log("Hi, I am Server");
     }, console.error);

@@ -98,15 +98,10 @@ describe("状态更改", function () {
     cpc.dispose(err);
 
     expect(cpc.callerStatus).toBe(CallerStatus.finished);
-    const e1 = expect(cpc.onClose).rejects.toThrowError();
-    const e2 = expect(pms, "在返回前中断").rejects.toThrowError(CpcFailRespondError);
-
-    await Promise.all([e1, e2]);
+    await expect(pms, "在返回前中断").rejects.toThrowError(CpcFailRespondError);
   });
   test("Promise状态在变化前断开连接", async function () {
     const { serverCpc, clientCpc } = mocks.createConnectedCpc();
-    serverCpc.onClose.catch(() => {});
-    clientCpc.onClose.catch(() => {});
 
     serverCpc.exposeObject({
       cmd: function () {
@@ -129,13 +124,12 @@ describe("状态更改", function () {
     const cpcall = new CpCall(ctrl);
     cpcall.dispose(err);
     ctrl.sendFrame.mockRestore();
-
-    await expect(cpcall.onClose).rejects.toBe(err);
     expect(ctrl.sendFrame).not.toBeCalled();
   });
   test("source close 异常", async function () {
+    const err = new Error("err");
     const onClose = vi.fn(() => {
-      throw new Error("err");
+      throw err;
     });
     const onDispose = vi.fn();
     let ctrl: CpcController;
@@ -150,10 +144,10 @@ describe("状态更改", function () {
 
     ctrl!.nextFrame({ type: FrameType.endCall });
     ctrl!.nextFrame({ type: FrameType.endServe });
-
-    await expect(cpc.onClose).rejects.toThrowError("err");
+    await cpc.onClose;
     expect(onClose).toBeCalledTimes(1);
     expect(onDispose, "close 无法正常关闭，应调用 dispose").toBeCalledTimes(1);
+    expect(onDispose).toBeCalledWith(err);
   });
 
   test("endServe()", async function ({ cpcSuite }) {
@@ -231,15 +225,13 @@ describe("状态更改", function () {
     const error = new Error("主动dispose");
     cpc1.dispose(error);
 
-    const e1 = expect(cpc1.onClose, "cpc1 抛出异常与 dispose 传入的 异常 一致").rejects.toThrowError(error);
-    const e2 = expect(cpc2.onClose, "远程异常关闭").rejects.toThrowError();
-    await e1;
-    await e2;
+    await Promise.all([cpc1.onClose, cpc2.onClose]);
     expect(cpc1.closed).toBeTruthy();
 
     expect(cpc1Src.close).not.toBeCalled();
     expect(cpc2Src.close).not.toBeCalled();
     expect(cpc1Src.dispose).toBeCalledTimes(1);
+    expect(cpc1Src.dispose).toBeCalledWith(error);
     expect(cpc2Src.dispose).toBeCalledTimes(1);
   });
 }, 500);

@@ -26,13 +26,8 @@ describe("状态更改/cpc_socket", function () {
   });
   test("外部 Duplex end()", async function () {
     const { serverCpc, clientCpc, clientSocket, serverSocket } = mock;
-
     clientSocket.end();
-
-    const p1 = expect(serverCpc.onClose).rejects.toThrowError();
-    const p2 = expect(clientCpc.onClose).rejects.toThrowError();
-
-    await Promise.all([p1, p2]);
+    await Promise.all([serverCpc.onClose, serverCpc.onClose]); // 关闭
   });
   test("外部 Duplex 销毁", async function () {
     const { serverCpc, clientCpc, clientSocket, serverSocket } = mock;
@@ -42,9 +37,6 @@ describe("状态更改/cpc_socket", function () {
     expect(serverSocket.destroyed, "server socket 已销毁").toBeTruthy();
     expect(clientSocket.destroyed, "client socket 已销毁").toBeTruthy();
 
-    const p1 = expect(serverCpc.onClose).rejects.toThrowError();
-    const p2 = expect(clientCpc.onClose).rejects.toThrowError();
-
-    await Promise.all([p1, p2]);
+    await Promise.all([serverCpc.onClose, serverCpc.onClose]); // 关闭
   });
 }, 500);

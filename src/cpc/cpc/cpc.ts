@@ -74,10 +74,11 @@ export class CpCall extends CpCallBase {
     throw new UnregisteredMethodError(cmd);
   }
 
-  /** 删除设置的可调用服务 */
-  exposeObject(obj?: object): void;
   /** 设置可调用的服务 */
   exposeObject(obj: object): void;
+  /** 删除可调用服务 */
+  exposeObject(obj?: undefined): void;
+  exposeObject(obj?: object): void;
   exposeObject(obj: object = {}) {
     if (typeof obj !== "object" || obj === null) throw new Error("obj must be an object");
     this.#root = { object: obj };
@@ -218,6 +219,7 @@ export interface CpCallOption {
   disableCall?: boolean;
   /** 禁用服务。如果为 true, 对方构造实例时 disableCall 必须为 true, 否则无法正常断开连接并触发 onClose */
   disableServe?: boolean;
+  /** 设置服务对象 */
   serveObject?: object;
 }
 

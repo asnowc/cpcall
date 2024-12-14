@@ -131,7 +131,6 @@ describe("状态更改", function () {
   test("主动调用 dispose()", async function ({ cpcHandle }) {
     const { cpc, ctrl, source } = cpcHandle;
     const err = new Error("主动调用dispose");
-    cpc.onClose.catch(() => {});
     cpc.dispose(err);
 
     // 下面的帧应该被忽略
@@ -141,6 +140,7 @@ describe("状态更改", function () {
     ctrl.nextFrame({ type: FrameType.endServe });
     ctrl.endFrame(new Error("被忽略的异常"));
     ctrl.endFrame(new Error("被忽略的异常"));
+    await cpc.onClose;
 
     expect(source.close).toBeCalledTimes(0);
     expect(source.dispose).toBeCalledTimes(1);
@@ -149,11 +149,11 @@ describe("状态更改", function () {
   });
 });
 
-test("source 异常", function ({ cpcHandle }) {
+test("source 异常", async function ({ cpcHandle }) {
   const { cpc, ctrl, source } = cpcHandle;
   const error = new Error("source error");
   ctrl.endFrame(error);
-  expect(cpc.onClose).rejects.toThrowError(error);
+  await expect(cpc.onClose).resolves.toBeUndefined();
 
   // 下面的帧应该被忽略
   ctrl.nextFrame({ type: FrameType.exec, args: [] });
@@ -170,7 +170,6 @@ test("source 异常", function ({ cpcHandle }) {
 describe("错误帧", function () {
   test("错误的响应", async function ({ cpcHandle }) {
     const { cpc, ctrl, source } = cpcHandle;
-    cpc.onClose.catch(() => {});
 
     ctrl.nextFrame({ type: FrameType.return, value: "value" }); //不存在的返回值"
     ctrl.nextFrame({ type: FrameType.throw, value: "value" });

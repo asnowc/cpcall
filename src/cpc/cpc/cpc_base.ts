@@ -50,14 +50,18 @@ export abstract class CpCallBase {
     frameSource.init({
       endFrame: (reason) => {
         if (this.closed) return;
-        this.dispose(reason ?? new Error("异常结束"));
+        this.dispose(reason ?? new Error("No end frame was received"));
       },
       nextFrame: (frame: RpcFrame) => {
         this.#callee.nextFrame(frame) || this.#caller.onFrame(frame);
       },
     });
-  }
 
+    this.onClose = new Promise<void>((resolve) => {
+      //@ts-ignore
+      this.#closeResolve = resolve;
+    });
+  }
   /* --------- caller ------------- */
 
   /** 调用远程设置的函数. 如果 caller ended 不为 0 ，则抛出异常 */
@@ -73,7 +77,7 @@ export abstract class CpCallBase {
    * @remarks 为保证连接能正常关闭，当不再需要远程调用服务时。应手动调用它
    * @returns 当 ended 状态变为 3 后解决的 Promise
    * */
-  endCall(): Promise<void> {
+  async endCall(): Promise<void> {
     this.#resolveCallEnd();
     this.#caller.endCall();
     return this.#onCallFinish.promise;
@@ -109,7 +113,7 @@ export abstract class CpCallBase {
    * @remarks 为保证连接能正常关闭，当不再提供调用服务时，应手动调用。
    * @returns 返回当 serverStatus 变为 2 时解决的 Promise
    */
-  endServe(): Promise<void> {
+  async endServe(): Promise<void> {
     this.#callee.endServe();
     return this.#onServeFinish.promise;
   }
@@ -117,42 +121,42 @@ export abstract class CpCallBase {
 
   /* --------- close ------------- */
 
-  #errored: any;
-  readonly #closeEvent = withPromise<void>();
+  readonly #closeResolve!: () => void;
   /**
    * 关闭事件
    * @remarks
    * 这分为正常关闭和异常关闭，如果你需要监听无论正常异常都触发的事件，你应调用 `onClose.finally()` 监听
    *
    */
-  readonly onClose: Promise<void> = this.#closeEvent.promise;
+  readonly onClose: Promise<void>;
   /** 销毁连接
    * @returns 返回 CpCall 完全关闭后解决的 Promise
    */
-  dispose(reason: any = null): void {
-    if (this.#errored !== undefined) return; //已经销毁过或已关闭
-    this.#errored = reason;
+  dispose(reason?: any): void {
+    if (this.closed) return;
+    this.#error = reason ? reason : new Error("CpCall has been disposed");
     this.#callee.dispose();
     this.#caller.dispose(reason);
-    this.#closeEvent.reject(reason);
-    this.frameSource.dispose?.(reason);
   }
+  #error?: any;
   /** 关闭 CpCall, 相当于同时调用 endServe() 和 endCall()*/
   async close(): Promise<void> {
     await Promise.all([this.#callee.endServe(), this.#caller.endCall()]);
   }
   async #checkClose() {
-    if (this.#errored !== undefined) return; //已经发生异常或已关闭
     if (!this.closed) return;
-    this.#errored = null;
+    if (this.#error) {
+      this.frameSource.dispose?.(this.#error);
+      this.#closeResolve();
+      return;
+    }
     try {
       await this.frameSource.close();
-      this.#closeEvent.resolve();
     } catch (error) {
-      this.#errored = error;
-      this.#closeEvent.reject(error);
       this.frameSource.dispose?.(error);
       return;
+    } finally {
+      this.#closeResolve();
     }
   }
   get closed(): boolean {

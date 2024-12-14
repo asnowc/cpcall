@@ -54,7 +54,6 @@ import { createSocketCpc } from "cpcall";
 const server = new net.Server(async function (socket) {
   const cpc = createSocketCpc(socket);
   cpc.exposeObject(globalThis);
-  cpc.onClose.catch(console.error);
   const remote = cpc.genCaller();
   remote.console.log("Hi, I am Server");
 });
@@ -72,7 +71,6 @@ const wsServer = new WebSocketServer({ server });
 wsServer.on("connection", async (ws) => {
   const cpc = await createWebSocketCpcOnOpen(ws);
   cpc.exposeObject(globalThis);
-  cpc.onClose.catch(console.error);
   const remote = cpc.genCaller();
   remote.console.log("Hi, I am Server");
 });
@@ -105,7 +103,6 @@ const server = Deno.listen({ port: 8888 });
 for await (const conn of server) {
   const cpc = createWebStreamCpc(conn);
   cpc.exposeObject(globalThis);
-  cpc.onClose.catch(console.error);
   const remote = cpc.genCaller();
   remote.console.log("Hi, I am Server");
 }
@@ -124,7 +121,6 @@ Deno.serve({ port: 8887 }, function (req, res): Response {
   const { response, socket } = Deno.upgradeWebSocket(req);
   createWebSocketCpcOnOpen(socket).then((cpc): void => {
     cpc.exposeObject(globalThis);
-    cpc.onClose.catch(console.error);
     const remote = cpc.genCaller();
     remote.console.log("Hi, I am Server");
   }, console.error);

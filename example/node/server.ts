@@ -8,7 +8,6 @@ function tcpServer() {
   const server = new net.Server(async function (socket) {
     const cpc = createSocketCpc(socket);
     cpc.exposeObject(globalThis);
-    cpc.onClose.catch(console.error);
     const remote = cpc.genCaller();
     remote.console.log("Hi, I am Server");
   });
@@ -20,7 +19,6 @@ function wsServer() {
   wsServer.on("connection", async (ws) => {
     const cpc = await createWebSocketCpcOnOpen(ws);
     cpc.exposeObject(globalThis);
-    cpc.onClose.catch(console.error);
     const remote = cpc.genCaller();
     remote.console.log("Hi, I am Server");
   });
