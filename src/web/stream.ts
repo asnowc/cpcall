@@ -22,17 +22,11 @@ class WebStreamSource implements CpcFrameSource<Uint8Array> {
       () => (this.readerClosed = true),
       () => (this.readerClosed = true)
     );
-    this._writer.closed.then(
-      () => (this.writerClosed = true),
-      () => (this.writerClosed = true)
-    );
   }
   private _reader;
   private _writer;
-  private writerClosed = false;
   private readerClosed = false;
   private onWriterError = (e: any) => {
-    this.writerClosed = true;
     if (!this.readerClosed) {
       this.readerClosed = true;
       this._reader.cancel(e);
@@ -57,11 +51,11 @@ class WebStreamSource implements CpcFrameSource<Uint8Array> {
   close(): void | Promise<void> {
     //理论上这里这个 this.readerClosed 必定为 true
     if (!this.readerClosed) this._reader.cancel(new Error("WebStreamSource internal error"));
-    if (!this.writerClosed) return this._writer.close();
+    return this._writer.close(); // 这里 write 预期应该没有被 close()
   }
   dispose(reason?: any) {
     if (!this.readerClosed) this._reader.cancel(reason);
-    if (!this.writerClosed) return this._writer.close();
+    return this._writer.close().catch(() => {}); // _writer 可能已关闭，但是 writer.closed 的 Promise 是异步的，所以无法及时订阅关闭事件
   }
   sendFrame(frame: Uint8Array): void {
     this._writer.write(frame).catch(this.onWriterError);

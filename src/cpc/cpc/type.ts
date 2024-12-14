@@ -11,11 +11,12 @@ export type CpcFrameSource<T = RpcFrame> = {
    * @param controller - CpCall 实例的控制器
    */
   init(controller: CpcController<T>): void;
-  /** 实例正常关闭时调用。它在 closeEvent 触发前被调用，如果返回Promise，则在 Promise 解决后 触发 closeEvent
-   * @remarks 如果调用时抛出异常，那么CpCall 的 closeEvent 将触发异常（非正常关闭）
+  /**
+   * 实例正常关闭时调用。它在 closeEvent 触发前被调用，如果返回Promise，则在 Promise 解决后 触发 closeEvent
+   * 如果 调用 close() 是抛出异常，则会调用 dispose()
    */
   close(): void | Promise<void>;
-  /** 当用户手动调用 dispose() 时或出现异常时调用  */
+  /** 当用户手动调用 dispose() 时或出现异常时调用。dispose() 调用时如果抛出异常，不会被 CpCall 捕获  */
   dispose(reason?: any): void;
 };
 

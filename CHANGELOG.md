@@ -2,6 +2,10 @@
 
 ### 0.6.x
 
+#### 0.6.6
+
+fix: createWebStreamCpc 内部错误
+
 #### 0.6.5
 
 feat!: CpCall.onClose 的 Promise 现在不再会被拒绝，最终总是被解决的
