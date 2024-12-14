@@ -35,8 +35,10 @@ export class CpCall extends CpCallBase {
     constructor(frameSource: CpcFrameSource<RpcFrame>, config?: CpCallOption);
     static call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T>;
     static exec<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): void;
-    exposeObject(obj?: object): void;
     exposeObject(obj: object): void;
+    exposeObject(obj?: undefined): void;
+    // (undocumented)
+    exposeObject(obj?: object): void;
     genCaller(opts?: GenCallerOpts): AnyCaller;
     genCaller(base: string, opts?: GenCallerOpts): AnyCaller;
     genCaller<R extends object>(base: string, opts?: GenCallerOpts): MakeCallers<R>;
@@ -84,7 +86,6 @@ export interface CpCallBaseOption {
 export interface CpCallOption {
     disableCall?: boolean;
     disableServe?: boolean;
-    // (undocumented)
     serveObject?: object;
 }
 
@@ -310,8 +311,8 @@ export class UnregisteredMethodError extends Error {
 
 // Warnings were encountered during analysis:
 //
-// dist/mod.d.ts:488:5 - (ae-forgotten-export) The symbol "PruneReadableStream" needs to be exported by the entry point index.d.ts
-// dist/mod.d.ts:489:5 - (ae-forgotten-export) The symbol "PruneWritableStream" needs to be exported by the entry point index.d.ts
+// dist/mod.d.ts:490:5 - (ae-forgotten-export) The symbol "PruneReadableStream" needs to be exported by the entry point index.d.ts
+// dist/mod.d.ts:491:5 - (ae-forgotten-export) The symbol "PruneWritableStream" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

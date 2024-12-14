@@ -1,6 +1,6 @@
 {
   "name": "@asn/cpcall",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "imports": {
     "jbod": "jsr:@asn/jbod@^0.5.0",
     "evlib": "jsr:@asn/evlib@^2.6.1",

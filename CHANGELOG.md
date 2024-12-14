@@ -2,6 +2,10 @@
 
 ### 0.6.x
 
+#### 0.6.5
+
+feat!: CpCall.onClose 的 Promise 现在不再会被拒绝，最终总是被解决的
+
 #### 0.6.4
 
 feat: 新增 `CpCall.genEmitter()`
