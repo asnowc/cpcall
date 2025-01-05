@@ -213,10 +213,10 @@ describe("状态更改", function () {
     const { cpc1, cpc2, cpc1Src, cpc2Src } = cpcSuite;
     await cpc1.close();
     expect(cpc1.closed).toBeTruthy();
-    expect(cpc1.onClose).resolves.toBeUndefined();
+    await expect(cpc1.onClose).resolves.toBeUndefined();
 
     expect(cpc2.closed).toBeTruthy();
-    expect(cpc2.onClose).resolves.toBeUndefined();
+    await expect(cpc2.onClose).resolves.toBeUndefined();
     expect(cpc1Src.close).toBeCalledTimes(1);
     expect(cpc2Src.close).toBeCalledTimes(1);
   });

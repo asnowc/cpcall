@@ -101,7 +101,7 @@ describe("状态更改", function () {
     const calls = source.sendFrame.mock.calls;
     expect(calls[0][0]).toMatchObject({ type: FrameType.endServe });
     expect(cpc.serviceStatus, "不存在返回队列自动结束").toBe(ServiceStatus.finished);
-    expect(cpc.onServeEnd).resolves.toBeUndefined();
+    await expect(cpc.onServeEnd).resolves.toBeUndefined();
   });
 
   test("close()", async function ({ cpcHandle }) {

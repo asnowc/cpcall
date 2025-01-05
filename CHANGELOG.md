@@ -2,6 +2,10 @@
 
 ### 0.6.x
 
+#### 0.6.7
+
+deps: 升级 jbod 到 0.5.1
+
 #### 0.6.6
 
 fix: createWebStreamCpc 内部错误
