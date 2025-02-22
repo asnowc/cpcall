@@ -8,6 +8,7 @@ import {
   RpcInterceptCall,
   RpcInterceptReturn,
   manualDecorateClass,
+  RemoteCallError,
 } from "cpcall";
 import { cpcTest as test } from "../env/cpc.env.ts";
 test("装饰器", async function ({ cpcSuite }) {
@@ -106,9 +107,15 @@ describe("继承", function () {
     const a = cpc1.genCaller<A>();
 
     await expect(a.method1(), "调用继承方法，继承方法已经标记暴露").resolves.toBe(1);
-    await expect(a.method2(), "调用继承方法，子类已排除").rejects.toThrowError(new UnregisteredMethodError("method2"));
-    await expect(a.method3(), "method3 在父类没有被标记").rejects.toThrowError(new UnregisteredMethodError("method3"));
-    await expect(a.method4(), "method4 在父类标记了排除").rejects.toThrowError(new UnregisteredMethodError("method4"));
+    await expect(a.method2(), "调用继承方法，子类已排除").rejects.toThrowError(
+      creteRemoteCallError(new UnregisteredMethodError("method2"))
+    );
+    await expect(a.method3(), "method3 在父类没有被标记").rejects.toThrowError(
+      creteRemoteCallError(new UnregisteredMethodError("method3"))
+    );
+    await expect(a.method4(), "method4 在父类标记了排除").rejects.toThrowError(
+      creteRemoteCallError(new UnregisteredMethodError("method4"))
+    );
   });
   test("service 继承 普通类", async function ({ cpcSuite }) {
     const { cpc1, cpc2 } = cpcSuite;
@@ -120,7 +127,7 @@ describe("继承", function () {
     const a = cpc1.genCaller<A>();
 
     await expect(a.method1(), "method1 没有在子类或父类标注，应抛出异常").rejects.toThrowError(
-      new UnregisteredMethodError("method1")
+      creteRemoteCallError(new UnregisteredMethodError("method1"))
     );
   });
   test("service 继承 排除类", async function ({ cpcSuite }) {
@@ -204,3 +211,6 @@ test("manualDecorateClass", async function ({ cpcSuite }) {
   await expect(a.method2()).resolves.toBe(2);
   await expect(a.method3(), "method3 没有被标记").rejects.toThrowError();
 });
+function creteRemoteCallError(err: Error) {
+  return new RemoteCallError(err.message);
+}
