@@ -1,5 +1,12 @@
 import { expect } from "vitest";
-import { RpcService, RpcExposed, ServiceDefineMode, rpcExclude, UnregisteredMethodError } from "cpcall";
+import {
+  RpcService,
+  RpcExposed,
+  ServiceDefineMode,
+  rpcExclude,
+  UnregisteredMethodError,
+  RemoteCallError,
+} from "cpcall";
 import { cpcTest as test } from "../env/cpc.env.ts";
 
 test("普通对象", async function ({ cpcSuite }) {
@@ -84,19 +91,22 @@ test("子服务", async function ({ cpcSuite }) {
   await expect(service.service3.s2Method3()).resolves.toBe(1);
 
   await expect(service.obj1.method(), "obj1 没有被标记暴露").rejects.toThrowError(
-    new UnregisteredMethodError("obj1.method")
+    creteRemoteCallError(new UnregisteredMethodError("obj1.method"))
   );
   await expect(service.service2.s2Method3(), "service2 没有被标记暴露，应无法调用").rejects.toThrowError(
-    new UnregisteredMethodError("service2.s2Method3")
+    creteRemoteCallError(new UnregisteredMethodError("service2.s2Method3"))
   );
   await expect(service.service3.s2Method2(), "s2Method2标记了排除，应无法调用").rejects.toThrowError(
-    new UnregisteredMethodError("service3.s2Method2")
+    creteRemoteCallError(new UnregisteredMethodError("service3.s2Method2"))
   );
 });
 test("调用非函数", async function ({ cpcSuite }) {
   const { cpc1, cpc2 } = cpcSuite;
   cpc2.exposeObject({ att1: 8, att2: null, att3: "string" });
-  await expect(cpc1.call("att1")).rejects.toThrowError(new UnregisteredMethodError("att1"));
-  await expect(cpc1.call("att2")).rejects.toThrowError(new UnregisteredMethodError("att2"));
-  await expect(cpc1.call("att3")).rejects.toThrowError(new UnregisteredMethodError("att3"));
+  await expect(cpc1.call("att1")).rejects.toThrowError(creteRemoteCallError(new UnregisteredMethodError("att1")));
+  await expect(cpc1.call("att2")).rejects.toThrowError(creteRemoteCallError(new UnregisteredMethodError("att2")));
+  await expect(cpc1.call("att3")).rejects.toThrowError(creteRemoteCallError(new UnregisteredMethodError("att3")));
 });
+function creteRemoteCallError(err: Error) {
+  return new RemoteCallError(err.message);
+}

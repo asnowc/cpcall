@@ -2,11 +2,25 @@ name: CI
 on:
   push:
     branches:
-      - main
-      - feat/*
-      - test/*
+      - "**"
 jobs:
-  build:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: true
+      - name: Check type
+        run: pnpm ci:check-type
+      - name: Build
+        if: ${{ github.ref_name == 'main' }}
+        run: pnpm run ci:build
+      - name: Check Api
+        if: ${{ github.ref_name == 'main' }}
+        run: pnpm run ci:check-api
+
+  test:
     strategy:
       matrix:
         node-version: [18, 20, 22]
@@ -15,20 +29,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup NodeJS
-        uses: asnowc/actions@setup-node/v2
+      - uses: pnpm/action-setup@v4
         with:
-          node_v: ${{matrix.node-version}}
-          pnpm_v: 9
-          run_install: true
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{matrix.node-version}}
+          cache: pnpm
+      - run: pnpm install
       - name: Test
         run: pnpm ci:test
-      - name: Check type
-        if: ${{matrix.node-version == 22}}
-        run: pnpm ci:check-type
-      - name: Build
-        if: ${{github.ref_name == 'main' && matrix.node-version == 22}}
-        run: pnpm run ci:build
-      - name: Check Api
-        if: ${{github.ref_name == 'main' && matrix.node-version == 22}}
-        run: pnpm run ci:check-api
