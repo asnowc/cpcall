@@ -3,10 +3,9 @@ import { describe } from "node:test";
 import { expect, test } from "vitest";
 import { baseDataTypes } from "../__mocks__/data_type.cases.ts";
 import { CpcFrameEncoder } from "../../src/cpc/stream_trans/mod.ts";
-function encodeCpcFrameHex(frame: RpcFrame) {
-  const u8Arr = new CpcFrameEncoder(frame).encode();
-  return u8ArrToHex(u8Arr);
-}
+/**
+ * 这个测试 CpCall 的数据帧编码是否正常
+ */
 describe("caller", function () {
   test("call", async function () {
     const hex = encodeCpcFrameHex({ type: FrameType.call, args: ["abcd", 1, "null"] });
@@ -60,4 +59,8 @@ describe("数据类型二进制", function () {
 
 function u8ArrToHex(u8Arr: Uint8Array) {
   return Buffer.from(u8Arr.buffer, u8Arr.byteOffset, u8Arr.byteLength).toString("hex");
+}
+function encodeCpcFrameHex(frame: RpcFrame) {
+  const u8Arr = new CpcFrameEncoder(frame).encode();
+  return u8ArrToHex(u8Arr);
 }

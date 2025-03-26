@@ -8,7 +8,7 @@ describe("状态更改/cpc_socket", function () {
     mocks.setDuplexEvents(mock.clientSocket);
     mocks.setDuplexEvents(mock.serverSocket);
   });
-  test("安全关闭", async function () {
+  test("正常结束 CpCall 应能够正常结束 Duplex 的连接", async function () {
     const { serverCpc, clientCpc, clientSocket, serverSocket } = mock;
     serverCpc.endCall();
     clientCpc.endCall();
@@ -24,12 +24,12 @@ describe("状态更改/cpc_socket", function () {
     expect(clientSocket.closed).toBeTruthy();
     expect(serverSocket.closed).toBeTruthy();
   });
-  test("外部 Duplex end()", async function () {
+  test("外部 Duplex 调用 end() 会关闭 CpCall 的连接", async function () {
     const { serverCpc, clientCpc, clientSocket, serverSocket } = mock;
     clientSocket.end();
     await Promise.all([serverCpc.onClose, serverCpc.onClose]); // 关闭
   });
-  test("外部 Duplex 销毁", async function () {
+  test("外部 Duplex 销毁会关闭 CpCall 的连接", async function () {
     const { serverCpc, clientCpc, clientSocket, serverSocket } = mock;
     // const err = new Error("外部Duplex 销毁");
     clientSocket.destroy();
