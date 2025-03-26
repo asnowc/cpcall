@@ -70,17 +70,17 @@ describe("call-response", function () {
   });
 });
 describe("状态更改", function () {
-  test("endCall()", async function ({ cpcHandle }) {
-    const { cpc, ctrl, source } = cpcHandle;
+  test("endCall()", async function ({ mockCpc: cpc }) {
+    const { ctrl, mockSource } = cpc;
 
     expect(cpc.callerStatus).toBe(0);
 
     const r1 = cpc.call(0); //发起一个调用
 
     cpc.endCall();
-    expect(cpc.callerStatus).toBe(CallerStatus.ending);
+    expect(cpc.callerStatus, "callerStatus 立即变为 ending").toBe(CallerStatus.ending);
 
-    expect(source.sendFrame.mock.calls[1][0], "已发送 endCall 帧").toEqual({
+    expect(mockSource.sendFrame.mock.calls[1][0], "已发送 endCall 帧").toEqual({
       type: FrameType.endCall,
     } satisfies Frame.EndCall);
 
@@ -94,18 +94,18 @@ describe("状态更改", function () {
     expect(cpc.callerStatus).toBe(CallerStatus.finished);
     await expect(r1).resolves.toBe("r1");
   });
-  test("endServe()", async function ({ cpcHandle }) {
-    const { cpc, ctrl, source } = cpcHandle;
+  test("endServe()", async function ({ mockCpc: cpc }) {
+    const { mockSource } = cpc;
 
     cpc.endServe();
-    const calls = source.sendFrame.mock.calls;
+    const calls = mockSource.sendFrame.mock.calls;
     expect(calls[0][0]).toMatchObject({ type: FrameType.endServe });
     expect(cpc.serviceStatus, "不存在返回队列自动结束").toBe(ServiceStatus.finished);
     await expect(cpc.onServeEnd).resolves.toBeUndefined();
   });
 
-  test("close()", async function ({ cpcHandle }) {
-    const { cpc, ctrl, source } = cpcHandle;
+  test("close()", async function ({ mockCpc: cpc }) {
+    const { ctrl, mockSource } = cpc;
     setTimeout(() => {
       ctrl.nextFrame({ type: FrameType.endServe });
       ctrl.nextFrame({ type: FrameType.endCall });
@@ -122,14 +122,14 @@ describe("状态更改", function () {
 
     await afterTime();
 
-    expect(source.close).toBeCalledTimes(1);
-    expect(source.dispose).toBeCalledTimes(0);
+    expect(mockSource.close).toBeCalledTimes(1);
+    expect(mockSource.dispose).toBeCalledTimes(0);
     ctrl.nextFrame({ type: FrameType.call, args: ["abc"] }); //传一些错误的帧
     expect(cpc.closed).toBeTruthy();
   });
 
-  test("主动调用 dispose()", async function ({ cpcHandle }) {
-    const { cpc, ctrl, source } = cpcHandle;
+  test("主动调用 dispose()", async function ({ mockCpc: cpc }) {
+    const { ctrl, mockSource } = cpc;
     const err = new Error("主动调用dispose");
     cpc.dispose(err);
 
@@ -142,15 +142,15 @@ describe("状态更改", function () {
     ctrl.endFrame(new Error("被忽略的异常"));
     await cpc.onClose;
 
-    expect(source.close).toBeCalledTimes(0);
-    expect(source.dispose).toBeCalledTimes(1);
-    expect(source.dispose).toBeCalledWith(err);
-    source.close();
+    expect(mockSource.close).toBeCalledTimes(0);
+    expect(mockSource.dispose).toBeCalledTimes(1);
+    expect(mockSource.dispose).toBeCalledWith(err);
+    mockSource.close();
   });
 });
 
-test("source 异常", async function ({ cpcHandle }) {
-  const { cpc, ctrl, source } = cpcHandle;
+test("source 异常", async function ({ mockCpc: cpc }) {
+  const { ctrl, mockSource } = cpc;
   const error = new Error("source error");
   ctrl.endFrame(error);
   await expect(cpc.onClose).resolves.toBeUndefined();
@@ -163,13 +163,13 @@ test("source 异常", async function ({ cpcHandle }) {
   ctrl.endFrame(new Error("被忽略的异常"));
   ctrl.endFrame(new Error("被忽略的异常"));
 
-  expect(source.dispose).toBeCalledWith(error);
-  expect(source.close).not.toBeCalled();
+  expect(mockSource.dispose).toBeCalledWith(error);
+  expect(mockSource.close).not.toBeCalled();
 });
 
 describe("错误帧", function () {
-  test("错误的响应", async function ({ cpcHandle }) {
-    const { cpc, ctrl, source } = cpcHandle;
+  test("错误的响应", async function ({ mockCpc: cpc }) {
+    const { ctrl } = cpc;
 
     ctrl.nextFrame({ type: FrameType.return, value: "value" }); //不存在的返回值"
     ctrl.nextFrame({ type: FrameType.throw, value: "value" });

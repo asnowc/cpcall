@@ -59,5 +59,5 @@ describe("数据类型二进制", function () {
 });
 
 function u8ArrToHex(u8Arr: Uint8Array) {
-  return Buffer.from(u8Arr, u8Arr.byteOffset, u8Arr.byteLength).toString("hex");
+  return Buffer.from(u8Arr.buffer, u8Arr.byteOffset, u8Arr.byteLength).toString("hex");
 }

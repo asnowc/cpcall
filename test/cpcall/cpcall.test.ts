@@ -11,7 +11,6 @@ import {
 } from "cpcall";
 import { afterTime } from "evlib";
 import * as mocks from "../__mocks__/cpc_socket.mock.ts";
-import { MockCpcFrameSource } from "../__mocks__/CpcMockControl.ts";
 import { cpcTest as test } from "../env/cpc.env.ts";
 
 /** 测试返回顺序 */
@@ -117,12 +116,11 @@ describe("状态更改", function () {
 
     await expect(pms).rejects.toThrowError(CpcFailAsyncRespondError);
   });
-  test("数据源实例发生异常后不能调用 sendFrame", async function () {
+  test("数据源实例发生异常后不能调用 sendFrame", async function ({ mockCpc: cpc }) {
     const err = new Error("源发生异常");
 
-    const ctrl = new MockCpcFrameSource();
-    const cpcall = new CpCall(ctrl);
-    cpcall.dispose(err);
+    const ctrl = cpc.mockSource;
+    cpc.dispose(err);
     ctrl.sendFrame.mockRestore();
     expect(ctrl.sendFrame).not.toBeCalled();
   });
