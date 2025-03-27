@@ -3,7 +3,7 @@ import { CpCall, createWebSocketCpcOnOpen, createWebStreamCpc } from "cpcall";
 async function onRpcConnected(cpc: CpCall) {
   cpc.exposeObject(globalThis);
   const remoteAlice = cpc.genCaller();
-  remoteAlice.console.log("Bob called Alice");
+  await remoteAlice.console.log("Bob called Alice");
   await cpc.endCall();
 }
 
@@ -22,7 +22,7 @@ function startHttpServe() {
       return new Response("hi");
     }
     const { response, socket } = Deno.upgradeWebSocket(req);
-    createWebSocketCpcOnOpen(socket).then(onRpcConnected, console.error);
+    createWebSocketCpcOnOpen(socket).then(onRpcConnected).catch(console.error);
     return response;
   });
 }

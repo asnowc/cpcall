@@ -54,7 +54,7 @@ import { CpCall, createSocketCpc } from "cpcall";
 async function onRpcConnected(cpc: CpCall) {
   cpc.exposeObject(globalThis);
   const remoteAlice = cpc.genCaller();
-  remoteAlice.console.log("Bob called Alice");
+  await remoteAlice.console.log("Bob called Alice");
   await cpc.endCall();
 }
 
@@ -92,7 +92,7 @@ import { CpCall, createWebStreamCpc } from "cpcall";
 async function onRpcConnected(cpc: CpCall) {
   cpc.exposeObject(globalThis);
   const remoteAlice = cpc.genCaller();
-  remoteAlice.console.log("Bob called Alice");
+  await remoteAlice.console.log("Bob called Alice");
   await cpc.endCall();
 }
 
@@ -130,7 +130,7 @@ Bob: websocket server. The server is implemented by Deno or Node
 async function onRpcConnected(cpc: CpCall) {
   cpc.exposeObject(globalThis);
   const remoteAlice = cpc.genCaller();
-  remoteAlice.console.log("Bob called Alice");
+  await remoteAlice.console.log("Bob called Alice");
   await cpc.endCall();
 }
 ```
@@ -177,7 +177,7 @@ async function connectWsCpc() {
   const remote = cpc.genCaller<typeof globalThis>();
   await remote.console.log("Alice called Bob");
 
-  await cpc.close();
+  await cpc.endCall();
 }
 
 connectWsCpc();
