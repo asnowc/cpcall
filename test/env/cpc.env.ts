@@ -1,5 +1,6 @@
 import { test, vi } from "vitest";
 import { CpCall, CpcFrameSource, CpcController, RpcFrame } from "cpcall";
+import { MockCpCall } from "../__mocks__/mock_cpc.ts";
 
 function mockConnectedCpc() {
   let c1Controller: CpcController<RpcFrame>;
@@ -53,34 +54,16 @@ function mockConnectedCpc() {
 }
 
 export interface CpcTestContext {
+  /** 两个已经建立连接的 CpCall 实例 */
   cpcSuite: ReturnType<typeof mockConnectedCpc>;
-  cpcHandle: CpcHandle;
+  /** 一个模拟 CpCall 实例，通过控制器与与它通信 */
+  mockCpc: MockCpCall;
 }
 export const cpcTest = test.extend<CpcTestContext>({
   async cpcSuite({}, use) {
     await use(mockConnectedCpc());
   },
-  async cpcHandle({}, use) {
-    await use(createCpcHandle());
+  async mockCpc({}, use) {
+    await use(new MockCpCall());
   },
 });
-
-class CpcHandle {
-  cpc!: CpCall;
-  source = {
-    close: vi.fn(),
-    dispose: vi.fn(),
-    sendFrame: vi.fn(),
-    init: vi.fn(),
-  } satisfies CpcFrameSource;
-  ctrl!: CpcController<RpcFrame>;
-}
-function createCpcHandle(): CpcHandle {
-  const hd: CpcHandle = new CpcHandle();
-  hd.source.init.mockImplementation((controller) => {
-    hd.ctrl = controller;
-  });
-  const cpc = new CpCall(hd.source);
-  hd.cpc = cpc;
-  return hd;
-}

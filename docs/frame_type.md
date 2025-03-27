@@ -1,39 +1,5 @@
 ## CPCALL RPC 数据帧协议
 
-### 数据帧格式:
-
-```
-|---8bit---|---n---|
-|Frame type|Content|
-```
-
-| DEC | BIN  | Frame Name | Content                    | Describe        |
-| --- | ---- | ---------- | -------------------------- | --------------- |
-| 0   | 0000 |            |                            |                 |
-| 1   | 0001 | call       | (JBOD dyArray content)     |                 |
-| 2   | 0010 | exec       | (JBOD dyArray content)     |                 |
-| 3   | 0011 |            |                            |                 |
-| 4   | 0100 |            |                            |                 |
-| 5   | 0101 |            |                            |                 |
-| 6   | 0110 |            |                            |                 |
-| 7   | 0111 |            |                            |                 |
-| 8   | 1000 | promise    | (varints)                  | Return Promise  |
-| 9   | 1001 | resolve    | (varints) + (JBOD content) | Promise resolve |
-| 10  | 1010 | reject     | (varints) + (JBOD content) | Promise reject  |
-| 11  | 1011 | return     | (JBOD content)             |                 |
-| 12  | 1100 | throw      | (JBOD content)             |                 |
-
-| dec | binary    | Frame type length | content length |
-| --- | --------- | ----------------- | -------------- |
-| 16  | 0001_0000 |                   |                |
-| 17  | 0001_0001 |                   |                |
-|     |           |                   |                |
-| 20  | 0001_0100 |                   |                |
-| 254 | 11111110  | endCall           | 0              |
-| 255 | 11111111  | endServe          | 0              |
-
-### All types of content:
-
 #### 调用帧
 
 ##### call
@@ -64,7 +30,9 @@ call 帧的发送顺序与响应帧的返回顺序相同，
 ##### promise
 
 如果调用没法立即给出结果，为了不阻塞其他响应帧，应返回一个 promise 帧，在得出结果后，resolve 帧或 reject 帧返回。\
-promise 帧会携带一个 id，id 为 varints 类型。id 由被调用方生成。
+promise 帧会携带一个 id，id 由被调用方生成。
+
+使用 JBOD 序列化的 id 是 varints 类型：
 
 ```
 |--varints--|
@@ -75,6 +43,8 @@ promise 帧会携带一个 id，id 为 varints 类型。id 由被调用方生成
 
 当异步有结果时，解决之前返回 的 promise 帧
 
+使用 JBOD 序列化的数据格式：
+
 ```
 |--varints--| |----JBOD----|
    asyncId     resolve arg
@@ -83,6 +53,8 @@ promise 帧会携带一个 id，id 为 varints 类型。id 由被调用方生成
 ##### reject
 
 当异步调用出现异常时，拒绝之前返回 的 promise 帧
+
+使用 JBOD 序列化的数据格式：
 
 ```
 |--varints--| |----JBOD----|
@@ -112,3 +84,41 @@ B 收到 endServe 帧后，B 的 callerStatus=2 , 然后立即返回一个 endCa
 
 当 A 的所有异步结果全部返回后， A 的 serviceStatus=2\
 当 B 等待的所有异步结果全部敲定后， B 的 callerStatus=3
+
+### RPC 数据帧 JBOD 序列化格式:
+
+数据帧由 1 字节的类型标识 + n 字节的帧内容，帧内容有序列化
+
+```
+|---8bit---|---n---|
+|Frame type|Content|
+```
+
+| DEC | HEX | BIN  | Frame Name | Content                    | Describe        |
+| --- | --- | ---- | ---------- | -------------------------- | --------------- |
+| 0   | 00  | 0000 |            |                            |                 |
+| 1   | 01  | 0001 | call       | (JBOD dyArray content)     |                 |
+| 2   | 02  | 0010 | exec       | (JBOD dyArray content)     |                 |
+| 3   | 03  | 0011 |            |                            |                 |
+| 4   | 04  | 0100 |            |                            |                 |
+| 5   | 05  | 0101 |            |                            |                 |
+| 6   | 06  | 0110 |            |                            |                 |
+| 7   | 07  | 0111 |            |                            |                 |
+| 8   | 09  | 1000 | promise    | (varints)                  | Return Promise  |
+| 9   | 09  | 1001 | resolve    | (varints) + (JBOD content) | Promise resolve |
+| 10  | 0A  | 1010 | reject     | (varints) + (JBOD content) | Promise reject  |
+| 11  | 0B  | 1011 | return     | (JBOD content)             |                 |
+| 12  | 0C  | 1100 | throw      | (JBOD content)             |                 |
+
+| DEC | HEX | BIN       | Frame type length | content length |
+| --- | --- | --------- | ----------------- | -------------- |
+| 16  | 10  | 0001_0000 |                   |                |
+| 17  | 11  | 0001_0001 |                   |                |
+|     |     |           |                   |                |
+| 20  | 14  | 0001_0100 |                   |                |
+| 254 | FE  | 1111_1110 | endCall           | 0              |
+| 255 | FF  | 1111_1111 | endServe          | 0              |
+
+### All types of content:
+
+TODO...

@@ -2,7 +2,7 @@
 
 - 远程调用可操作[远程代理对象](#expose-object)，与原生 JavaScript 调用语法几乎无差别
 - 可使用 [ECMA 装饰器](https://github.com/tc39/proposal-decorators)定义服务。 [查看装饰器的使用](./docs/use_decorator.md)
-- 与协议无关，可用于基于 TCP、IPC、WebSocket 等
+- 与协议无关，可基于 TCP、IPC、WebSocket 等
 - 类型安全
 - 双端远程调用
 - 数据传输默认采用 [JBOD](https://github.com/asnowc/jbod) **二进制**编码。相比 JSON，有如下优势：
@@ -14,118 +14,146 @@
 
 ### Expose globalThis
 
-下面的示例中，我们将在两端暴露全局对象，并在客户端调用服务端的 `console.log()` 方法后关闭连接
+下面的示例中，Alice 作为客户端，Bob 作为服务端。它们分别向对方暴露了全局对象，并相互调用了对方的 `console.log()` 方法后结束调用。
 
 #### Node
 
-tcp server
+Bob: tcp server
 
 ```ts
 import net from "node:net";
-import { createSocketCpc } from "cpcall";
-const server = new net.Server(async function (socket) {
-  const cpc = createSocketCpc(socket);
+import { CpCall, createSocketCpc } from "cpcall";
+
+async function onRpcConnected(cpc: CpCall) {
   cpc.exposeObject(globalThis);
-  const remote = cpc.genCaller();
-  remote.console.log("Hi, I am Server");
+  const remoteAlice = cpc.genCaller();
+  await remoteAlice.console.log("Bob called Alice");
+  await cpc.endCall();
+}
+
+const server = new net.Server((socket) => {
+  const cpc = createSocketCpc(socket);
+  onRpcConnected(cpc);
 });
 server.listen(8888);
 ```
 
-websocket server
+Alice: tcp client
 
 ```ts
-import { WebSocketServer } from "ws";
-import http from "node:http";
-import { createWebSocketCpcOnOpen } from "cpcall";
-const server = new http.Server();
-const wsServer = new WebSocketServer({ server });
-wsServer.on("connection", async (ws) => {
-  const cpc = await createWebSocketCpcOnOpen(ws);
-  cpc.exposeObject(globalThis);
-  const remote = cpc.genCaller();
-  remote.console.log("Hi, I am Server");
-});
-server.listen(8887);
-```
-
-tcp client
-
-```ts
-import { connect, Socket } from "node:net";
+import { connect } from "node:net";
 import { createSocketCpc } from "cpcall";
 
 const socket = connect(8888);
 socket.on("connect", async () => {
   const cpc = createSocketCpc(socket);
   const remote = cpc.genCaller<typeof globalThis>();
-  remote.console.log("Hi, I am Server");
-  await cpc.close();
+
+  await remote.console.log("Alice Called Bob");
+
+  await cpc.endCall();
 });
 ```
 
 #### Deno
 
-tcp server
+Bob: tcp server
 
 ```ts
-import { createWebStreamCpc } from "jsr:@asn/cpcall";
+import { CpCall, createWebStreamCpc } from "cpcall";
+
+async function onRpcConnected(cpc: CpCall) {
+  cpc.exposeObject(globalThis);
+  const remoteAlice = cpc.genCaller();
+  await remoteAlice.console.log("Bob called Alice");
+  await cpc.endCall();
+}
 
 const server = Deno.listen({ port: 8888 });
 for await (const conn of server) {
   const cpc = createWebStreamCpc(conn);
-  cpc.exposeObject(globalThis);
-  const remote = cpc.genCaller();
-  remote.console.log("Hi, I am Server");
+  onRpcConnected(cpc);
 }
 ```
 
-http server
+Alice: TCP client
 
 ```ts
-import { createWebSocketCpcOnOpen } from "jsr:@asn/cpcall";
+import { createWebStreamCpc } from "cpcall";
 
+async function connTcpCpc() {
+  const conn = await Deno.connect({ port: 8888 });
+  const cpc = createWebStreamCpc(conn);
+  cpc.exposeObject(globalThis);
+
+  const remoteBob = cpc.genCaller<typeof globalThis>();
+  await remoteBob.console.log("Alice called bob");
+
+  await cpc.endCall();
+}
+
+await connTcpCpc();
+```
+
+#### Browser
+
+Bob: websocket server。服务端由 deno 或 node 实现
+
+```ts
+async function onRpcConnected(cpc: CpCall) {
+  cpc.exposeObject(globalThis);
+  const remoteAlice = cpc.genCaller();
+  await remoteAlice.console.log("Bob called Alice");
+  await cpc.endCall();
+}
+```
+
+Deno http 服务
+
+```ts
+import { CpCall, createWebSocketCpcOnOpen } from "cpcall";
 Deno.serve({ port: 8887 }, function (req, res): Response {
   const upgrade = req.headers.get("upgrade") || "";
   if (upgrade.toLowerCase() != "websocket") {
     return new Response("hi");
   }
   const { response, socket } = Deno.upgradeWebSocket(req);
-  createWebSocketCpcOnOpen(socket).then((cpc): void => {
-    cpc.exposeObject(globalThis);
-    const remote = cpc.genCaller();
-    remote.console.log("Hi, I am Server");
-  }, console.error);
+  createWebSocketCpcOnOpen(socket).then(onRpcConnected, console.error);
   return response;
 });
 ```
 
-tcp client
+Node http 服务
 
 ```ts
-import { createWebStreamCpc } from "jsr:@asn/cpcall";
+import { WebSocketServer } from "npm:ws";
+import http from "node:http";
+import { CpCall, createWebSocketCpcOnOpen } from "cpcall";
 
-const conn = await Deno.connect({ port: 8888 });
-const cpc = createWebStreamCpc(conn);
-cpc.exposeObject(globalThis);
-
-const remote = cpc.genCaller<typeof globalThis>();
-remote.console.log("Hi, I am Server");
-await cpc.close();
+const server = new http.Server();
+const wsServer = new WebSocketServer({ server });
+wsServer.on("connection", async (ws) => {
+  createWebSocketCpcOnOpen(ws).then(onRpcConnected);
+});
+server.listen(8887);
 ```
 
-#### Browser
+Alice: websocket client
 
 ```ts
-import { createWebSocketCpcOnOpen } from "https://esm.sh/cpcall";
+import { createWebSocketCpcOnOpen } from "https://esm.sh/cpcall@0.6.x";
 
-const ws = new WebSocket("ws://127.0.0.1:8887");
-const cpc = await createWebSocketCpcOnOpen(ws);
-cpc.exposeObject(globalThis);
-const remote = cpc.genCaller<typeof globalThis>();
-remote.console.log("Hi, I am Server");
+async function connectWsCpc() {
+  const ws = new WebSocket("ws://127.0.0.1:8887");
+  const cpc = await createWebSocketCpcOnOpen(ws);
+  cpc.exposeObject(globalThis);
+  const remote = cpc.genCaller<typeof globalThis>();
+  await remote.console.log("Alice called Bob");
 
-await cpc.close();
+  await cpc.endCall();
+}
+
+connectWsCpc();
 ```
 
 ### Expose object
