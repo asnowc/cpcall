@@ -5,10 +5,10 @@ async function connTcpCpc() {
   const cpc = createWebStreamCpc(conn);
   cpc.exposeObject(globalThis);
 
-  const remote = cpc.genCaller<typeof globalThis>();
-  await remote.console.log("Hello, I am Client");
+  const remoteBob = cpc.genCaller<typeof globalThis>();
+  await remoteBob.console.log("Alice called bob");
 
-  await cpc.close();
+  await cpc.endCall();
 }
 
 await connTcpCpc();

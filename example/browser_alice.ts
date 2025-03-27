@@ -5,7 +5,7 @@ async function connectWsCpc() {
   const cpc = await createWebSocketCpcOnOpen(ws);
   cpc.exposeObject(globalThis);
   const remote = cpc.genCaller<typeof globalThis>();
-  await remote.console.log("Hello, I am Client");
+  await remote.console.log("Alice called Bob");
 
   await cpc.close();
 }
