@@ -88,7 +88,7 @@ export class CalleeCore {
   }
 
   private handelReturnPromise(pms: Promise<any>) {
-    const id = this.#sendingUniqueKey.allowKeySet(pms);
+    const id = this.#sendingUniqueKey.allocKeySet(pms);
     this.sendCtrl.sendFrame({ type: FrameType.promise, id });
     return pms
       .then(

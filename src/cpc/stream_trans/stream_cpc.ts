@@ -1,12 +1,13 @@
 import { FrameType } from "../core/const.ts";
 import { RpcFrame, Frame } from "../core/type.ts";
 import JBOD, { DataType, varints, UnsupportedDataTypeError, DataWriter } from "jbod";
-import { StepsByteParser, LengthByteParser, ByteParser } from "../../deps/evlib.ts";
+import { ByteParser } from "../../deps/evlib.ts";
 
 const U32DByteParser = varints.U32DByteParser;
+
 /** 收集二进制chunk, 拼接成完整的二进制帧 */
 export function createCpcFrameParser(): ByteParser<Uint8Array> {
-  return new StepsByteParser<Uint8Array>({ first: new U32DByteParser() }, (len: number) => new LengthByteParser(len));
+  return new CpcFrameByteParser();
 }
 
 /** 解码二进制帧。输入应该是通过 packageCpcFrame 生成的二进制块，可以是经过流的碎片 */
@@ -160,6 +161,59 @@ export class CpcFrameEncoder {
   encode() {
     let buf = new Uint8Array(this.byteLength);
     this.encodeInto(buf, 0);
+    return buf;
+  }
+}
+class CpcFrameByteParser extends ByteParser<Uint8Array> {
+  #u32d = new U32DByteParser();
+  #totalLen?: number;
+  #requiredLen?: number;
+  private list: Uint8Array[] = [];
+  next(chunk: Uint8Array): boolean {
+    if (this.#totalLen === undefined) {
+      if (this.#u32d.next(chunk)) {
+        const { value, residue } = this.#u32d.finish();
+        this.#requiredLen = value;
+        this.#totalLen = value;
+        if (residue) return this.#nextBy(residue, value);
+
+        return false;
+      }
+      return false;
+    } else {
+      return this.#nextBy(chunk, this.#requiredLen!);
+    }
+  }
+  #nextBy(chunk: Uint8Array, len: number): boolean {
+    if (chunk.byteLength > len) {
+      this.list.push(chunk.subarray(0, len));
+      this.result = { value: this.#concatU8Arr(), residue: chunk.subarray(len) };
+      return true;
+    } else if (chunk.byteLength === len) {
+      this.list.push(chunk);
+      this.result = { value: this.#concatU8Arr() };
+      return true;
+    } else {
+      this.list.push(chunk);
+      this.#requiredLen = len - chunk.byteLength;
+      return false;
+    }
+  }
+  #concatU8Arr(): Uint8Array {
+    const totalLen = this.#totalLen!;
+    let buf: Uint8Array;
+    if (this.list.length === 1) buf = this.list[0];
+    else {
+      buf = new Uint8Array(totalLen);
+      let offset = 0;
+      for (let i = 0; i < this.list.length; i++) {
+        buf.set(this.list[i], offset);
+        offset += this.list[i].byteLength;
+      }
+    }
+    this.list.length = 0;
+    this.#totalLen = undefined;
+    this.#requiredLen = undefined;
     return buf;
   }
 }
