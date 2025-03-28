@@ -1,6 +1,6 @@
 {
   "name": "@asn/cpcall",
-  "version": "0.6.7",
+  "version": "0.6.8",
   "imports": {
     "jbod": "jsr:@asn/jbod@^0.5.1",
     "cpcall": "./src/mod.ts"

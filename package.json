@@ -1,6 +1,6 @@
 {
   "name": "cpcall",
-  "version": "0.6.7",
+  "version": "0.6.8",
   "description": "A protocol independent library designed for remote procedure call (RPC) in JavaScript",
   "type": "module",
   "scripts": {
