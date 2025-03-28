@@ -60,7 +60,7 @@ test("service 继承 service", async function ({ cpcSuite }) {
   @RpcService()
   class A extends Include {
     @rpcExclude //排除父类暴露的方法
-    method2 = super.method2;
+    override method2 = super.method2;
   }
 
   cpc2.exposeObject(new A());

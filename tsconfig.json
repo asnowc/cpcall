@@ -10,6 +10,7 @@
     "isolatedModules": true,
     "allowJs": true,
     "allowImportingTsExtensions": true,
+    "noImplicitOverride": true,
     "rewriteRelativeImportExtensions": true,
     "paths": {
       "cpcall": ["./src/mod.ts"]

@@ -49,7 +49,7 @@ export class CpCall extends CpCallBase {
    *
    * ```
    */
-  static call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T> {
+  static override call<T extends (...args: any[]) => any>(proxyObj: T, ...args: Parameters<T>): ReturnType<T> {
     const { cpc, path } = getProxyInfo(proxyObj);
     return cpc.call(path.join(cpc.#separator), ...args) as Promise<any> as any;
   }
