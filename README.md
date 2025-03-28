@@ -41,7 +41,7 @@
 
 ### Expose globalThis
 
-In the example below, we'll expose the global object on both sides and close the connection after the client calls the server's `console.log()` method
+In the following example, Alice serves as the client and Bob serves as the server. They exposed global objects to each other and called each other's `console.log()` method before ending the call.
 
 #### Node
 
