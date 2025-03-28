@@ -311,8 +311,8 @@ export class UnregisteredMethodError extends Error {
 
 // Warnings were encountered during analysis:
 //
-// dist/mod.d.ts:503:5 - (ae-forgotten-export) The symbol "PruneReadableStream" needs to be exported by the entry point index.d.ts
-// dist/mod.d.ts:504:5 - (ae-forgotten-export) The symbol "PruneWritableStream" needs to be exported by the entry point index.d.ts
+// src/web/stream.ts:9:5 - (ae-forgotten-export) The symbol "PruneReadableStream" needs to be exported by the entry point index.d.ts
+// src/web/stream.ts:10:5 - (ae-forgotten-export) The symbol "PruneWritableStream" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

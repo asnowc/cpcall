@@ -2,8 +2,7 @@
   "name": "@asn/cpcall",
   "version": "0.6.7",
   "imports": {
-    "jbod": "jsr:@asn/jbod@^0.5.0",
-    "evlib": "jsr:@asn/evlib@^2.6.1",
+    "jbod": "jsr:@asn/jbod@^0.5.1",
     "cpcall": "./src/mod.ts"
   },
   "tasks": {

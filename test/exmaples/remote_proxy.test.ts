@@ -1,7 +1,7 @@
 import { expect, vi } from "vitest";
 import { CpCall } from "cpcall";
 import { cpcTest as test } from "../env/cpc.env.ts";
-import { afterTime } from "evlib";
+import { afterTime } from "../utils/time.ts";
 
 interface SubCall {
   ab: number;
