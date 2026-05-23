@@ -5,6 +5,7 @@ import deno from "@deno/vite-plugin";
 const root = __dirname;
 
 export default defineConfig({
+  esbuild: { target: "es2024" },
   plugins: [deno()],
   test: {
     api: 8809,
