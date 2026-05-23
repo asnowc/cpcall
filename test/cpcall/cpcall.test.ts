@@ -50,7 +50,7 @@ describe("返回值", function () {
     fn.mockImplementation(() => {
       throw new Error("yy");
     });
-    await expect(clientCpc.call("fn"), "message 与远程抛出的异常一致").rejects.toThrowError("yy");
+    await expect(clientCpc.call("fn"), "message 与远程抛出的异常一致").rejects.toThrow("yy");
     await expect(clientCpc.call("fn")).rejects.toBeInstanceOf(RemoteCallError);
   });
   test("远程函数抛出非 Error 对象，本地端应抛出原始值", async function () {
@@ -65,7 +65,7 @@ describe("返回值", function () {
     fn.mockImplementation(async () => {
       throw new Error("yy");
     });
-    await expect(clientCpc.call("fn")).rejects.toThrowError("yy");
+    await expect(clientCpc.call("fn")).rejects.toThrow("yy");
     await expect(clientCpc.call("fn")).rejects.toBeInstanceOf(RemoteCallError);
   });
   test("远程异步函数抛出非 Error 对象，本地端应抛出 RemoteCallError", async function () {
@@ -89,7 +89,7 @@ test("Alice 调用 endServe() 后, Bob 继续尝试发起调用将会抛出异�
 
   expect(Alice.callable).toBeTruthy();
   expect(Bob.callable, "Bob 将不能再发起调用").toBeFalsy();
-  await expect(Bob.call("cmd"), "Bob call Alice 将会被拒绝").rejects.toThrowError();
+  await expect(Bob.call("cmd"), "Bob call Alice 将会被拒绝").rejects.toThrow();
   await expect(Alice.call("cmd"), "Alice 可以继续 call Bob").resolves.toBe(2);
 
   expect(Bob.serviceStatus).toBe(ServiceStatus.serving);
@@ -108,7 +108,7 @@ test("Bob 调用 endCall() 后, Bob 继续尝试发起调用将会抛出异常",
   expect(Bob.callable, "Bob 不能再继续发起调用").toBeFalsy();
   expect(Alice.callable).toBeTruthy();
 
-  await expect(Bob.call("cmd"), "Bob 尝试 call Alice 将抛出异常").rejects.toThrowError();
+  await expect(Bob.call("cmd"), "Bob 尝试 call Alice 将抛出异常").rejects.toThrow();
   await expect(Alice.call("cmd")).resolves.toBe(2);
 
   expect(Bob.serviceStatus).toBe(ServiceStatus.serving);

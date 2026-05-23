@@ -36,12 +36,10 @@ class Service1 {
 
 cpc2.exposeObject(new Service1());
 
-const service1 = cpc1.genCaller<Service1>();
+await expect(cpc1.call("property")).resolves.toBe("result");
+await expect(cpc1.call("method1", 1), "经过了拦截器").resolves.toBe("2-res-r");
 
-await expect(service1.property()).resolves.toBe("result");
-await expect(service1.method1(1), "经过了拦截器").resolves.toBe("2-res-r");
-
-await expect(service1.method2(), "method2 没有显示定义").rejects.toThrowError();
+await expect(cpc1.call("method2"), "method2 没有显示定义").rejects.toThrow();
 ```
 
 ## @RpcService()
@@ -106,12 +104,11 @@ class A extends Include {
 }
 
 cpc2.exposeObject(new A());
-const a = cpc1.genCaller<A>();
 
-await expect(a.method1(), "调用继承方法，继承方法已经标记暴露").resolves.toBe(1);
-await expect(a.method2(), "调用继承方法，子类已排除").rejects.toThrowError();
-await expect(a.method3(), "method3 在父类没有被标记").rejects.toThrowError();
-await expect(a.method4(), "method4 在父类标记了排除").rejects.toThrowError();
+await expect(cpc1.call("method1"), "调用继承方法，继承方法已经标记暴露").resolves.toBe(1);
+await expect(cpc1.call("method2"), "调用继承方法，子类已排除").rejects.toThrow();
+await expect(cpc1.call("method3"), "method3 在父类没有被标记").rejects.toThrow();
+await expect(cpc1.call("method4"), "method4 在父类标记了排除").rejects.toThrow();
 ```
 
 ```ts
@@ -119,10 +116,9 @@ await expect(a.method4(), "method4 在父类标记了排除").rejects.toThrowErr
 class A extends Exclude {}
 
 cpc2.exposeObject(new A());
-const a = cpc1.genCaller<A>();
 
-await expect(a.method1(), "method1 没有标注").rejects.toThrowError();
-await expect(a.method2(), "method2 标注了排除").rejects.toThrowError();
+await expect(cpc1.call("method1"), "method1 没有标注").rejects.toThrow();
+await expect(cpc1.call("method2"), "method2 标注了排除").rejects.toThrow();
 ```
 
 标注 @RpcService(RpcDefineMode.exclude)：当前类和父类只有标注了 @rpcExclude 才不会被暴露
@@ -136,12 +132,11 @@ class A extends Include {
 }
 
 cpc2.exposeObject(new A());
-const a = cpc1.genCaller<A>();
 
-await expect(a.method5(), "method2 在父类中标记暴露").resolves.toBe(5);
-await expect(a.method2(), "method2 在父类中标记暴露").resolves.toBe(2);
-await expect(a.method3(), "method2 在父类中没有被标记").resolves.toBe(3);
-await expect(a.method4(), "method4 在父类中已标记排除，应抛出异常").rejects.toThrowError();
+await expect(cpc1.call("method5"), "method2 在父类中标记暴露").resolves.toBe(5);
+await expect(cpc1.call("method2"), "method2 在父类中标记暴露").resolves.toBe(2);
+await expect(cpc1.call("method3"), "method2 在父类中没有被标记").resolves.toBe(3);
+await expect(cpc1.call("method4"), "method4 在父类中已标记排除，应抛出异常").rejects.toThrow();
 ```
 
 普通类，没有标注 @RpcService(): 会继承父类的标注信息
@@ -166,8 +161,7 @@ manualDecorateClass(A, RpcService(), {
 });
 
 cpc2.exposeObject(new A());
-const a = cpc1.genCaller<A>();
-await expect(a.method1()).resolves.toBe("InterceptReturn");
-await expect(a.method2()).resolves.toBe(2);
-await expect(a.method3(), "method3 没有被标记").rejects.toThrowError();
+await expect(cpc1.call("method1")).resolves.toBe("InterceptReturn");
+await expect(cpc1.call("method2")).resolves.toBe(2);
+await expect(cpc1.call("method3"), "method3 没有被标记").rejects.toThrow();
 ```

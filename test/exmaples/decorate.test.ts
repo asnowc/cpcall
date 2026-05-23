@@ -1,13 +1,13 @@
 import { expect } from "vitest";
 import {
-  RpcService,
-  RpcExposed,
-  ServiceDefineMode,
+  RemoteCallError,
   rpcExclude,
-  UnregisteredMethodError,
+  RpcExposed,
   RpcInterceptCall,
   RpcInterceptReturn,
-  RemoteCallError,
+  RpcService,
+  ServiceDefineMode,
+  UnregisteredMethodError,
 } from "cpcall";
 import { cpcTest as test } from "../env/cpc.env.ts";
 test("@RpcService() 装饰的类只有装饰了 RpcExposed() 的方法或属性会被暴露", async function ({ cpcSuite }) {
@@ -15,13 +15,15 @@ test("@RpcService() 装饰的类只有装饰了 RpcExposed() 的方法或属性�
 
   @RpcService()
   class Service {
-    @RpcExposed() exposedMethod() {
+    @RpcExposed()
+    exposedMethod() {
       return "exposed";
     }
     hiddenMethod() {
       return "hidden";
     }
-    @RpcExposed() exposedAtt = () => {
+    @RpcExposed()
+    exposedAtt = () => {
       return "exposedAtt";
     };
     hiddenAtt = () => {
@@ -30,51 +32,53 @@ test("@RpcService() 装饰的类只有装饰了 RpcExposed() 的方法或属性�
   }
 
   cpc2.exposeObject(new Service());
-  const service = cpc1.genCaller<Service>();
 
-  await expect(service.exposedMethod()).resolves.toBe("exposed");
-  await expect(service.hiddenMethod()).rejects.toThrowError(
-    creteRemoteCallError(new UnregisteredMethodError("hiddenMethod"))
+  await expect(cpc1.call("exposedMethod")).resolves.toBe("exposed");
+  await expect(cpc1.call("hiddenMethod")).rejects.toThrow(
+    creteRemoteCallError(new UnregisteredMethodError("hiddenMethod")),
   );
-  await expect(service.exposedAtt()).resolves.toBe("exposedAtt");
-  await expect(service.hiddenAtt()).rejects.toThrowError(
-    creteRemoteCallError(new UnregisteredMethodError("hiddenAtt"))
-  );
-});
-test("@RpcService(ServiceDefineMode.exclude)  装饰的类型只有装饰了 rpcExclude 的方法或属性才不会被暴露 ", async function ({
-  cpcSuite,
-}) {
-  const { cpc1, cpc2 } = cpcSuite;
-
-  @RpcService(ServiceDefineMode.exclude)
-  class Service {
-    exposedMethod() {
-      return "exposed";
-    }
-    @rpcExclude
-    hiddenMethod() {
-      return "hidden";
-    }
-    exposedAtt = () => {
-      return "exposedAtt";
-    };
-    @rpcExclude hiddenAtt = () => {
-      return "hidden";
-    };
-  }
-
-  cpc2.exposeObject(new Service());
-  const service = cpc1.genCaller<Service>();
-
-  await expect(service.exposedMethod()).resolves.toBe("exposed");
-  await expect(service.hiddenMethod()).rejects.toThrowError(
-    creteRemoteCallError(new UnregisteredMethodError("hiddenMethod"))
-  );
-  await expect(service.exposedAtt()).resolves.toBe("exposedAtt");
-  await expect(service.hiddenAtt()).rejects.toThrowError(
-    creteRemoteCallError(new UnregisteredMethodError("hiddenAtt"))
+  await expect(cpc1.call("exposedAtt")).resolves.toBe("exposedAtt");
+  await expect(cpc1.call("hiddenAtt")).rejects.toThrow(
+    creteRemoteCallError(new UnregisteredMethodError("hiddenAtt")),
   );
 });
+test(
+  "@RpcService(ServiceDefineMode.exclude)  装饰的类型只有装饰了 rpcExclude 的方法或属性才不会被暴露 ",
+  async function ({
+    cpcSuite,
+  }) {
+    const { cpc1, cpc2 } = cpcSuite;
+
+    @RpcService(ServiceDefineMode.exclude)
+    class Service {
+      exposedMethod() {
+        return "exposed";
+      }
+      @rpcExclude
+      hiddenMethod() {
+        return "hidden";
+      }
+      exposedAtt = () => {
+        return "exposedAtt";
+      };
+      @rpcExclude
+      hiddenAtt = () => {
+        return "hidden";
+      };
+    }
+
+    cpc2.exposeObject(new Service());
+
+    await expect(cpc1.call("exposedMethod")).resolves.toBe("exposed");
+    await expect(cpc1.call("hiddenMethod")).rejects.toThrow(
+      creteRemoteCallError(new UnregisteredMethodError("hiddenMethod")),
+    );
+    await expect(cpc1.call("exposedAtt")).resolves.toBe("exposedAtt");
+    await expect(cpc1.call("hiddenAtt")).rejects.toThrow(
+      creteRemoteCallError(new UnregisteredMethodError("hiddenAtt")),
+    );
+  },
+);
 
 test("可以通过 @RpcInterceptCall() 装饰器设置参数拦截器", async function ({ cpcSuite }) {
   const { cpc1, cpc2 } = cpcSuite;
@@ -89,9 +93,8 @@ test("可以通过 @RpcInterceptCall() 装饰器设置参数拦截器", async fu
   }
 
   cpc2.exposeObject(new Service());
-  const service = cpc1.genCaller<Service>();
 
-  await expect(service.method(5)).resolves.toBe(10);
+  await expect(cpc1.call("method", 5)).resolves.toBe(10);
 });
 test("可以通过 @RpcInterceptReturn() 装饰器设置响应拦截器", async function ({ cpcSuite }) {
   const { cpc1, cpc2 } = cpcSuite;
@@ -106,9 +109,8 @@ test("可以通过 @RpcInterceptReturn() 装饰器设置响应拦截器", async 
   }
 
   cpc2.exposeObject(new Service());
-  const service = cpc1.genCaller<Service>();
 
-  await expect(service.method()).resolves.toBe("result-intercepted");
+  await expect(cpc1.call("method")).resolves.toBe("result-intercepted");
 });
 
 test("子服务", async function ({ cpcSuite }) {
@@ -147,19 +149,17 @@ test("子服务", async function ({ cpcSuite }) {
   }
 
   cpc2.exposeObject(new Service1());
-  const service = cpc1.genCaller<Service1>();
+  await expect(cpc1.call("obj2.method")).resolves.toBe(1);
+  await expect(cpc1.call("service3.s2Method3")).resolves.toBe(1);
 
-  await expect(service.obj2.method()).resolves.toBe(1);
-  await expect(service.service3.s2Method3()).resolves.toBe(1);
-
-  await expect(service.obj1.method(), "obj1 没有被标记暴露").rejects.toThrowError(
-    creteRemoteCallError(new UnregisteredMethodError("obj1.method"))
+  await expect(cpc1.call("obj1.method"), "obj1 没有被标记暴露").rejects.toThrow(
+    creteRemoteCallError(new UnregisteredMethodError("obj1.method")),
   );
-  await expect(service.service2.s2Method3(), "service2 没有被标记暴露，应无法调用").rejects.toThrowError(
-    creteRemoteCallError(new UnregisteredMethodError("service2.s2Method3"))
+  await expect(cpc1.call("service2.s2Method3"), "service2 没有被标记暴露，应无法调用").rejects.toThrow(
+    creteRemoteCallError(new UnregisteredMethodError("service2.s2Method3")),
   );
-  await expect(service.service3.s2Method2(), "s2Method2标记了排除，应无法调用").rejects.toThrowError(
-    creteRemoteCallError(new UnregisteredMethodError("service3.s2Method2"))
+  await expect(cpc1.call("service3.s2Method2"), "s2Method2标记了排除，应无法调用").rejects.toThrow(
+    creteRemoteCallError(new UnregisteredMethodError("service3.s2Method2")),
   );
 });
 function creteRemoteCallError(err: Error) {

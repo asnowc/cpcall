@@ -116,7 +116,7 @@ test("接受到错误帧，将被忽略", async function ({ mockCpc: cpc }) {
   const r2 = cpc.call();
   ctrl.nextFrame({ type: FrameType.promise, id: 1 });
   ctrl.nextFrame({ type: FrameType.promise, id: 1 });
-  await expect(r2).rejects.toThrowError();
+  await expect(r2).rejects.toThrow();
   ctrl.nextFrame({ type: FrameType.resolve, id: 1, value: "r1" });
   cpc.dispose();
 
@@ -132,7 +132,7 @@ test("发起调用, 在返回前调用 dispose(), 挂起的 Promise 应该立即
   cpc.dispose(err);
 
   expect(cpc.callerStatus).toBe(CallerStatus.finished);
-  await expect(promise, "在返回前中断").rejects.toThrowError(CpcFailRespondError);
+  await expect(promise, "在返回前中断").rejects.toThrow(CpcFailRespondError);
 });
 test("发起调用, 远程已经返回了异步id，本地端强行断开连接后，挂起的 Promise 应被 CpcFailAsyncRespondError 拒绝", async function ({
   mockCpc: cpc,
@@ -146,7 +146,7 @@ test("发起调用, 远程已经返回了异步id，本地端强行断开连接�
   cpc.dispose();
   expect(cpc.callerStatus).toBe(CallerStatus.finished);
 
-  await expect(promise).rejects.toThrowError(CpcFailAsyncRespondError);
+  await expect(promise).rejects.toThrow(CpcFailAsyncRespondError);
 });
 
 test("数据源实例发生异常后 sendFrame 应不会被调用", async function ({ mockCpc: cpc }) {

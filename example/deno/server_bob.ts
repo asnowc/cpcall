@@ -2,8 +2,7 @@ import { CpCall, createWebSocketCpcOnOpen, createWebStreamCpc } from "cpcall";
 
 async function onRpcConnected(cpc: CpCall) {
   cpc.exposeObject(globalThis);
-  const remoteAlice = cpc.genCaller();
-  await remoteAlice.console.log("Bob called Alice");
+  await cpc.call("console.log", "Bob called Alice");
   await cpc.endCall();
 }
 

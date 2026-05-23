@@ -41,7 +41,6 @@ cpc.exposeObject({
 client
 
 ```ts
-//caller 是远程代理对象，由 cpc.genCaller() 生成
-const res = await caller.updateItem("1", { name: "updated" });
+const res = await cpc.call("updateItem", "1", { name: "updated" });
 console.log(res);
 ```
