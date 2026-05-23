@@ -16,6 +16,8 @@ jobs:
         run: deno install --frozen
       - name: Check type
         run: deno task check-type
+      - name: publish-dry
+        run: deno task publish-dry
 
   test-node:
     strategy:
