@@ -1,5 +1,6 @@
 import { expect } from "vitest";
 import { cpcTest as test } from "../env/cpc.env.ts";
+import { setTimeout } from "node:timers";
 
 class Service {
   add(a: number, b: number) {

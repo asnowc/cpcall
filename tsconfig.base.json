@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ESNext",
+    "lib": ["ESNext"],
+    "strict": true,
+    "skipDefaultLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "allowJs": true,
+    "allowImportingTsExtensions": true,
+    "noImplicitOverride": true,
+    "rewriteRelativeImportExtensions": true,
+    "paths": {
+      "cpcall": ["./src/mod.ts"]
+    }
+  }
+}

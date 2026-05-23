@@ -2,6 +2,7 @@ import { expect } from "vitest";
 import { FrameType, Frame, CallerStatus, ServiceStatus, CpcFailRespondError, CpcFailAsyncRespondError } from "cpcall";
 import { cpcTest as test } from "../env/cpc.env.ts";
 import { afterTime } from "../utils/time.ts";
+import { setTimeout } from "node:timers";
 
 /**
  * 测试实例的状态变化

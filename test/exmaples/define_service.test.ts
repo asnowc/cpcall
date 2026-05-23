@@ -1,6 +1,7 @@
 import { expect } from "vitest";
 import { UnregisteredMethodError, RemoteCallError } from "cpcall";
 import { cpcTest as test } from "../env/cpc.env.ts";
+import { setTimeout } from "node:timers";
 
 test("可以调用 getter", async function ({ cpcSuite }) {
   const { cpc1, cpc2 } = cpcSuite;

@@ -1,8 +1,9 @@
-import { RpcFrame, FrameType } from "cpcall";
-import { describe } from "node:test";
+import { FrameType, RpcFrame } from "cpcall";
+import { describe } from "vitest";
 import { expect, test } from "vitest";
 import { baseDataTypes } from "../__mocks__/data_type.cases.ts";
 import { CpcFrameEncoder } from "../../src/cpc/stream_trans/mod.ts";
+import { Buffer } from "node:buffer";
 /**
  * 这个测试 CpCall 的数据帧编码是否正常
  */
