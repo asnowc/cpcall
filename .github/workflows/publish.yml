@@ -21,15 +21,19 @@ jobs:
           node-version: 26
           registry-url: https://registry.npmjs.org
       - uses: actions/checkout@v6
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2
+          cache: true
       - name: Install dependencies
         run: deno install --frozen
 
       - name: Build
         run: deno task build
-      - name: Publish-Jsr
-        run: npx jsr publish
+      - name: Publish
+        run: npm publish
   publish-jsr:
-    if: ${{github.repository_owner != 'asnowc'}}
+    if: ${{github.repository_owner == 'asnowc'}}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
