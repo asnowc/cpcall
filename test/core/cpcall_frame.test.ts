@@ -31,7 +31,7 @@ test("call-throw", async function ({ cpcSuite }) {
       throw new Error("hhh");
     },
   });
-  await expect(cpc1.call("cmd")).rejects.toThrowError("hhh");
+  await expect(cpc1.call("cmd")).rejects.toThrow("hhh");
 
   expect(cpc2Src.sendFrame.mock.calls[0][0], "return frame").toMatchObject({
     type: FrameType.throw,

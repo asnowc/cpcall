@@ -1,19 +1,29 @@
 {
   "name": "@asn/cpcall",
-  "version": "0.6.8",
+  "version": "0.7.0",
+
   "imports": {
     "jbod": "jsr:@asn/jbod@^0.5.1",
     "cpcall": "./src/mod.ts"
   },
   "tasks": {
-    "publish-dry": "deno publish --dry-run --allow-dirty"
+    "check-type:core": "deno x tsc -p tsconfig.lib.json",
+    "check-type": "deno check",
+    "publish-dry": "deno publish --dry-run --allow-dirty",
+    "test": "deno x vitest run",
+    "test:coverage": "deno x vitest --coverage --ui",
+    "test:node": "node node_modules/vitest/vitest.mjs run",
+    "build": "deno x tsc -p tsconfig.lib.json --noEmit false"
   },
   "exports": {
     ".": "./src/mod.ts"
+  },
+  "fmt": {
+    "lineWidth": 120
   },
   "publish": {
     "include": ["README.md", "LICENSE", "src/**/*.ts"]
   },
   "nodeModulesDir": "manual",
-  "lock": false
+  "exclude": ["example", "dist"]
 }

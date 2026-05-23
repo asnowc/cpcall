@@ -7,35 +7,45 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v6
+      - uses: denoland/setup-deno@v2
         with:
-          run_install: true
+          deno-version: v2
+          cache: true
+      - name: Install dependencies
+        run: deno install --frozen
       - name: Check type
-        run: pnpm ci:check-type
-      - name: Build
-        if: ${{ github.ref_name == 'main' }}
-        run: pnpm run ci:build
-      - name: Check Api
-        if: ${{ github.ref_name == 'main' }}
-        run: pnpm run ci:check-api
+        run: deno task check-type
+      - name: publish-dry
+        run: deno task publish-dry
 
-  test:
+  test-node:
     strategy:
       matrix:
-        node-version: [18, 20, 22]
+        node-version: [18, 24, 26]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v6
+      - uses: denoland/setup-deno@v2
         with:
-          run_install: false
-      - uses: actions/setup-node@v4
+          deno-version: v2
+          cache: true
+      - name: Install dependencies
+        run: deno install --frozen
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{matrix.node-version}}
-          cache: pnpm
-      - run: pnpm install
       - name: Test
-        run: pnpm ci:test
+        run: deno task test:node
+  test-deno:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2
+          cache: true
+      - name: Install dependencies
+        run: deno install --frozen
+      - name: Test
+        run: deno task test

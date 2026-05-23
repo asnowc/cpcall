@@ -1,6 +1,7 @@
 import { expect } from "vitest";
 import { UnregisteredMethodError, RemoteCallError } from "cpcall";
 import { cpcTest as test } from "../env/cpc.env.ts";
+import { setTimeout } from "node:timers";
 
 test("可以调用 getter", async function ({ cpcSuite }) {
   const { cpc1, cpc2 } = cpcSuite;
@@ -60,9 +61,9 @@ test("循环引用也能调用", async function ({ cpcSuite }) {
 test("尝试调用非函数将抛出 UnregisteredMethodError 异常", async function ({ cpcSuite }) {
   const { cpc1, cpc2 } = cpcSuite;
   cpc2.exposeObject({ att1: 8, att2: null, att3: "string" });
-  await expect(cpc1.call("att1")).rejects.toThrowError(creteRemoteCallError(new UnregisteredMethodError("att1")));
-  await expect(cpc1.call("att2")).rejects.toThrowError(creteRemoteCallError(new UnregisteredMethodError("att2")));
-  await expect(cpc1.call("att3")).rejects.toThrowError(creteRemoteCallError(new UnregisteredMethodError("att3")));
+  await expect(cpc1.call("att1")).rejects.toThrow(creteRemoteCallError(new UnregisteredMethodError("att1")));
+  await expect(cpc1.call("att2")).rejects.toThrow(creteRemoteCallError(new UnregisteredMethodError("att2")));
+  await expect(cpc1.call("att3")).rejects.toThrow(creteRemoteCallError(new UnregisteredMethodError("att3")));
 });
 
 function creteRemoteCallError(err: Error) {

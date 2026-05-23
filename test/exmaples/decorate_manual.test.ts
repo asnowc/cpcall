@@ -1,5 +1,5 @@
 import { expect } from "vitest";
-import { RpcService, RpcExposed, RpcInterceptReturn, manualDecorateClass } from "cpcall";
+import { manualDecorateClass, RpcExposed, RpcInterceptReturn, RpcService } from "cpcall";
 import { cpcTest as test } from "../env/cpc.env.ts";
 
 test("manualDecorateClass", async function ({ cpcSuite }) {
@@ -22,8 +22,7 @@ test("manualDecorateClass", async function ({ cpcSuite }) {
   const { cpc1, cpc2 } = cpcSuite;
 
   cpc2.exposeObject(new A());
-  const a = cpc1.genCaller<A>();
-  await expect(a.method1()).resolves.toBe("InterceptReturn");
-  await expect(a.method2()).resolves.toBe(2);
-  await expect(a.method3(), "method3 没有被标记").rejects.toThrowError();
+  await expect(cpc1.call("method1")).resolves.toBe("InterceptReturn");
+  await expect(cpc1.call("method2")).resolves.toBe(2);
+  await expect(cpc1.call("method3"), "method3 没有被标记").rejects.toThrow();
 });

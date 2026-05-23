@@ -15,7 +15,7 @@ test("可以使用 WebSocket 进行双向远程调用", async function () {
 test("WebSocket 实例如果不是 OPEN 状态将抛出异常", function () {
   const ws = new MockWebSocket();
   ws.readyState = 0;
-  expect(() => createWebSocketCpc(ws), "websocket状态必须为已连接").toThrowError();
+  expect(() => createWebSocketCpc(ws), "websocket状态必须为已连接").toThrow();
 });
 
 type WS = Parameters<typeof createWebSocketCpc>[0];

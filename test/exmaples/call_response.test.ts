@@ -1,5 +1,6 @@
 import { expect } from "vitest";
 import { cpcTest as test } from "../env/cpc.env.ts";
+import { setTimeout } from "node:timers";
 
 class Service {
   add(a: number, b: number) {
@@ -34,11 +35,8 @@ test("调用", async function ({ cpcSuite: { cpc1, cpc2 } }) {
   await expect(cpc1.call("add", 1, 2)).resolves.toBe(3);
   await expect(cpc1.exec("add", 1, 2)).toBe(undefined); // 不需要获取返回值
 
-  const service = cpc1.genCaller<Service>(); // 可以使用代理对象，获得完整类型提示
-
-  await expect(service.add(1, 2)).resolves.toBe(3);
-  await expect(service.getPromise(100)).resolves.toBe(100);
-  await expect(service.throwError(), "RemoteCallError").rejects.toThrowError("throw an error");
+  await expect(cpc1.call("getPromise", 100)).resolves.toBe(100);
+  await expect(cpc1.call("throwError"), "RemoteCallError").rejects.toThrow("throw an error");
 
   const args = [
     {
@@ -56,8 +54,8 @@ test("调用", async function ({ cpcSuite: { cpc1, cpc2 } }) {
     new Set([1, 2, 3]),
     new Map([["str", 1]]),
   ];
-  await service.multiType(...args); // 支持许多数据类型
+  await cpc1.call("multiType", ...args); // 支持许多数据类型
 
-  await expect(service.obj.method0()).resolves.toBe(0);
-  await expect(service.obj.lv1.lv2.method2()).resolves.toBe(2); // 深度调用
+  await expect(cpc1.call("obj.method0")).resolves.toBe(0);
+  await expect(cpc1.call("obj.lv1.lv2.method2")).resolves.toBe(2); // 深度调用
 });

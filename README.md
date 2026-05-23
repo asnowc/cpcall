@@ -53,8 +53,7 @@ import { CpCall, createSocketCpc } from "cpcall";
 
 async function onRpcConnected(cpc: CpCall) {
   cpc.exposeObject(globalThis);
-  const remoteAlice = cpc.genCaller();
-  await remoteAlice.console.log("Bob called Alice");
+  await cpc.call("console.log", "Bob called Alice");
   await cpc.endCall();
 }
 
@@ -74,9 +73,8 @@ import { createSocketCpc } from "cpcall";
 const socket = connect(8888);
 socket.on("connect", async () => {
   const cpc = createSocketCpc(socket);
-  const remote = cpc.genCaller<typeof globalThis>();
 
-  await remote.console.log("Alice Called Bob");
+  await cpc.call("console.log", "Alice Called Bob");
 
   await cpc.endCall();
 });
@@ -91,8 +89,7 @@ import { CpCall, createWebStreamCpc } from "cpcall";
 
 async function onRpcConnected(cpc: CpCall) {
   cpc.exposeObject(globalThis);
-  const remoteAlice = cpc.genCaller();
-  await remoteAlice.console.log("Bob called Alice");
+  await cpc.call("console.log", "Bob called Alice");
   await cpc.endCall();
 }
 
@@ -113,8 +110,7 @@ async function connTcpCpc() {
   const cpc = createWebStreamCpc(conn);
   cpc.exposeObject(globalThis);
 
-  const remoteBob = cpc.genCaller<typeof globalThis>();
-  await remoteBob.console.log("Alice called bob");
+  await cpc.call("console.log", "Alice called bob");
 
   await cpc.endCall();
 }
@@ -129,8 +125,7 @@ Bob: websocket server. The server is implemented by Deno or Node
 ```ts
 async function onRpcConnected(cpc: CpCall) {
   cpc.exposeObject(globalThis);
-  const remoteAlice = cpc.genCaller();
-  await remoteAlice.console.log("Bob called Alice");
+  await cpc.call("console.log", "Bob called Alice");
   await cpc.endCall();
 }
 ```
@@ -174,8 +169,7 @@ async function connectWsCpc() {
   const ws = new WebSocket("ws://127.0.0.1:8887");
   const cpc = await createWebSocketCpcOnOpen(ws);
   cpc.exposeObject(globalThis);
-  const remote = cpc.genCaller<typeof globalThis>();
-  await remote.console.log("Alice called Bob");
+  await cpc.call("console.log", "Alice called Bob");
 
   await cpc.endCall();
 }
@@ -185,7 +179,7 @@ connectWsCpc();
 
 ### Expose object
 
-The following example shows the invocation of the proxy object
+The following example shows invoking exposed methods with cpc.call().
 
 server.ts
 
@@ -225,16 +219,12 @@ export type { Service };
 client.ts
 
 ```ts
-import type { Service } from "./server.ts";
-
 const res = await cpc1.call("add", 1, 2); // res === 3
 cpc1.exec("add", 1, 2); // No need to retrieve the return value
 
-const service = cpc1.genCaller<Service>(); // Use proxy objects to obtain complete type prompts
-
-await service.add(1, 2);
-await service.getPromise(100);
-await service.throwError().catch((e) => {
+await cpc1.call("add", 1, 2);
+await cpc1.call("getPromise", 100);
+await cpc1.call("throwError").catch((e) => {
   console.log(e); // Error: throw an error
 });
 
@@ -254,10 +244,10 @@ const args = [
   new Set([1, 2, 3]),
   new Map([["str", 1]]),
 ];
-await service.multiType(...args); // Supports many data types
+await cpc1.call("multiType", ...args); // Supports many data types
 
-await service.obj.method0();
-await service.obj.lv1.lv2.method2(); // Deep call
+await cpc1.call("obj.method0");
+await cpc1.call("obj.lv1.lv2.method2"); // Deep call
 ```
 
 ### More Examples

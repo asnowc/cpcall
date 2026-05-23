@@ -1,5 +1,6 @@
 {
-  "deno.enablePaths": ["./benchmark", "./example"],
-  "deno.config": "./deno.json",
-  "cSpell.words": ["cpcall", "jbod"]
+  "cSpell.words": ["cpcall", "jbod"],
+  "vitest.runtime": "deno",
+  "editor.defaultFormatter": "denoland.vscode-deno",
+  "deno.codeLens.test": false
 }

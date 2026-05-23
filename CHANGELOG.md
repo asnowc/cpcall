@@ -1,6 +1,12 @@
 ## 0.x
 
-### 0.6.x
+### 0.7.x
+
+#### 0.7.0
+
+BREAKING CHANGES:
+
+- 移除 `CpCall.prototype.genCaller()`、`CpCall.prototype.getEmitter()`、`CpCall.exec()`、`CpCall.call()`
 
 #### 0.6.8
 

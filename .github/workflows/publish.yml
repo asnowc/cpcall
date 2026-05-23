@@ -3,31 +3,35 @@ on:
   push:
     tags:
       - v*
+  workflow_dispatch:
+    
 
 permissions:
   contents: read
   id-token: write
 
 jobs:
-  publish:
+  publish-npm:
     if: ${{github.repository_owner == 'asnowc'}}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 26
           registry-url: https://registry.npmjs.org
-      - uses: pnpm/action-setup@v4
-        with:
-          run_install: true
+      - uses: actions/checkout@v6
+      - name: Install dependencies
+        run: deno install --frozen
+
       - name: Build
-        run: pnpm run ci:build
-      - name: Publish-Jsr dry-run
-        run: npx jsr publish --dry-run
-      - name: Publish
-        run: pnpm publish --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: deno task build
       - name: Publish-Jsr
+        run: npx jsr publish
+  publish-jsr:
+    if: ${{github.repository_owner != 'asnowc'}}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Publish
         run: npx jsr publish
