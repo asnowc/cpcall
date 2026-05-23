@@ -7,6 +7,7 @@
     "npm:@vitest/ui@^4.1.7": "4.1.7_vitest@4.1.7_vite@7.3.3__@types+node@25.9.1",
     "npm:jbod@~0.5.1": "0.5.1",
     "npm:typescript@^6.0.3": "6.0.3",
+    "npm:vite@^7.3.3": "7.3.3_@types+node@25.9.1",
     "npm:vitest@^4.1.7": "4.1.7_@types+node@25.9.1_@vitest+ui@4.1.7_vite@7.3.3__@types+node@25.9.1"
   },
   "jsr": {
