@@ -21,6 +21,10 @@ jobs:
           node-version: 26
           registry-url: https://registry.npmjs.org
       - uses: actions/checkout@v6
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2
+          cache: true
       - name: Install dependencies
         run: deno install --frozen
 
