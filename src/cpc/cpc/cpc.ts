@@ -74,15 +74,6 @@ export class UnregisteredMethodError extends Error {
  * @public
  * @category Rpc
  */
-export type GenCallerOpts = {
-  /** 默认会添加 then 属性为 null，避免在异步函数中错误执行，如果为 true，则不添加 */
-  keepThen?: boolean;
-};
-
-/**
- * @public
- * @category Rpc
- */
 export interface CpCallOption {
   /** 禁用调用。如果为 true, 对方构造实例时 disableServe 必须为 true, 否则无法正常断开连接并触发 onClose */
   disableCall?: boolean;
@@ -91,43 +82,3 @@ export interface CpCallOption {
   /** 设置服务对象 */
   serveObject?: object;
 }
-
-/**
- * 远程调用代理
- * @public
- * @category Rpc
- */
-export type AnyCaller = {
-  (...args: any[]): Promise<any>;
-  [key: string]: AnyCaller;
-};
-/**
- * 远程触发代理
- * @public
- * @category Rpc
- */
-export type AnyEmitter = {
-  (...args: any[]): void;
-  [key: string]: AnyCaller;
-};
-/**
- * @public
- * @category Rpc
- */
-export type MakeCallers<T extends object, E extends object = {}> =
-  & E
-  & {
-    [Key in keyof T as T[Key] extends object ? Key : never]: T[Key] extends object ? MakeCallers<T[Key], E> : never;
-  }
-  & (T extends (...args: infer A) => infer R ? (...args: A) => Promise<Awaited<R>> : {});
-
-/**
- * @public
- * @category Rpc
- */
-export type MakeEmitter<T extends object, E extends object = {}> =
-  & E
-  & {
-    [Key in keyof T as T[Key] extends object ? Key : never]: T[Key] extends object ? MakeCallers<T[Key], E> : never;
-  }
-  & (T extends (...args: infer A) => any ? (...args: A) => void : {});
